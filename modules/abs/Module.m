@@ -12,14 +12,16 @@ classdef Module < dynamicprops
         
         function initialize(obj)
             obj.controller.initialize();
+            obj.submodules.call('initialize');
         end
         
         function out = prepare(obj)
             out = obj.controller.prepare();
+            obj.submodules.call('prepare');
         end
         
-        function add_submodule(submodule)
-            obj.submodules.add(submodule)
+        function add_submodule(obj, submodule)
+            obj.submodules.add(submodule);
         end
     end
 end

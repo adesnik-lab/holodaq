@@ -7,6 +7,8 @@ classdef SLMFlip < Module
             io = DAQInterface(dq, channel);
             controller = DAQInputController(io);
             obj = obj@Module(controller);
+
+%             obj.add_submodule(Saver());
         end
     end
 end
