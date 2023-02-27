@@ -19,8 +19,27 @@ classdef ModuleManager < dynamicprops
             end
             obj.(class(module)) = module;
         end
-
-        function out = call(obj, function_name, varargin)
+        
+         function out = call(obj, function_name, varargin)
+                out = cell(1, length(properties(obj)));
+                ct = 1;
+                for m = properties(obj)'
+                    % FIX THIS FOR NO OUTPUT ARGUMENTS?
+                    try
+                        out{ct} = feval(function_name, obj.(m{:}), varargin{:});
+                    catch ME
+                        if strcmp(ME.message, 'Too many output arguments.')
+                            feval(function_name, obj.(m{:}), varargin{:});
+                        else
+                            rethrow(ME)
+                        end
+                    end
+                    ct = ct + 1;
+                end
+                out = cat(2, out{:});
+         end
+        
+        function out = call_old(obj, function_name, varargin)
             out = cell(1, length(properties(obj)));
             ct = 1;
             for m = properties(obj)'
@@ -36,46 +55,56 @@ classdef ModuleManager < dynamicprops
                 end
                 ct = ct + 1;
             end
+            out = cat(2, out{:});
         end
         
-        function out = get_outputs(obj)
-            props = properties(obj);
-            is_output = cellfun(@(x) strcmp(obj.(x).controller.direction, 'output'), props);
-            if ~any(is_output)
-                fprintf('No output modules.\n')
-                return
-            end
+%         function out = get_outputs(obj)
+%             props = properties(obj);
+%             is_output = cellfun(@(x) strcmp(obj.(x).submodules.Triggerer.direction, 'output'), props);
+%             if ~any(is_output)
+%                 fprintf('No output modules.\n')
+%                 return
+%             end
+%             
+%             out = ModuleManager();
+%             for i = find(is_output)'
+%                 out.add(obj.(props{i}));
+%             end
+%         end
+%         
+%         function out = get_inputs(obj)
+%             props = properties(obj);
+%             is_input = cellfun(@(x) strcmp(obj.(x).controller.direction, 'input'), props);
+%             if ~any(is_input)
+%                 fprintf('No input modules.\n')
+%                 return
+%             end
+%             
+%             out = ModuleManager();  
+%             for i = find(is_input)'
+%                 out.add(obj.(props{i}));
+%             end
+%         end
+        
+        function out = extract(obj, query)
+            out = obj.call('extract', query);
+%             if ~any(is_queried)
+%                 fprintf('No modules found with query: %s\n', query)
+%                 return
+%             end
+%             
+%             out = ModuleManager();
+%             for i = find(is_queried)'
+%                 out.add(obj.(props{i}));
+%             end
+        end
+        
+        function out = contains(obj, query)
+            has_query = obj.call('contains', query);
             
+            props = properties(obj);
             out = ModuleManager();
-            for i = find(is_output)'
-                out.add(obj.(props{i}));
-            end
-        end
-        
-        function out = get_inputs(obj)
-            props = properties(obj);
-            is_input = cellfun(@(x) strcmp(obj.(x).controller.direction, 'input'), props);
-            if ~any(is_input)
-                fprintf('No input modules.\n')
-                return
-            end
-            
-            out = ModuleManager();  
-            for i = find(is_input)'
-                out.add(obj.(props{i}));
-            end
-        end
-        
-        function out = get(obj, query)
-            props = properties(obj);
-            is_queried = cellfun(@(x) isa(obj.(x), query), props);
-            if ~all(is_queried)
-                fprintf('No modules found with query: %s\n', query)
-                return
-            end
-            
-            out = ModuleManager();
-            for i = find(is_queried)'
+            for i = find(has_query)
                 out.add(obj.(props{i}));
             end
         end

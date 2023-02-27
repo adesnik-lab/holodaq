@@ -1,6 +1,6 @@
 classdef PulseOutput < handle
     properties
-        daq_rate
+        sample_rate
         % sweep_length
         % sweep
         % sweep_length_samples
@@ -15,16 +15,16 @@ classdef PulseOutput < handle
     end
 
     methods
-        function obj = PulseOutput(daq_rate, val)
-            obj.daq_rate = daq_rate;
+        function obj = PulseOutput(sample_rate, val)
+            obj.sample_rate = sample_rate;
             obj.value = val;
             % obj.sweep_length = sweep_length;
-            % obj.sweep_length_samples = obj.daq_rate*sweep_length;
+            % obj.sweep_length_samples = obj.sample_rate*sweep_length;
             % obj.sweep = zeros(1,daq_rate*sweep_length);
         end
 
         function samples = to_samples(obj, ms)
-            samples = ms * obj.daq_rate / 1000;
+            samples = ms * obj.sample_rate / 1000;
         end
 
 
@@ -33,7 +33,7 @@ classdef PulseOutput < handle
         end
         
         % function resetOutput(obj)
-        %     obj.sweep = zeros(1,obj.daq_rate*obj.sweep_length);
+        %     obj.sweep = zeros(1,obj.sample_rate*obj.sweep_length);
         % end
 
         % function show(obj, fig)
@@ -42,7 +42,7 @@ classdef PulseOutput < handle
         %     end
         %     figure(fig)
         %     xs = 1:obj.sweep_length_samples;
-        %     xs = xs/obj.daq_rate;
+        %     xs = xs/obj.sample_rate;
         %     plot(xs, obj.sweep)
         % end
 
@@ -78,7 +78,7 @@ classdef PulseOutput < handle
 
         function addStartTrigger(obj)
             % obj.sweep(1:obj.trig_length_samples) = 1;
-            obj.pulse_starts = [obj.pulse_starts 1/obj.daq_rate];
+            obj.pulse_starts = [obj.pulse_starts 1/obj.sample_rate];
         end
     end
 end

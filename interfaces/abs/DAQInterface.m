@@ -1,15 +1,16 @@
 classdef DAQInterface < Interface
     properties
-        dq
         channel
         type
+        sample_rate
     end
 
     methods
         function obj = DAQInterface(dq, channel)
-            obj.dq = dq;
+            obj.interface = dq;
             obj.channel = channel;
             obj.type = obj.derive_type();
+            obj.sample_rate = obj.interface.Rate;
         end
 
         function type = derive_type(obj)
@@ -26,9 +27,9 @@ classdef DAQInterface < Interface
         function add_channel(obj, direction)
             switch direction
             case 'output'
-                ch = obj.dq.addoutput(obj.dq.dev, obj.channel, obj.type);
+                ch = obj.interface.addoutput(obj.interface.dev, obj.channel, obj.type);
             case 'input'
-                ch = obj.dq.addinput(obj.dq.dev, obj.channel, obj.type);
+                ch = obj.interface.addinput(obj.interface.dev, obj.channel, obj.type);
             end
             if strcmp(obj.type, 'voltage')
                 ch.TerminalConfig = 'SingleEnded';

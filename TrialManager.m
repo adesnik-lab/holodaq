@@ -18,24 +18,25 @@ classdef TrialManager < handle
         end
 
         function set_trial_length(obj, trial_length)
-            output_modules = obj.modules.get_outputs();
-            output_modules.call('set_trial_length', trial_length);
+            for t = obj.modules.extract('Triggerer')
+                t.set_trial_length(trial_length);
+            end
         end
         
         function prepare(obj)
-            output_modules = obj.modules.get_outputs();
-            outputs = output_modules.call('prepare');
-         
-            obj.sweep = cat(1, outputs{:});
+            for t = obj.modules.extract('Triggerer')
+                t.generate_sweep();
+                obj.sweep = [obj.sweep; t.get_sweep()];
+            end
         end
 
         function out = start(obj)
-
+    
         end
 
         function show(obj)
-            output_modules = obj.modules.get_outputs();
-            module_names = properties(output_modules);
+            triggers = obj.modules.contains('Triggerer');
+            module_names = properties(triggers);
             n_modules = length(module_names);
             figure;
             for o = 1:n_modules

@@ -30,10 +30,13 @@ tm.modules.add(LaserEOM(dq, 'ao0'));
 tm.modules.add(SLMFlip(dq, 'ai0'));
 
 tm.initialize();
+
+%%
+
 tm.set_trial_length(550); %in ms
 
-tm.modules.ScanImageTrigger.controller.set_trigger(100, 50); % in ms
-tm.modules.LaserEOM.controller.set_trigger([100:100:500], 50);
+tm.modules.ScanImageTrigger.trigger.set_trigger(100, 50); % in ms
+tm.modules.LaserEOM.trigger.set_trigger([100:100:500], 50);
 
 % for one trial
 %%%

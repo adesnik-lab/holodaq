@@ -1,11 +1,11 @@
-classdef DAQOutputController < DAQController
+classdef Triggerer < 
     properties
         pulse
     end
     
     methods
-        function obj = DAQOutputController(io)
-            obj = obj@DAQController(io)
+        function obj = Triggerer(io)
+            obj = obj@DAQController(io);
             obj.direction = 'output';
             switch io.type
                 case 'voltage'
