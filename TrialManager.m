@@ -34,10 +34,15 @@ classdef TrialManager < handle
         end
 
         function show(obj)
-            imagesc(obj.sweep)
-        end
-
-
-
+            output_modules = obj.modules.get_outputs();
+            module_names = properties(output_modules);
+            n_modules = length(module_names);
+            figure;
+            for o = 1:n_modules
+                subplot(n_modules, 1, o)
+                plot(obj.sweep(o, :));
+                ylabel(module_names{o})
+            end
+        end  
     end
 end
