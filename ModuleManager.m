@@ -39,24 +39,6 @@ classdef ModuleManager < dynamicprops
                 out = cat(2, out{:});
          end
         
-        function out = call_old(obj, function_name, varargin)
-            out = cell(1, length(properties(obj)));
-            ct = 1;
-            for m = properties(obj)'
-                % FIX THIS FOR NO OUTPUT ARGUMENTS?
-                try
-                    out{ct} = feval(function_name, obj.(m{:}).controller, varargin{:});
-                catch ME
-                    if strcmp(ME.message, 'Too many output arguments.')
-                        feval(function_name, obj.(m{:}).controller, varargin{:});
-                    else
-                        rethrow(ME)
-                    end
-                end
-                ct = ct + 1;
-            end
-            out = cat(2, out{:});
-        end
         
 %         function out = get_outputs(obj)
 %             props = properties(obj);

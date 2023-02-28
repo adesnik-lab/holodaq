@@ -15,7 +15,6 @@ classdef Triggerer < Submodule
                     val = 1;
             end
             obj.pulse = PulseOutput(io.sample_rate, val);
-            
         end
         
         function initialize(obj)

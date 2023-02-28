@@ -23,7 +23,10 @@ tm = TrialManager(dq);
 %% reduce copies of the daq
 
 %% OUTPUTS
-tm.modules.add(ScanImageTrigger(dq, 'port0/line0'));
+sim = ScanImageTrigger(dq, 'port0/line0');
+ptb = PsychToolboxTrigger(dq, 'port0/line1');
+tm.modules.add(sim);
+tm.modules.add(ptb);
 tm.modules.add(LaserEOM(dq, 'ao0'));
 
 %% INPUTS
@@ -35,8 +38,9 @@ tm.initialize();
 
 tm.set_trial_length(550); %in ms
 
-tm.modules.ScanImageTrigger.trigger.set_trigger(100, 50); % in ms
-tm.modules.LaserEOM.trigger.set_trigger([100:100:500], 50);
+sim.trigger.set_trigger(200, 50); % in ms, trigger failure here
+ptb.trigger.set_trigger(1, 10);
+tm.modules.LaserEOM.trigger.set_trigger([100:100:300], 50);
 
 % for one trial
 %%%
