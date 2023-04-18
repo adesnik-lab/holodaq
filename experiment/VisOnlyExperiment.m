@@ -1,0 +1,2 @@
+classdef VisOnlyExperiment < Experiment
+end

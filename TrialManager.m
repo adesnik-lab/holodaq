@@ -28,10 +28,6 @@ classdef TrialManager < handle
                 t.generate_sweep();
                 obj.sweep = [obj.sweep; t.get_sweep()];
             end
-            
-%             for r = obj.module.extract('Readers')
-%                 r.prepare_to_read();
-%             end
         end
 
         function out = start(obj)

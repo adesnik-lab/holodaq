@@ -38,47 +38,10 @@ classdef ModuleManager < dynamicprops
                 end
                 out = cat(2, out{:});
          end
-        
-        
-%         function out = get_outputs(obj)
-%             props = properties(obj);
-%             is_output = cellfun(@(x) strcmp(obj.(x).submodules.Triggerer.direction, 'output'), props);
-%             if ~any(is_output)
-%                 fprintf('No output modules.\n')
-%                 return
-%             end
-%             
-%             out = ModuleManager();
-%             for i = find(is_output)'
-%                 out.add(obj.(props{i}));
-%             end
-%         end
-%         
-%         function out = get_inputs(obj)
-%             props = properties(obj);
-%             is_input = cellfun(@(x) strcmp(obj.(x).controller.direction, 'input'), props);
-%             if ~any(is_input)
-%                 fprintf('No input modules.\n')
-%                 return
-%             end
-%             
-%             out = ModuleManager();  
-%             for i = find(is_input)'
-%                 out.add(obj.(props{i}));
-%             end
-%         end
+
         
         function out = extract(obj, query)
             out = obj.call('extract', query);
-%             if ~any(is_queried)
-%                 fprintf('No modules found with query: %s\n', query)
-%                 return
-%             end
-%             
-%             out = ModuleManager();
-%             for i = find(is_queried)'
-%                 out.add(obj.(props{i}));
-%             end
         end
         
         function out = contains(obj, query)
