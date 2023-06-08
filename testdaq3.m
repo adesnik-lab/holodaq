@@ -22,14 +22,34 @@ tm = TrialManager(dq);
 
 %% reduce copies of the daq
 
+%%outputs
+addAnalogOutputChannel(s,'Dev1',2,'Voltage'); %LASER EOM
+addDigitalChannel(s,'Dev1','port0/Line0', 'OutputOnly'); %si trig
+addDigitalChannel(s,'Dev1','port0/Line2', 'OutputOnly'); %slm trig
+addDigitalChannel(s,'Dev1','port0/Line3', 'OutputOnly'); %pt trig
+
+
+%%inputs
+addDigitalChannel(s, 'Dev1','port0/line15','InputOnly'); %pt vis stim on/off
+addDigitalChannel(s, 'Dev1','port0/line13','InputOnly'); %pt stim id signal
+addDigitalChannel(s, 'Dev1','port0/line10','InputOnly'); %running
+
+
 %% OUTPUTS
 sim = ScanImageTrigger(dq, 'port0/line0');
 ptb = PsychToolboxTrigger(dq, 'port0/line1');
+laser_eom = LaserEOM(dq, 'ao0');
+slm = SLMTrigger(dq, 'port0/line2');
+
 tm.modules.add(sim);
-tm.modules.add(ptb);
-tm.modules.add(LaserEOM(dq, 'ao0'));
+tm.modules.add(ptb); 
+tm.modules.add(slm);
+tm.modules.add(laser_eom);
 
 %% INPUTS
+pt_input = PsychToolboxReporter();
+pt_stim_id = PsychToolboxStimID();
+running_input = RunningInput();
 tm.modules.add(SLMFlip(dq, 'ai0'));
 
 tm.initialize();

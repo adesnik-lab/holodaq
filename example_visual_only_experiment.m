@@ -2,7 +2,6 @@ clear
 close all
 clc
 
-
 addpath(genpath('.'))
 
 %% this could probably be put into a function or something?
@@ -21,7 +20,7 @@ pause(0.5)
 fprintf('OK.\n')
 
 %%
-generateMetadataStruct(); % default stuff, like machine configuration info, etc?
+metadata = generateMetadataStruct(); % default stuff, like machine configuration info, etc?
 metadata.mouseID = 'KKS002-1';
 metadata.date = '230216';
 
@@ -29,6 +28,7 @@ tm = TrialManager(dq);
 
 sim = ScanImageTrigger(dq, 'port0/line0');
 ptb = PsychToolboxTrigger(dq, 'port0/line1');
+slm = SLMTrigger(dq, 'port0/line2');
 % not yet implemented
 % stimIDSender = StimSender('something?');
 tm.modules.add(sim);
