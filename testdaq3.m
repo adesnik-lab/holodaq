@@ -1,3 +1,15 @@
+%% TO DO
+% work on getting inputs in place
+% msocket control? should that happen here or somewhere else?
+
+
+% data saving
+% 
+
+% add checknig for trial length vs actual sweep
+
+
+% "Select" code runs before the main loop, then "make" code in the loop....
 clear
 close all
 clc
@@ -12,65 +24,77 @@ pause(0.5)
 fprintf('OK.\n')
 
 fprintf('Making MATLAB NIDAQ object... ')
-% dq = daq('ni');
-dq = fakedaq();
+dq = daq('ni');
+% dq = fakedaq();
 dq.Rate = setup.daqrate;
 pause(0.5)
 fprintf('OK.\n')
 
-tm = TrialManager(dq);
+tman = TrialManager(dq);
 
 %% reduce copies of the daq
-
+%{
 %%outputs
-addAnalogOutputChannel(s,'Dev1',2,'Voltage'); %LASER EOM
-addDigitalChannel(s,'Dev1','port0/Line0', 'OutputOnly'); %si trig
-addDigitalChannel(s,'Dev1','port0/Line2', 'OutputOnly'); %slm trig
-addDigitalChannel(s,'Dev1','port0/Line3', 'OutputOnly'); %pt trig
+addAnalogOutputChannel(dq,'Dev1',2,'Voltage'); %LASER EOM
+addDigitalChannel(dq,'Dev1','port0/Line0', 'OutputOnly'); %si trig
+addDigitalChannel(dq,'Dev1','port0/Line2', 'OutputOnly'); %slm trig
+addDigitalChannel(dq,'Dev1','port0/Line3', 'OutputOnly'); %pt trig
 
 
 %%inputs
-addDigitalChannel(s, 'Dev1','port0/line15','InputOnly'); %pt vis stim on/off
-addDigitalChannel(s, 'Dev1','port0/line13','InputOnly'); %pt stim id signal
-addDigitalChannel(s, 'Dev1','port0/line10','InputOnly'); %running
-
+addDigitalChannel(dq, 'Dev1','port0/line15','InputOnly'); %pt vis stim on/off
+addDigitalChannel(dq, 'Dev1','port0/line13','InputOnly'); %pt stim id signal
+addDigitalChannel(dq, 'Dev1','port0/line10','InputOnly'); %running
+%}
 
 %% OUTPUTS
-sim = ScanImageTrigger(dq, 'port0/line0');
+si = ScanImageTrigger(dq, 'port0/line0');
 ptb = PsychToolboxTrigger(dq, 'port0/line1');
 laser_eom = LaserEOM(dq, 'ao0');
-slm = SLMTrigger(dq, 'port0/line2');
+slm = SLMTrigger(dq, 'ao1'); % this is overkill for the SLM trigger, but I just don't want loose cables lol (see the daq, this lets me keep bnc for everything)
 
-tm.modules.add(sim);
-tm.modules.add(ptb); 
-tm.modules.add(slm);
-tm.modules.add(laser_eom);
+tman.modules.add(si);
+tman.modules.add(ptb); 
+tman.modules.add(slm);
+tman.modules.add(laser_eom);
 
 %% INPUTS
+%{
 pt_input = PsychToolboxReporter();
 pt_stim_id = PsychToolboxStimID();
 running_input = RunningInput();
-tm.modules.add(SLMFlip(dq, 'ai0'));
+tman.modules.add(SLMFlip(dq, 'ai0'));
+%}
 
-tm.initialize();
+tman.initialize();
 
-%%
 
-tm.set_trial_length(550); %in ms
+%% Select code?
+holosToUse = importdata('holosToUse.mat');
 
-sim.trigger.set_trigger(200, 50); % in ms, trigger failure here
-ptb.trigger.set_trigger(1, 10);
-tm.modules.LaserEOM.trigger.set_trigger([100:100:300], 50);
+%% Generate triggers?
+load('HoloRequest.mat') % replace later with appropriate holorequest get function
 
-% for one trial
-%%%
-tm.prepare()
+powers = [0.1, 0.08, 0.01];
+trial_scaling = [1, 1.2, 1.3];
+ct = 1;
+for p = powers(1)
+    tic
+    % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
+    tman.set_trial_length(3000);
+    
+    Makefixedspike2k
+    si.trigger.set_trigger(1, 25, 1);
+    ptb.trigger.set_trigger(1, 25, 1);
+    % Prepare and show
+    tman.prepare();
+    toc
 
-tm.show();
-
-tm.start()
-
-for t = 1:n_trials
-    tm.prepare()
-    tm.start()
+    % tman.show();
+    tic
+    tman.start_trial();
+    tman.end_trial();
+    toc
+    ct = ct + 1;
 end
+%%

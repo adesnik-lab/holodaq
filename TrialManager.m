@@ -5,6 +5,7 @@ classdef TrialManager < handle
         dq
 
         sweep
+        in
     end
 
     methods
@@ -25,13 +26,25 @@ classdef TrialManager < handle
         
         function prepare(obj)
             for t = obj.modules.extract('Triggerer')
-                t.generate_sweep();
-                obj.sweep = [obj.sweep; t.get_sweep()];
+                sweep = t.generate_sweep();
+                obj.sweep = cat(2, obj.sweep, sweep);
             end
         end
 
-        function out = start(obj)
-    
+        function out = start_trial(obj)
+            disp('started trial')
+            try % hacky solution for not having any input channels
+                obj.in = obj.dq.readwrite(obj.sweep);
+            catch
+                obj.dq.write(obj.sweep);
+            end
+        end
+
+        function end_trial(obj)
+            % cleanup and maintenance after a trial ends
+            % separate the data
+            
+            obj.sweep = [];
         end
 
         function show(obj)
@@ -41,7 +54,7 @@ classdef TrialManager < handle
             figure;
             for o = 1:n_modules
                 subplot(n_modules, 1, o)
-                plot(obj.sweep(o, :));
+                plot(obj.sweep(:, o));
                 ylabel(module_names{o})
             end
         end  
