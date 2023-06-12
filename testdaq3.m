@@ -1,15 +1,13 @@
 %% TO DO
 % work on getting inputs in place
 % msocket control? should that happen here or somewhere else?
-
-
 % data saving
-% 
 
+
+% bugfixes
 % add checknig for trial length vs actual sweep
 
 
-% "Select" code runs before the main loop, then "make" code in the loop....
 clear
 close all
 clc
@@ -49,9 +47,9 @@ addDigitalChannel(dq, 'Dev1','port0/line10','InputOnly'); %running
 
 %% OUTPUTS
 si = ScanImageTrigger(dq, 'port0/line0');
-ptb = PsychToolboxTrigger(dq, 'port0/line1');
+ptb = PsychToolboxTrigger(dq, 'port0/line1', 'port0/line15', 'port0/line13');
 laser_eom = LaserEOM(dq, 'ao0');
-slm = SLMTrigger(dq, 'ao1'); % this is overkill for the SLM trigger, but I just don't want loose cables lol (see the daq, this lets me keep bnc for everything)
+slm = SLMTrigger(dq, 'ao1', 'ai1'); % this is overkill for the SLM trigger, but I just don't want loose cables lol (see the daq, this lets me keep bnc for everything)
 
 tman.modules.add(si);
 tman.modules.add(ptb); 

@@ -5,7 +5,6 @@ classdef TrialManager < handle
         dq
 
         sweep
-        in
     end
 
     methods

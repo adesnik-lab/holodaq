@@ -1,6 +1,7 @@
 classdef Reader < Submodule
     properties
         io
+        data
     end
 
     methods
@@ -12,6 +13,11 @@ classdef Reader < Submodule
             obj.io.add_channel('input');
         end
         
+        function get_data(obj)
+            % Data is automatically read, we jsut need to appropriately
+            % extract it
+        end
+
         function start(obj)
         end
 
