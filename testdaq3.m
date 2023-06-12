@@ -104,8 +104,7 @@ for p = powers(1:2)
     % tman.show();
     tic
     tman.start_trial();
-    t1 = toc;
-    tic
+    
     tman.end_trial();
 
     fprintf('Trial duration: %0.05f\n', t1);
