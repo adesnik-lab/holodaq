@@ -27,7 +27,7 @@ classdef PulseOutput < handle
     end
 
     methods
-        function sweep = add_pulses(obj, sweep)
+        function sweep = generate_pulse(obj, sweep)
             if any((obj.pulse_starts + obj.pulse_lengths) > obj.sweep_length)
                 error('Trigger longer than sweep length')
             end
@@ -36,12 +36,12 @@ classdef PulseOutput < handle
             end
         end
 
-        function set_trigger(obj, trig_time, trig_duration, pulse_value)
-            trig_duration = repmat(trig_duration, [1, length(trig_time)/length(trig_duration)]);
-            for t = 1:length(trig_time)
-                obj.pulse_starts = [obj.pulse_starts, trig_time(t)];
-                obj.pulse_lengths = [obj.pulse_lengths, max(trig_duration(t), obj.default_trig_length)]; % potentially dangerous, because if trigger is shorter than 5ms it'll fail 
-                obj.pulse_value = [obj.pulse_value, pulse_value];
+        function set_pulse(obj, start, duration, value)
+            duration = repmat(duration, [1, length(start)/length(duration)]);
+            for t = 1:length(start)
+                obj.pulse_starts = [obj.pulse_starts, start(t)];
+                obj.pulse_lengths = [obj.pulse_lengths, max(duration(t), obj.default_trig_length)]; % potentially dangerous, because if trigger is shorter than 5ms it'll fail 
+                obj.pulse_value = [obj.pulse_value, value];
             end
         end
 

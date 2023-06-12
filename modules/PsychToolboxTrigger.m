@@ -7,13 +7,13 @@ classdef PsychToolboxTrigger < Module
     
     methods
         function obj = PsychToolboxTrigger(dq, output_channel, onoff_channel, id_channel)
-            io = DAQInterface(dq, output_channel);
+            io = DAQOutput(dq, output_channel);
             obj.trigger = Triggerer(io);
             
-            io = DAQInterface(dq, onoff_channel);
+            io = DAQInput(dq, onoff_channel);
             obj.stim_onoff = Reader(io);
 
-            io = DAQInterface(dq, id_channel);
+            io = DAQInput(dq, id_channel);
             obj.stim_id = Reader(io);
         end
         
@@ -23,8 +23,8 @@ classdef PsychToolboxTrigger < Module
             obj.stim_id.initialize();
         end
         
-        function prepare(obj)
-           obj.trigger.prepare();
+        function set_trigger(obj, start, duration, val)
+           obj.trigger.io.set_pulse(start, duration, val);
         end
         
         function out = get_sweep(obj);

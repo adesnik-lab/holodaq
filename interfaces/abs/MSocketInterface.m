@@ -12,7 +12,7 @@ classdef MSocketInterface < Interface
             obj.port = socket;
         end
 
-        function connect(obj)
+        function initialize(obj)
             obj.socket = msconnect(obj.ip, obj.port);
             obj.validate();
         end

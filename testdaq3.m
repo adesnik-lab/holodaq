@@ -14,6 +14,7 @@ clc
 
 addpath(genpath('.'))
 
+
 fprintf('Starting daq...\r')
 
 fprintf('Loading defaults... ')
@@ -50,7 +51,7 @@ si = ScanImageTrigger(dq, 'port0/line0');
 ptb = PsychToolboxTrigger(dq, 'port0/line1', 'port0/line15', 'port0/line13');
 laser_eom = LaserEOM(dq, 'ao0');
 slm = SLMTrigger(dq, 'ao1', 'ai1'); % this is overkill for the SLM trigger, but I just don't want loose cables lol (see the daq, this lets me keep bnc for everything)
-
+ 
 tman.modules.add(si);
 tman.modules.add(ptb); 
 tman.modules.add(slm);
@@ -81,9 +82,9 @@ for p = powers(1)
     % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
     tman.set_trial_length(3000);
     
+    si.trigger.set([1, 25, 1]);
+    ptb.trigger.set([1, 25, 1]);
     Makefixedspike2k
-    si.trigger.set_trigger(1, 25, 1);
-    ptb.trigger.set_trigger(1, 25, 1);
     % Prepare and show
     tman.prepare();
     toc

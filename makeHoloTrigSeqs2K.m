@@ -104,7 +104,7 @@ for i = 1:numel(Seq) %Each type of stim
                         Exp_Defaults.Fs,...
                         size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
                     % added
-                    slm.trigger.set_trigger(tm, holoStimParams.TrigDuration, 5);
+                    slm.trigger.set([tm, holoStimParams.TrigDuration, 5]);
 
                     tm=tm+holoStimParams.waitList(i)+ ...
                         holoStimParams.TrigDuration;
@@ -114,7 +114,7 @@ for i = 1:numel(Seq) %Each type of stim
                     %Stim Time
                     ST=makepulseoutputs(tm,1,holoStimParams.pulseDuration,V,holoStimParams.stimFreq,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
                     % added
-                    laser_eom.trigger.set_trigger(tm, holoStimParams.pulseDuration, V);
+                    laser_eom.trigger.set([tm, holoStimParams.pulseDuration, V]);
                     tm=tm+holoStimParams.pulseDuration-holoStimParams.TrigDuration;
                     stimOutput = stimOutput +ST;
                     

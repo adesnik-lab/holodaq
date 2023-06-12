@@ -6,14 +6,15 @@ classdef SLMTrigger < Module
     
     methods
         function obj = SLMTrigger(dq, output_channel, input_channel)
-            io = DAQInterface(dq, output_channel);
+            io = DAQOutput(dq, output_channel);
             obj.trigger = Triggerer(io);
 
-            io = DAQInterface(dq, input_channel);
+            io = DAQInput(dq, input_channel);
             obj.reader = Reader(io);
 
             % io = MSocketInterface('19...', 2390290);
-            obj.holo_computer = MSocketInterface();
+            
+            %obj.holo_computer = MSocketInterface();
         end
         
         function initialize(obj)

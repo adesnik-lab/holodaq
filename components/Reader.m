@@ -10,7 +10,7 @@ classdef Reader < Submodule
         end
         
         function initialize(obj)
-            obj.io.add_channel('input');
+            obj.io.initialize();
         end
         
         function get_data(obj)

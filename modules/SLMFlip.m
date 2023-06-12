@@ -5,7 +5,7 @@ classdef SLMFlip < Module
     
     methods
         function obj = SLMFlip(dq, channel)
-            io = DAQInterface(dq, channel);
+            io = DAQOutput(dq, channel);
             obj.reader = Reader(io);
 %             obj.add_submodule(Saver());
         end

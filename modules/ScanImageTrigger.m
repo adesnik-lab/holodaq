@@ -5,7 +5,7 @@ classdef ScanImageTrigger < Module
     
     methods
         function obj = ScanImageTrigger(dq, channel)
-            io = DAQInterface(dq, channel);
+            io = DAQOutput(dq, channel);
             obj.trigger = Triggerer(io);
         end
         
@@ -14,10 +14,9 @@ classdef ScanImageTrigger < Module
         end
         
         function prepare(obj)
-           obj.trigger.prepare();
         end
         
-        function out = get_sweep(obj);
+        function out = get_sweep(obj)
             out = obj.trigger.sweep;
         end
     end

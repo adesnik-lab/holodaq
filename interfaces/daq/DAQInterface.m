@@ -27,17 +27,12 @@ classdef DAQInterface < Interface
             end
         end
 
-        function add_channel(obj, direction)
-            switch direction
-            case 'output'
-                ch = obj.interface.addoutput(obj.dev, obj.channel, obj.type);
-            case 'input'
-                ch = obj.interface.addinput(obj.dev, obj.channel, obj.type);
-            end
-            if strcmp(obj.type, 'voltage')
-                ch.TerminalConfig = 'SingleEnded';
-            end
+        function initialize(obj)
         end
-        
+
+        function prepare(obj)
+        end
+
+      
     end
 end

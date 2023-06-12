@@ -3,6 +3,7 @@ classdef TrialManager < handle
     properties
         modules
         dq
+        trial_length
 
         sweep
     end
@@ -17,23 +18,27 @@ classdef TrialManager < handle
             obj.modules.call('initialize');
         end
 
-        function set_trial_length(obj, trial_length)
-            for t = obj.modules.extract('Triggerer')
-                t.set_trial_length(trial_length);
-            end
-        end
-        
+
         function prepare(obj)
+            % set trial length here
+            % generate sweeps
+            % prepare msockets
+            % obj.modules.call('prepare');
             for t = obj.modules.extract('Triggerer')
-                sweep = t.generate_sweep();
-                obj.sweep = cat(2, obj.sweep, sweep);
+                switch class(t.io)
+                    case 'DAQOutput'
+                        t.io.set_trial_length(obj.trial_length);
+                        obj.sweep = cat(2, obj.sweep, t.io.generate_sweep());
+                    case 'Msocket'
+                end
             end
         end
 
         function out = start_trial(obj)
+            % send EVERYTHING
             disp('started trial')
             try % hacky solution for not having any input channels
-                obj.in = obj.dq.readwrite(obj.sweep);
+                out = obj.dq.readwrite(obj.sweep);
             catch
                 obj.dq.write(obj.sweep);
             end
@@ -46,6 +51,10 @@ classdef TrialManager < handle
             obj.sweep = [];
         end
 
+        function set_trial_length(obj, trial_length)
+            obj.trial_length = trial_length; %
+        end
+        
         function show(obj)
             triggers = obj.modules.contains('Triggerer');
             module_names = properties(triggers);
