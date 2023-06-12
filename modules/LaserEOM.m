@@ -5,7 +5,7 @@ end
 
 methods
     function obj = LaserEOM(dq, channel)
-        io = DAQOutput(dq, channel);
+        io = DAQInterface(dq, channel);
         obj.trigger = Triggerer(io);
     end
     
