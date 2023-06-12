@@ -90,15 +90,17 @@ for p = powers(1:2)
     ptb.trigger.set([1, 25, 1]);
     % Prepare and show
     tman.prepare();
-    toc
+    t2 = toc;
 
     % tman.show();
     tic
     tman.start_trial();
-    toc
+    t1 = toc;
     tic
     tman.end_trial();
-    
+
+    fprintf('Trial duration: %0.05f\n', t1);
+    fprintf('ITI: %0.05f\n', t2);    
     ct = ct + 1;
 end
 %%

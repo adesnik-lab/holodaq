@@ -12,7 +12,7 @@ ExpStruct.triggerSI5=zeros(size(ExpStruct.triggerSI5))...
 % ExpStruct.nextsequenceTrigger=zeros(size(ExpStruct.nextsequenceTrigger))...
 %     + makepulseoutputs(25,1,50,1,1,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
 
-updateAOaxes();
+%updateAOaxes();
 
 blankOutput=zeros(size(ExpStruct.StimLaserEOM));
 
@@ -29,7 +29,7 @@ ExpStruct.StimLaserEOM=blankOutput;
 ExpStruct.nextsequenceTrigger=zeros(size(ExpStruct.nextsequenceTrigger))...
             + makepulseoutputs(holoStimParams.visStartTime,1,10,1,50,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
 
-updateAOaxes();
+%updateAOaxes();
 % saveoutput('Out 0. 0mW. No Pulses');
 disp('Saved Control Output');
 
@@ -136,7 +136,7 @@ for i = 1:numel(Seq) %Each type of stim
         
         ExpStruct.nextholoTrigger = trigOutput;
         ExpStruct.StimLaserEOM=stimOutput;
-        updateAOaxes();
+        %updateAOaxes();
         
         %         newSeq{c}=Seq{i};
         ExpStruct.bigListofSequences{c} = Seq{i};

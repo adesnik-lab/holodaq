@@ -35,7 +35,7 @@ classdef TrialManager < handle
             end
         end
 
-        function out = start_trial(obj)
+        function start_trial(obj)
             % send EVERYTHING
             disp('started trial')
             for t = obj.modules.extract('Triggerer') % let's track how long this takes...
