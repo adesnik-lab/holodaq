@@ -2,6 +2,12 @@
 % work on getting inputs in place
 % msocket control? should that happen here or somewhere else?
 % data saving
+% saver into reader
+% big calls on some things
+% can we reduce delay via background running
+
+
+% change wait timeout
 
 
 % bugfixes
@@ -51,6 +57,7 @@ si = SIComputer(dq, 'port0/line0', 'ai0');
 ptb = PTBComputer(dq, 'port0/line1', 'port0/line15', 'port0/line13');
 
 % running input
+rwheel = RunningWheel(dq, 'ai2');
 laser_eom = LaserEOM(dq, 'ao0');
 slm = SLM(dq, 'ao1', 'ai1'); % this is overkill for the SLM trigger, but I just don't want loose cables lol (see the daq, this lets me keep bnc for everything)
  
@@ -58,6 +65,7 @@ tman.modules.add(si);
 tman.modules.add(ptb); 
 tman.modules.add(slm);
 tman.modules.add(laser_eom);
+tman.modules.add(rwheel);
 
 %% INPUTS
 %{
@@ -78,11 +86,12 @@ load('HoloRequest.mat') % replace later with appropriate holorequest get functio
 
 powers = [0.1, 0.01];
 trial_scaling = [1, 1.2];
+trial_lengths = [3000, 5000];
 ct = 1;
 for p = powers(1:2)
     
     % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
-    tman.set_trial_length(3000);
+    tman.set_trial_length(trial_lengths(ct));
     Makefixedspike2k % takes care of laser_eom and slm triggers
     
     si.info.set('hello');
@@ -103,4 +112,3 @@ for p = powers(1:2)
     fprintf('ITI: %0.05f\n', t2);    
     ct = ct + 1;
 end
-%%
