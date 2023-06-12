@@ -13,7 +13,11 @@ classdef Triggerer < Submodule
         end
     
         function set(obj, input)
-            obj.io.set(input);
+            if obj.io.validate(input)
+                obj.io.set(input);
+            else
+                fprintf('Invalid input, nothing set \n');
+            end
         end
 
         function prepare(obj)

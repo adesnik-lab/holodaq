@@ -2,22 +2,23 @@ classdef MSocketInterface < Interface
     properties
         ip
         port
-
+        
+        data
         socket
     end
     
     methods
-        function obj = MSocketInterface(ip, socket
-            obj.ip = ip;
-            obj.port = socket;
+        function obj = MSocketInterface()
+            % obj.ip = ip;
+            % obj.port = socket;
         end
 
         function initialize(obj)
             obj.socket = msconnect(obj.ip, obj.port);
-            obj.validate();
+            obj.validate_connection();
         end
 
-        function validate(obj)
+        function validate_connection(obj)
             while ~strcmp(invar,'A')
                 invar=msrecv(obj.socket,.5);
             end
@@ -26,8 +27,20 @@ classdef MSocketInterface < Interface
             disp('input from hologram computer validated');
         end
 
-        function send(obj, cmd)
-            mssend(obj.socket, cmd);
+        function set(obj, val)
+            obj.data = val;
+        end
+
+        function validated = validate(obj, val)
+            validated = false;
+            if isa(val, 'char')
+                validated = true;
+            end
+        end
+
+        function send(obj)
+            fprintf('sent ''%s''\n', obj.data)
+            % mssend(obj.socket, obj.data);
         end
 
         function out =  receive(obj,  timeout)

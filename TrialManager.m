@@ -29,7 +29,7 @@ classdef TrialManager < handle
                     case 'DAQOutput'
                         t.io.set_trial_length(obj.trial_length);
                         obj.sweep = cat(2, obj.sweep, t.io.generate_sweep());
-                    case 'Msocket'
+                    case 'MSocketInterface'
                 end
             end
         end
@@ -37,11 +37,17 @@ classdef TrialManager < handle
         function out = start_trial(obj)
             % send EVERYTHING
             disp('started trial')
+            for t = obj.modules.extract('Triggerer') % let's track how long this takes...
+                if isa(t.io, 'MSocketInterface')
+                    t.io.send();
+                end
+            end
             try % hacky solution for not having any input channels
                 out = obj.dq.readwrite(obj.sweep);
             catch
                 obj.dq.write(obj.sweep);
             end
+            fprintf('expected length: %0.5f\n', size(obj.sweep, 1)/obj.dq.Rate)
         end
 
         function end_trial(obj)

@@ -1,12 +1,16 @@
 classdef ScanImageTrigger < Module
     properties
         trigger
+        info
     end
     
     methods
         function obj = ScanImageTrigger(dq, channel)
             io = DAQOutput(dq, channel);
             obj.trigger = Triggerer(io);
+            
+            io = MSocketInterface();
+            obj.info = Triggerer(io);
         end
         
         function initialize(obj)

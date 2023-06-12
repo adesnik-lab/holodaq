@@ -23,7 +23,11 @@ classdef Module < dynamicprops
             if ~any(is_queried)
                 out = [];
             else
-                out = obj.(props{is_queried});
+                ct = 1;
+                for q = find(is_queried)'
+                    out(ct) = obj.(props{q});
+                    ct =ct + 1;
+                end
             end
         end
         

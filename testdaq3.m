@@ -50,7 +50,7 @@ addDigitalChannel(dq, 'Dev1','port0/line10','InputOnly'); %running
 si = ScanImageTrigger(dq, 'port0/line0');
 ptb = PsychToolboxTrigger(dq, 'port0/line1', 'port0/line15', 'port0/line13');
 laser_eom = LaserEOM(dq, 'ao0');
-slm = SLMTrigger(dq, 'ao1', 'ai1'); % this is overkill for the SLM trigger, but I just don't want loose cables lol (see the daq, this lets me keep bnc for everything)
+slm = SLM(dq, 'ao1', 'ai1'); % this is overkill for the SLM trigger, but I just don't want loose cables lol (see the daq, this lets me keep bnc for everything)
  
 tman.modules.add(si);
 tman.modules.add(ptb); 
@@ -78,13 +78,14 @@ powers = [0.1, 0.08, 0.01];
 trial_scaling = [1, 1.2, 1.3];
 ct = 1;
 for p = powers(1)
-    tic
+    
     % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
     tman.set_trial_length(3000);
+    Makefixedspike2k
     
+    si.info.set('hello');
     si.trigger.set([1, 25, 1]);
     ptb.trigger.set([1, 25, 1]);
-    Makefixedspike2k
     % Prepare and show
     tman.prepare();
     toc
@@ -92,8 +93,10 @@ for p = powers(1)
     % tman.show();
     tic
     tman.start_trial();
-    tman.end_trial();
     toc
+    tic
+    tman.end_trial();
+    
     ct = ct + 1;
 end
 %%

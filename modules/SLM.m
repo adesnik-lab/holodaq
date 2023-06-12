@@ -1,11 +1,11 @@
-classdef SLMTrigger < Module
+classdef SLM < Module
     properties
         trigger
         reader
     end
     
     methods
-        function obj = SLMTrigger(dq, output_channel, input_channel)
+        function obj = SLM(dq, output_channel, input_channel)
             io = DAQOutput(dq, output_channel);
             obj.trigger = Triggerer(io);
 
@@ -13,8 +13,7 @@ classdef SLMTrigger < Module
             obj.reader = Reader(io);
 
             % io = MSocketInterface('19...', 2390290);
-            
-            %obj.holo_computer = MSocketInterface();
+            % obj.holo_computer = Triggerer(io);
         end
         
         function initialize(obj)

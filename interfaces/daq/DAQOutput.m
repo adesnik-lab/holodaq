@@ -17,11 +17,7 @@ classdef DAQOutput < DAQInterface
         end
 
         function set(obj, val)
-            if obj.validate(val)
-                obj.set_pulse(val(:, 1), val(:, 2), val(:, 3));
-            else
-                fprintf('Improper input, no trigger set\n')
-            end
+            obj.set_pulse(val(:, 1), val(:, 2), val(:, 3));
         end
 
         function validated = validate(obj, val)
