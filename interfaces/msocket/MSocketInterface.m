@@ -38,8 +38,11 @@ classdef MSocketInterface < Interface
             end
         end
 
-        function send(obj)
-            fprintf('sent ''%s''\n', obj.data)
+        function send(obj, data)
+            if nargin < 2 || isempty(data)
+                data = obj.data;
+            end
+            fprintf('sent ''%s''\n', data)
             % mssend(obj.socket, obj.data);
         end
 

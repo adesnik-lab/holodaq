@@ -6,6 +6,7 @@ classdef TrialManager < handle
         trial_length
 
         sweep
+        out
     end
 
     methods
@@ -43,7 +44,7 @@ classdef TrialManager < handle
                 end
             end
             try % hacky solution for not having any input channels
-                out = obj.dq.readwrite(obj.sweep);
+                obj.out = obj.dq.readwrite(obj.sweep);
             catch
                 obj.dq.write(obj.sweep);
             end
@@ -51,9 +52,13 @@ classdef TrialManager < handle
         end
 
         function end_trial(obj)
-            % cleanup and maintenance after a trial ends
-            % separate the data
-            
+            % read all data in
+            for r = obj.modules.extract('Reader')
+                chn = sprintf('%s_%s', r.io.dev, r.io.channel);
+                r.data = obj.out.(chn);
+            end
+            obj.modules.call('save'); % save it
+            obj.out = [];
             obj.sweep = [];
         end
 

@@ -1,4 +1,4 @@
-classdef PsychToolboxTrigger < Module
+classdef PTBComputer < Module
     properties
         trigger
         stim_onoff
@@ -6,7 +6,7 @@ classdef PsychToolboxTrigger < Module
     end
     
     methods
-        function obj = PsychToolboxTrigger(dq, output_channel, onoff_channel, id_channel)
+        function obj = PTBComputer(dq, output_channel, onoff_channel, id_channel)
             io = DAQOutput(dq, output_channel);
             obj.trigger = Triggerer(io);
             
@@ -30,5 +30,6 @@ classdef PsychToolboxTrigger < Module
         function out = get_sweep(obj);
             out = obj.trigger.sweep;
         end
+
     end
 end

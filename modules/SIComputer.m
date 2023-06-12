@@ -1,13 +1,17 @@
-classdef ScanImageTrigger < Module
+classdef SIComputer < Module
     properties
         trigger
+        reader
         info
     end
     
     methods
-        function obj = ScanImageTrigger(dq, channel)
-            io = DAQOutput(dq, channel);
+        function obj = SIComputer(dq, output_channel, input_channel)
+            io = DAQOutput(dq, output_channel);
             obj.trigger = Triggerer(io);
+
+            io = DAQInput(dq, input_channel);
+            obj.reader = Reader(io);
             
             io = MSocketInterface();
             obj.info = Triggerer(io);
@@ -15,6 +19,8 @@ classdef ScanImageTrigger < Module
         
         function initialize(obj)
             obj.trigger.initialize();
+            obj.reader.initialize();
+            %obj.info.initialize();
         end
         
         function prepare(obj)

@@ -12,6 +12,9 @@ classdef Module < dynamicprops
         
         function out = prepare(obj)
         end
+
+        function save(obj)
+        end
         
         function add_submodule(obj, submodule)
             obj.submodules.add(submodule);

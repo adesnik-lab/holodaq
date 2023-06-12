@@ -16,7 +16,7 @@ pulseDuration= 5; %ms Stimulation pulse
 TrigDuration = 5; %ms SLM flip command
 stimFreq= 1; % Shouldn't matter but is used
 
-P1=[0.05];%[0.01 0.025 0.05 0.1 .15]; %List of Powers To Use
+% P1=[0.05];%[0.01 0.025 0.05 0.1 .15]; %List of Powers To Use
 
 stimTypeNumTarget = unique(cellfun(@(x) numel(x),holosToUse)); %[3 10 25];%;[3 10];% 33];%[4 10];%[10 4 25];% 11];%[10 5 20]; %also dictates grouping needs to not be redundant
 stimTypeNumPulse = round(200./stimTypeNumTarget);%[33 20 10 5 3];%;[33 10];% 3]; %[25 10];% [10 25 4];% 10];%[10 20 5];
@@ -38,7 +38,7 @@ c=1;
 % for k= 1:numel(stimTypeNumPulse)
 for i=1:numHolos
     k = find(stimTypeNumTarget==numel(holosToUse{i}));
-    powerList{c}       = [P1];
+    powerList{c}       = [p];
     waitList(c)        = 10; %time after stim before next stim ms
     hzList(c)          = stimTypeHz(k);  %30Hz
     pulseList(c)       = stimTypeNumPulse(k); %5 is default
@@ -56,14 +56,14 @@ cellsToUse =holosToUse;%repmat(holosToUse,[1 numel(stimTypeNumPulse)]);%[holosTo
 
 if ~iscell(cellsToUse) && cellsToUse==0
 totalCells =size(holoRequest.targets,1);
-disp(['Total Cells Detected ' num2str(totalCells)]);
+%disp(['Total Cells Detected ' num2str(totalCells)]);
 cellsToUse = 1:totalCells;
 elseif iscell(cellsToUse)
     totalCells = numel(unique([cellsToUse{:}]));
-    disp(['Using ' num2str(totalCells) ' Cells']);
+    %disp(['Using ' num2str(totalCells) ' Cells']);
 else
     totalCells = numel(cellsToUse);
-    disp(['Using ' num2str(totalCells) ' Cells']);
+    %disp(['Using ' num2str(totalCells) ' Cells']);
 end
 
 nHolos          = floor(totalCells./divTotalCells./cellsPerHolo); %only make complete holograms
@@ -71,7 +71,7 @@ repsList        = divTotalCells./divTotalCells;%floor(nHolos./holosPerCycle);
 
 SequenceDurations =repsList./hzList.*pulseList+startTime/1000; %in s
 maxSeqDur = max(SequenceDurations);
-disp(['The Longest Sequence is ' num2str(maxSeqDur,3) 's']);
+%disp(['The Longest Sequence is ' num2str(maxSeqDur,3) 's']);
 
 %%populate stim params
 holoStimParams.powerList = powerList;
@@ -99,11 +99,11 @@ holoRequest.holoStimParams = holoStimParams;
 
 
 % if size(cellsToUse,1) > max(holoSets) 
-%     disp('***ERROR*** not enough hologram targets')
+%     %disp('***ERROR*** not enough hologram targets')
 % end
 % 
 % if size(cellsToUse,2) > max(cellsPerHolo)
-%     disp('***ERROR*** not enough cells per hologram')
+%     %disp('***ERROR*** not enough cells per hologram')
 % end
 
 setKey = {};
@@ -163,5 +163,5 @@ Seq=makeHoloSequences(holoRequest.holoStimParams, setKey);
 % make the daq sequences
 [slm, laser_eom] = makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom);
 % save into exp struct
-saveExpStructVars(holoRequest, holoStimParams);
+% saveExpStructVars(holoRequest, holoStimParams);
  

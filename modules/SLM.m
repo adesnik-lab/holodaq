@@ -2,6 +2,8 @@ classdef SLM < Module
     properties
         trigger
         reader
+
+        saver
     end
     
     methods
@@ -12,8 +14,7 @@ classdef SLM < Module
             io = DAQInput(dq, input_channel);
             obj.reader = Reader(io);
 
-            % io = MSocketInterface('19...', 2390290);
-            % obj.holo_computer = Triggerer(io);
+            obj.saver = Saver();
         end
         
         function initialize(obj)
@@ -24,9 +25,9 @@ classdef SLM < Module
         function prepare(obj)
            obj.trigger.prepare();
         end
-        
-        function out = get_sweep(obj)
-            out = obj.trigger.sweep;
+
+        function save(obj)
+            obj.saver.add_data(obj.reader.data);
         end
     end
 end

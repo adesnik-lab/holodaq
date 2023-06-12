@@ -13,11 +13,6 @@ classdef Reader < Submodule
             obj.io.initialize();
         end
         
-        function get_data(obj)
-            % Data is automatically read, we jsut need to appropriately
-            % extract it
-        end
-
         function start(obj)
         end
 
