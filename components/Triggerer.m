@@ -1,4 +1,4 @@
-classdef Triggerer < Submodule
+classdef Triggerer < Component
     properties
         io
     end

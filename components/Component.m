@@ -1,4 +1,4 @@
-classdef Submodule < Module
+classdef Component < handle
     %SUBMODULE Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -6,7 +6,7 @@ classdef Submodule < Module
     end
     
     methods
-        function obj = Submodule()
+        function obj = Component()
         end
     end
 end

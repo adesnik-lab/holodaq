@@ -17,11 +17,11 @@ classdef PTBComputer < Module
             obj.stim_id = Reader(io);
         end
         
-        function initialize(obj)
-            obj.trigger.initialize();
-            obj.stim_onoff.initialize();
-            obj.stim_id.initialize();
-        end
+        % function initialize(obj)
+        %     obj.trigger.initialize();
+        %     obj.stim_onoff.initialize();
+        %     obj.stim_id.initialize();
+        % end
         
         function set_trigger(obj, start, duration, val)
            obj.trigger.io.set_pulse(start, duration, val);

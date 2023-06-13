@@ -13,15 +13,15 @@ classdef SIComputer < Module
             io = DAQInput(dq, input_channel);
             obj.reader = Reader(io);
             
-            io = MSocketInterface();
-            obj.info = Triggerer(io);
+            % io = MSocketInterface();
+            % obj.info = Triggerer(io);
         end
         
-        function initialize(obj)
-            obj.trigger.initialize();
-            obj.reader.initialize();
-            %obj.info.initialize();
-        end
+        % function initialize(obj)
+        %     obj.trigger.initialize();
+        %     obj.reader.initialize();
+        %     %obj.info.initialize();
+        % end
         
         function prepare(obj)
         end

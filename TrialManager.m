@@ -4,7 +4,8 @@ classdef TrialManager < handle
         modules
         dq
         trial_length
-
+        saver
+        save_path
         sweep
     end
 
@@ -16,14 +17,21 @@ classdef TrialManager < handle
         
         function initialize(obj)
             obj.modules.call('initialize');
+            % set save paths on all savers
+            emptystruct = struct;
+
+            for s = obj.modules.extract('Saver')
+                s.set_save_path(obj.save_path);
+            end
+        end
+        
+        function do_stuff(obj)
+            for s = obj.modules.extract('Saver')
+                s.write();
+            end
         end
 
-
         function prepare(obj)
-            % set trial length here
-            % generate sweeps
-            % prepare msockets
-            % obj.modules.call('prepare');
             for t = obj.modules.extract('Triggerer')
                 switch class(t.io)
                     case 'DAQOutput'
@@ -36,41 +44,45 @@ classdef TrialManager < handle
         end
 
         function start_trial(obj)
-            % send EVERYTHING
             disp('started trial')
+
             obj.dq.write(obj.sweep); % because this is now running in background, we can call other stuff
             for t = obj.modules.extract('Triggerer') % let's track how long this takes...
                 if isa(t.io, 'MSocketInterface')
                     t.io.send();
                 end
-            end
-            % try % hacky solution for not having any input channels
-            %     obj.out = obj.dq.readwrite(obj.sweep);
-            %     obj.dq.write(obj.sweep)
-            % catch
-            %     obj.dq.write(obj.sweep);
-            % end
-            % fprintf('expected length: %0.5f\n', size(obj.sweep, 1)/obj.dq.Rate)
+            end    
+            obj.sweep = [];
         end
 
         function end_trial(obj)
             % read all data in
-            while obj.dq.Running()
-                drawnow();
-            end
+            obj.wait()
+
             out = obj.dq.read('all');
             for r = obj.modules.extract('Reader')
                 chn = sprintf('%s_%s', r.io.dev, r.io.channel);
                 r.data = out.(chn);
             end
             obj.modules.call('save'); % save it
-            obj.sweep = [];
+
+            obj.do_stuff();
+        end
+    
+        function set_save_path(obj, save_path)
+            obj.save_path = save_path;
         end
 
         function set_trial_length(obj, trial_length)
             obj.trial_length = trial_length; %
         end
         
+        function wait(obj)
+            while obj.dq.Running()
+                drawnow();
+            end
+        end
+
         function show(obj)
             triggers = obj.modules.contains('Triggerer');
             module_names = properties(triggers);

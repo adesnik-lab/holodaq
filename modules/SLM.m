@@ -14,14 +14,9 @@ classdef SLM < Module
             io = DAQInput(dq, input_channel);
             obj.reader = Reader(io);
 
-            obj.saver = Saver();
+            obj.saver = Saver(obj.reader, 'slm');
         end
-        
-        function initialize(obj)
-            obj.trigger.initialize();
-            obj.reader.initialize();
-        end
-        
+
         function prepare(obj)
            obj.trigger.prepare();
         end

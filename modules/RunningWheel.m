@@ -8,11 +8,7 @@ classdef RunningWheel < Module
         function obj = RunningWheel(dq, input_channel)
             io = DAQInput(dq, input_channel);
             obj.reader = Reader(io);
-            obj.saver = Saver();
-        end
-
-        function initialize(obj)
-            obj.reader.initialize();
+            obj.saver = Saver(obj.reader, 'running_wheel');
         end
 
         function save(obj)

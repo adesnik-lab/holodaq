@@ -7,7 +7,12 @@ classdef Module < dynamicprops
     methods
         function obj = Module()
         end
+
         function initialize(obj)
+            components = obj.extract('Component');
+            for c = components
+                c.initialize();
+            end
         end
         
         function out = prepare(obj)
@@ -16,9 +21,9 @@ classdef Module < dynamicprops
         function save(obj)
         end
         
-        function add_submodule(obj, submodule)
-            obj.submodules.add(submodule);
-        end
+        % function add_submodule(obj, submodule)
+        %     obj.submodules.add(submodule);
+        % end
         
         function out = extract(obj, query)
             props = properties(obj);

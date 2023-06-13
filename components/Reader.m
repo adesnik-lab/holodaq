@@ -1,4 +1,4 @@
-classdef Reader < Submodule
+classdef Reader < Component
     properties
         io
         data
@@ -12,7 +12,7 @@ classdef Reader < Submodule
         function initialize(obj)
             obj.io.initialize();
         end
-        
+
         function start(obj)
         end
 

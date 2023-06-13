@@ -9,10 +9,6 @@ methods
         obj.trigger = Triggerer(io);
     end
     
-    function initialize(obj)
-        obj.trigger.initialize();
-    end
-    
     function prepare(obj)
         obj.trigger.prepare();
     end
