@@ -1,4 +1,4 @@
-classdef Saver < Component
+classdef Saver < handle
     
     properties
         data = []

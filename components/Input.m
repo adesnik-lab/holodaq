@@ -1,4 +1,4 @@
-classdef Reader < Component
+classdef Input < Component
     properties
         data
     end
@@ -6,8 +6,9 @@ classdef Reader < Component
     % give each reader its own "read" method which propertly interfaces with its interface?
     % if you read the data ance in the DAQ, does it go away? can you read it in multiple times?
     methods
-        function obj = Reader(io)
+        function obj = Input(io)
             obj.io = io;
+            obj.reader = Reader(io);
         end
         
         function initialize(obj)

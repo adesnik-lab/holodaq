@@ -1,11 +1,11 @@
-classdef Triggerer < Component
+classdef Output < Component
     properties
-        io
     end
     
     methods
-        function obj = Triggerer(io)
+        function obj = Output(io)
             obj.io = io;
+            obj.reader = Reader(io);
         end
         
         function initialize(obj)

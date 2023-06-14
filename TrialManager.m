@@ -12,10 +12,10 @@ classdef TrialManager < handle
     end
 
     methods
-        function obj = TrialManager(dq, params)
+        function obj = TrialManager(dq)
             obj.dq = dq;
             obj.modules = ModuleManager();
-            obj.params.stream = params.stream;
+            % obj.params.stream = params.stream;
         end
         
         function initialize(obj)
