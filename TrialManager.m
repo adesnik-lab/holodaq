@@ -66,17 +66,17 @@ classdef TrialManager < handle
             % end
 
             % each module that needs to store data needs to deal with this independently (what data goes where?)
-            obj.modules.call('store_trial_data'); % this is because the save might include more than just the input data for each thing
+            % obj.modules.call('store_trial_data'); % this is because the save might include more than just the input data for each thing
             for r = obj.modules.extract('Reader')
                 r.read();
             end
 
             % transfer to the saver
-            for s = obj.modules.extract('Saver')
-                if obj.params.stream
-                    s.save('append'); % can turn this off if wanted
-                end
-            end
+            % for s = obj.modules.extract('Saver')
+            %     if obj.params.stream
+            %         s.save('append'); % can turn this off if wanted
+            %     end
+            % end
         end
     
         function cleanup(obj)

@@ -15,12 +15,8 @@ classdef Reader < Component
         end
 
         function read(obj)
-            obj.data = obj.io.get_data();
-            % somethnig goes here that properly interfaces with each interface to read the appropriate data form?
-            %this means that the read function actually nedes to be in the interface, some kind of "get_data" kinda thing... ok.
-            %DAQ -> some kind of input parsing, or for outputs feed the trigger, year
-            % MSocket -> just reads in the thing? idk
-            % ModuleIO -> 
+            disp('work here')
+            % obj.data = obj.io.get_data();
         end
         function start(obj)
         end
