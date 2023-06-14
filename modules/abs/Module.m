@@ -18,7 +18,9 @@ classdef Module < dynamicprops
         function out = prepare(obj)
         end
 
-        function save(obj)
+        function store_trial_data(obj)
+            % check if a saver exists and why it wasn't saved?
+            disp('Did you have trial data for this noe?')
         end
         
         % function add_submodule(obj, submodule)
@@ -34,7 +36,7 @@ classdef Module < dynamicprops
                 ct = 1;
                 for q = find(is_queried)'
                     out(ct) = obj.(props{q});
-                    ct =ct + 1;
+                    ct = ct + 1;
                 end
             end
         end

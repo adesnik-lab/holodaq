@@ -31,6 +31,10 @@ classdef MSocketInterface < Interface
             obj.data = val;
         end
 
+        function out = get_data(obj)
+            out = obj.data;
+        end
+
         function validated = validate(obj, val)
             validated = false;
             if isa(val, 'char')

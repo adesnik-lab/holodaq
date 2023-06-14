@@ -3,6 +3,10 @@ classdef PTBComputer < Module
         trigger
         stim_onoff
         stim_id
+
+        saver1
+        saver2
+        saver3
     end
     
     methods
@@ -15,13 +19,11 @@ classdef PTBComputer < Module
 
             io = DAQInput(dq, id_channel);
             obj.stim_id = Reader(io);
+
+            obj.saver1 = Saver('PTBTrigger');
+            obj.saver2 = Saver('stimonoff');
+            obj.saver3 = Saver('stimid');
         end
-        
-        % function initialize(obj)
-        %     obj.trigger.initialize();
-        %     obj.stim_onoff.initialize();
-        %     obj.stim_id.initialize();
-        % end
         
         function set_trigger(obj, start, duration, val)
            obj.trigger.io.set_pulse(start, duration, val);
@@ -31,5 +33,10 @@ classdef PTBComputer < Module
             out = obj.trigger.sweep;
         end
 
+        function store_trial_data(obj)
+            obj.saver1.store(obj.trigger.sweep);
+            obj.saver2.store(obj.stim_onoff.data);
+            obj.saver3.store(obj.stim_id.data);
+        end
     end
 end

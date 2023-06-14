@@ -27,7 +27,7 @@ classdef PulseOutput < handle
     end
 
     methods
-        function sweep = generate_pulse(obj, sweep)
+        function sweep = add_pulse(obj, sweep)
             if any((obj.pulse_starts + obj.pulse_lengths) > obj.sweep_length)
                 error('Trigger longer than sweep length')
             end

@@ -16,5 +16,9 @@ classdef DAQInput < DAQInterface
                 ch.TerminalConfig = 'SingleEnded';
             end
         end
+
+        function out = get_data(obj)
+            
+        end
     end
 end

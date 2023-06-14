@@ -7,6 +7,9 @@ methods
     function obj = Interface()
         
     end
+
+    function get_data(obj)
+    end
 end
     
 end

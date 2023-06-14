@@ -7,30 +7,25 @@ classdef TrialManager < handle
         saver
         save_path
         sweep
+        
+        params
     end
 
     methods
-        function obj = TrialManager(dq)
+        function obj = TrialManager(dq, params)
             obj.dq = dq;
             obj.modules = ModuleManager();
+            obj.params.stream = params.stream;
         end
         
         function initialize(obj)
             obj.modules.call('initialize');
             % set save paths on all savers
-            emptystruct = struct;
-
             for s = obj.modules.extract('Saver')
                 s.set_save_path(obj.save_path);
             end
         end
         
-        function do_stuff(obj)
-            for s = obj.modules.extract('Saver')
-                s.write();
-            end
-        end
-
         function prepare(obj)
             for t = obj.modules.extract('Triggerer')
                 switch class(t.io)
@@ -47,6 +42,7 @@ classdef TrialManager < handle
             disp('started trial')
 
             obj.dq.write(obj.sweep); % because this is now running in background, we can call other stuff
+
             for t = obj.modules.extract('Triggerer') % let's track how long this takes...
                 if isa(t.io, 'MSocketInterface')
                     t.io.send();
@@ -58,17 +54,35 @@ classdef TrialManager < handle
         function end_trial(obj)
             % read all data in
             obj.wait()
+            disp('ended trial')
 
+            % read data
             out = obj.dq.read('all');
+
+            % separate data
             for r = obj.modules.extract('Reader')
                 chn = sprintf('%s_%s', r.io.dev, r.io.channel);
                 r.data = out.(chn);
             end
-            obj.modules.call('save'); % save it
 
-            obj.do_stuff();
+            % each module that needs to store data needs to deal with this independently (what data goes where?)
+            obj.modules.call('store_trial_data'); % this is because the save might include more than just the input data for each thing
+            
+            % transfer to the saver
+            for s = obj.modules.extract('Saver')
+                if obj.params.stream
+                    s.save('append'); % can turn this off if wanted
+                end
+            end
         end
     
+        function cleanup(obj)
+            % clean stuff up
+            % for s = obj.modules.extract('Saver')
+            %     s.write('all'); % final write just in case
+            % end
+        end
+
         function set_save_path(obj, save_path)
             obj.save_path = save_path;
         end

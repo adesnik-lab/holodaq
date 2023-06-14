@@ -32,7 +32,5 @@ classdef DAQInterface < Interface
 
         function prepare(obj)
         end
-
-      
     end
 end

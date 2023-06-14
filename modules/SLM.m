@@ -14,15 +14,17 @@ classdef SLM < Module
             io = DAQInput(dq, input_channel);
             obj.reader = Reader(io);
 
-            obj.saver = Saver(obj.reader, 'slm');
+            obj.saver = Saver('slm_flip');
+            obj.saver2 = Saver('slm_trigger');
         end
 
         function prepare(obj)
            obj.trigger.prepare();
         end
 
-        function save(obj)
-            obj.saver.add_data(obj.reader.data);
+        function store_trial_data(obj)
+            obj.saver.store(obj.reader.data);
+            obj.saver2.store(obj.trigger.sweep);
         end
     end
 end

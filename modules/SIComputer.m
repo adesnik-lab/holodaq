@@ -3,6 +3,9 @@ classdef SIComputer < Module
         trigger
         reader
         info
+
+        saver1
+        saver2
     end
     
     methods
@@ -13,21 +16,22 @@ classdef SIComputer < Module
             io = DAQInput(dq, input_channel);
             obj.reader = Reader(io);
             
+            obj.saver1 = Saver('SITrigger');
+            obj.saver2 = Saver('SIInput');
             % io = MSocketInterface();
             % obj.info = Triggerer(io);
         end
-        
-        % function initialize(obj)
-        %     obj.trigger.initialize();
-        %     obj.reader.initialize();
-        %     %obj.info.initialize();
-        % end
         
         function prepare(obj)
         end
         
         function out = get_sweep(obj)
             out = obj.trigger.sweep;
+        end
+        
+        function store_trial_data(obj)
+            obj.saver1.store(obj.trigger.sweep);
+            obj.saver2.store(obj.reader.data);
         end
     end
 end
