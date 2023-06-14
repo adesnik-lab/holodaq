@@ -10,12 +10,12 @@ classdef SLM < Module
         function obj = SLM(dq, output_channel, input_channel)
             io = DAQOutput(dq, output_channel);
             obj.trigger = Triggerer(io);
+            obj.reader2 = Reader(io);
 
             io = DAQInput(dq, input_channel);
             obj.reader = Reader(io);
 
             obj.saver = Saver('slm_flip');
-            obj.saver2 = Saver('slm_trigger');
         end
 
         function prepare(obj)

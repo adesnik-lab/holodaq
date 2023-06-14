@@ -8,6 +8,7 @@ methods
     function obj = LaserEOM(dq, channel)
         io = DAQOutput(dq, channel);
         obj.trigger = Triggerer(io);
+        obj.reader = Reader(io);
         obj.saver = Saver('LaserEOM');
     end
     

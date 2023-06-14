@@ -56,18 +56,21 @@ classdef TrialManager < handle
             obj.wait()
             disp('ended trial')
 
-            % read data
-            out = obj.dq.read('all');
-
-            % separate data
-            for r = obj.modules.extract('Reader')
-                chn = sprintf('%s_%s', r.io.dev, r.io.channel);
-                r.data = out.(chn);
-            end
+            % % read data
+            % out = obj.dq.read('all');
+            % 
+            % % separate data
+            % for r = obj.modules.extract('Reader')
+            %     chn = sprintf('%s_%s', r.io.dev, r.io.channel);
+            %     r.data = out.(chn);
+            % end
 
             % each module that needs to store data needs to deal with this independently (what data goes where?)
             obj.modules.call('store_trial_data'); % this is because the save might include more than just the input data for each thing
-            
+            for r = obj.modules.extract('Reader')
+                r.read();
+            end
+
             % transfer to the saver
             for s = obj.modules.extract('Saver')
                 if obj.params.stream
