@@ -27,7 +27,7 @@ classdef TrialManager < handle
         end
         
         function prepare(obj)
-            for t = obj.modules.extract('Triggerer')
+            for t = obj.modules.extract('Output')
                 switch class(t.io)
                     case 'DAQOutput'
                         t.io.set_trial_length(obj.trial_length);
@@ -43,7 +43,7 @@ classdef TrialManager < handle
 
             obj.dq.write(obj.sweep); % because this is now running in background, we can call other stuff
 
-            for t = obj.modules.extract('Triggerer') % let's track how long this takes...
+            for t = obj.modules.extract('Output') % let's track how long this takes...
                 if isa(t.io, 'MSocketInterface')
                     t.io.send();
                 end

@@ -33,7 +33,7 @@ classdef DAQOutput < DAQInterface
 
         function set_pulse(obj, start, duration, value)
             if nargin < 3 || isempty(duration)
-                duration = NaN(1, length(start));
+                duration = NaN(1, lengttamh(start));
             end
             obj.pulse.set_pulse(start, duration, value);
         end

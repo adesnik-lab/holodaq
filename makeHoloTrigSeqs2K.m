@@ -1,20 +1,20 @@
 function [slm, laser_eom] = makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom)
 holoStimParams = holoRequest.holoStimParams;
-global ExpStruct Exp_Defaults
+% global ExpStruct Exp_Defaults
 locations = FrankenScopeRigFile();
 load(locations.PowerCalib,'LaserPower');
 
 disp('Making Sequences...')
 DE_list = holoRequest.DE_list;
 
-ExpStruct.triggerSI5=zeros(size(ExpStruct.triggerSI5))...
-    + makepulseoutputs(1,1,25,1,1,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
+% ExpStruct.triggerSI5=zeros(size(ExpStruct.triggerSI5))...
+%     + makepulseoutputs(1,1,25,1,1,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
 % ExpStruct.nextsequenceTrigger=zeros(size(ExpStruct.nextsequenceTrigger))...
 %     + makepulseoutputs(25,1,50,1,1,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
 
 %updateAOaxes();
 
-blankOutput=zeros(size(ExpStruct.StimLaserEOM));
+% blankOutput=zeros(size(ExpStruct.StimLaserEOM));
 
 %independent vis start time control added 4/5/21 -IAO
 % moved up here to fix the blank condition
@@ -23,17 +23,17 @@ if ~isfield(holoStimParams,'visStartTime')
 end
 
 %Make A blank output
-ExpStruct.triggerPuffer=blankOutput;%ExpStruct.nextsequenceTrigger=blankOutput;
-ExpStruct.nextholoTrigger = blankOutput;
-ExpStruct.StimLaserEOM=blankOutput;
-ExpStruct.nextsequenceTrigger=zeros(size(ExpStruct.nextsequenceTrigger))...
-            + makepulseoutputs(holoStimParams.visStartTime,1,10,1,50,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
-
+% ExpStruct.triggerPuffer=blankOutput;%ExpStruct.nextsequenceTrigger=blankOutput;
+% ExpStruct.nextholoTrigger = blankOutput;
+% ExpStruct.StimLaserEOM=blankOutput;
+% ExpStruct.nextsequenceTrigger=zeros(size(ExpStruct.nextsequenceTrigger))...
+%             + makepulseoutputs(holoStimParams.visStartTime,1,10,1,50,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
+% 
 %updateAOaxes();
 % saveoutput('Out 0. 0mW. No Pulses');
 disp('Saved Control Output');
 
-ExpStruct.bigListOfFirstStimTimes=[];
+% ExpStruct.bigListOfFirstStimTimes=[];
 
 
 
@@ -45,13 +45,13 @@ for i = 1:numel(Seq) %Each type of stim
     for p = 1:numel(holoStimParams.powerList{i})
         c=c+1;
         %Specify seq list
-          ExpStruct.triggerPuffer=zeros(size(ExpStruct.triggerPuffer))...
-             + makepulseoutputs(25,c,1.5,1,200,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
-   %changed to 1.5ms at 200Hz on 4/20/19
-   
-   %Trig Vis
-        ExpStruct.nextsequenceTrigger=zeros(size(ExpStruct.nextsequenceTrigger))...
-            + makepulseoutputs(holoStimParams.visStartTime,1,10,1,50,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
+   %        ExpStruct.triggerPuffer=zeros(size(ExpStruct.triggerPuffer))...
+   %           + makepulseoutputs(25,c,1.5,1,200,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
+   % %changed to 1.5ms at 200Hz on 4/20/19
+   % 
+   % %Trig Vis
+   %      ExpStruct.nextsequenceTrigger=zeros(size(ExpStruct.nextsequenceTrigger))...
+   %          + makepulseoutputs(holoStimParams.visStartTime,1,10,1,50,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
 
         targetList=(Seq{i});
         
@@ -78,9 +78,9 @@ for i = 1:numel(Seq) %Each type of stim
             end
             voltList(k)=Volt;
         end
-        stimOutput = blankOutput;
-        trigOutput = blankOutput;
-        
+        % stimOutput = blankOutput;
+        % trigOutput = blankOutput;
+        % 
         tm = holoStimParams.startTime;
         pulseStart = holoStimParams.startTime - holoStimParams.TrigDuration;
         counter = 1;
@@ -98,25 +98,25 @@ for i = 1:numel(Seq) %Each type of stim
                     V = voltList(counter);
                     counter=counter+1;
                     % Trig Time
-                    TT=makepulseoutputs(tm,1,...
-                        holoStimParams.TrigDuration,...
-                        1,holoStimParams.stimFreq,...
-                        Exp_Defaults.Fs,...
-                        size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
-                    % added
+                    % TT=makepulseoutputs(tm,1,...
+                    %     holoStimParams.TrigDuration,...
+                    %     1,holoStimParams.stimFreq,...
+                    %     Exp_Defaults.Fs,...
+                    %     size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
+                    % % added
                     slm.trigger.set([tm, holoStimParams.TrigDuration, 5]);
 
                     tm=tm+holoStimParams.waitList(i)+ ...
                         holoStimParams.TrigDuration;
-                    trigOutput = trigOutput +TT;
+                    % trigOutput = trigOutput +TT;
                     
                     
                     %Stim Time
-                    ST=makepulseoutputs(tm,1,holoStimParams.pulseDuration,V,holoStimParams.stimFreq,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
+                    % ST=makepulseoutputs(tm,1,holoStimParams.pulseDuration,V,holoStimParams.stimFreq,Exp_Defaults.Fs,size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
                     % added
                     laser_eom.trigger.set([tm, holoStimParams.pulseDuration, V]);
                     tm=tm+holoStimParams.pulseDuration-holoStimParams.TrigDuration;
-                    stimOutput = stimOutput +ST;
+                    % stimOutput = stimOutput +ST;
                     
                     if tm>pulseStart
                         disp('Potential error in timing, probably something is wrong')
@@ -125,24 +125,24 @@ for i = 1:numel(Seq) %Each type of stim
             end
         end
         
-        %if getFirstStimTimes breaks check that sweep is long enough
-        try
-        ExpStruct.bigListOfFirstStimTimes(:,c) = getFirstStimTimes(Seq{i}, trigOutput, holoRequest, Exp_Defaults.Fs, holoStimParams.totalCells, holoStimParams.pulseList(i));
-        catch
-            
-            disp('WARNING: Unable to create a bigListOfFirstStimTimes')
-            ExpStruct.bigListOfFirstStimTimes(:,c) = 0;
-        end
-        
-        ExpStruct.nextholoTrigger = trigOutput;
-        ExpStruct.StimLaserEOM=stimOutput;
-        %updateAOaxes();
-        
-        %         newSeq{c}=Seq{i};
-        ExpStruct.bigListofSequences{c} = Seq{i};
-        ExpStruct.powerList(c) = holoStimParams.powerList{i}(p);
-        ExpStruct.pulseList(c) = holoStimParams.pulseList(i);
-        ExpStruct.hzList(c)    = holoStimParams.hzList(i); 
+        % %if getFirstStimTimes breaks check that sweep is long enough
+        % try
+        % ExpStruct.bigListOfFirstStimTimes(:,c) = getFirstStimTimes(Seq{i}, trigOutput, holoRequest, Exp_Defaults.Fs, holoStimParams.totalCells, holoStimParams.pulseList(i));
+        % catch
+        % 
+        %     disp('WARNING: Unable to create a bigListOfFirstStimTimes')
+        %     ExpStruct.bigListOfFirstStimTimes(:,c) = 0;
+        % end
+        % 
+        % ExpStruct.nextholoTrigger = trigOutput;
+        % ExpStruct.StimLaserEOM=stimOutput;
+        % %updateAOaxes();
+        % 
+        % %         newSeq{c}=Seq{i};
+        % ExpStruct.bigListofSequences{c} = Seq{i};
+        % ExpStruct.powerList(c) = holoStimParams.powerList{i}(p);
+        % ExpStruct.pulseList(c) = holoStimParams.pulseList(i);
+        % ExpStruct.hzList(c)    = holoStimParams.hzList(i); 
         % %         sendThis = ExpStruct.bigListofSequences{seqNum}
         % % sendThisSI.times = ExpStruct.bigListOfFirstStimTimes(:,seqNum);
         % % sendThisSI.power = ExpStruct.powerList(seqNum);

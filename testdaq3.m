@@ -11,7 +11,6 @@
 % bugfixes
 % add checknig for trial length vs actual sweep
 
-
 clear
 close all
 clc
@@ -28,7 +27,6 @@ fprintf('OK.\n')
 
 fprintf('Making MATLAB NIDAQ object... ')
 dq = daq('ni');
-% dq = fakedaq();
 dq.Rate = setup.daqrate;
 pause(0.1)
 fprintf('OK.\n')
@@ -62,12 +60,13 @@ powers = [0.1, 0.01];
 trial_lengths = [2000, 2000];
 
 ct = 1;
+
 for p = repmat(powers(1:2), 1, 10)
     disp(ct)
     ts = tic;
     % this section takes ~0.04s, probably not worth worryngi about
     % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
-    tman.set_trial_length(2000+randi(200) - 100);
+    tman.set_trial_length(3000+randi(200) - 100);
     Makefixedspike2k % takes care of laser_eom and slm triggers
     
     % si.info.set('hello');
@@ -87,4 +86,5 @@ for p = repmat(powers(1:2), 1, 10)
     fprintf('ITI: %0.05f\n', t2);    
     ct = ct + 1;
 end
+
 tman.do_stuff(); % make sure the last one is saved
