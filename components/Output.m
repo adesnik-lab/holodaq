@@ -3,9 +3,8 @@ classdef Output < Component
     end
     
     methods
-        function obj = Output(io)
-            obj.io = io;
-            obj.reader = Reader(io);
+        function obj = Output(io, name)
+            obj = obj@Component(io, name);
         end
         
         function initialize(obj)

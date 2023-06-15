@@ -28,7 +28,9 @@ classdef DAQOutput < DAQInterface
         end
 
         function out = get_data(obj)
-            out = cat(2, obj.pulse.start, obj.pulse.length, obj.pulse.val);
+            out.starts = obj.pulse.pulse_starts;
+            out.lengths = obj.pulse.pulse_lengths;
+            out.values = obj.pulse.pulse_value;
         end
 
         function set_pulse(obj, start, duration, value)
@@ -42,7 +44,6 @@ classdef DAQOutput < DAQInterface
             % generate the pulse and get it ready to go
             sweep = obj.pulse.generate_sweep();
             sweep = obj.pulse.add_pulse(sweep);
-            obj.pulse.flush();
         end
 
         function set_trial_length(obj, sweep_length)

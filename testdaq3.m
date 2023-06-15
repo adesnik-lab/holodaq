@@ -8,6 +8,8 @@
 % change wait timeout
 
 
+% can we combine the daq somehow?
+
 % bugfixes
 % add checknig for trial length vs actual sweep
 
@@ -16,12 +18,12 @@ close all
 clc
 
 addpath(genpath('.'))
-
+addpath(genpath('C:\Users\holos\Documents\_code'))
 
 fprintf('Starting daq...\r')
 
 fprintf('Loading defaults... ')
-setup = getDefaults();
+setup = getDefaults();  
 pause(0.1)
 fprintf('OK.\n')
 
@@ -34,11 +36,19 @@ fprintf('OK.\n')
 tman = TrialManager(dq);
 
 %% Modules
-si = SIComputer(dq, 'port0/line0', 'ai0');
-ptb = PTBComputer(dq, 'port0/line1', 'port0/line15', 'port0/line13');
-rwheel = RunningWheel(dq, 'ai2');
-laser_eom = LaserEOM(dq, 'ao0');
-slm = SLM(dq, 'ao1', 'ai1'); % this is overkill for the SLM trigger, but I just don't want loose cables lol (see the daq, this lets me keep bnc for everything)
+si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
+                Input(DAQInput(dq, 'ai0'), 'SI Frame'));
+
+ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line1'), 'PTB Trigger'),...
+                  Input(DAQInput(dq, 'port0/line15'), 'Stim ONOFF'),...
+                  Input(DAQInput(dq, 'port0/line13'), 'Stim ID'));
+
+rwheel = RunningWheel(Input(DAQInput(dq, 'ai2'), 'Running Wheel'));
+
+laser_eom = LaserEOM(Output(DAQOutput(dq, 'ao0'), 'Laser Trigger'));
+
+slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
+          Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
 
 tman.modules.add(si);
 tman.modules.add(ptb); 
@@ -61,22 +71,22 @@ trial_lengths = [2000, 2000];
 
 ct = 1;
 
-for p = repmat(powers(1:2), 1, 10)
+for p = powers(1); %repmat(powers(1:2), 1, )
     disp(ct)
     ts = tic;
     % this section takes ~0.04s, probably not worth worryngi about
     % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
-    tman.set_trial_length(3000+randi(200) - 100);
+    tman.set_trial_length(3000);
     Makefixedspike2k % takes care of laser_eom and slm triggers
-    
     % si.info.set('hello');
     si.trigger.set([1, 25, 1]);
     ptb.trigger.set([1, 25, 1]);
-    tman.prepare();
+    tman.prepare()
     
     ts2 = tic;
     tman.start_trial();
     tman.end_trial();
+
 
     % tman.do_stuff(); % we can run stuff in the ITI, but be careful, if the thing you run is too long, it might delay the next call
     t2 = toc(ts);
@@ -86,5 +96,5 @@ for p = repmat(powers(1:2), 1, 10)
     fprintf('ITI: %0.05f\n', t2);    
     ct = ct + 1;
 end
+% obj.saver.save('all');
 
-tman.do_stuff(); % make sure the last one is saved

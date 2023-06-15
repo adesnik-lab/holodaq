@@ -8,30 +8,29 @@ classdef TrialManager < handle
         save_path
         sweep
         
-        params
+        stream_to_disk
     end
 
     methods
         function obj = TrialManager(dq)
             obj.dq = dq;
             obj.modules = ModuleManager();
+            obj.stream_to_disk = false;
             % obj.params.stream = params.stream;
         end
         
         function initialize(obj)
             obj.modules.call('initialize');
-            % set save paths on all savers
-            for s = obj.modules.extract('Saver')
-                s.set_save_path(obj.save_path);
-            end
+            obj.saver = Saver();
+            obj.saver.set_save_path(obj.save_path);
         end
         
         function prepare(obj)
-            for t = obj.modules.extract('Output')
-                switch class(t.io)
+            for o = obj.modules.extract('Output')
+                switch class(o.io)
                     case 'DAQOutput'
-                        t.io.set_trial_length(obj.trial_length);
-                        obj.sweep = cat(2, obj.sweep, t.io.generate_sweep());
+                        o.io.set_trial_length(obj.trial_length);
+                        obj.sweep = cat(2, obj.sweep, o.io.generate_sweep());
                     case 'MSocketInterface'
                 end
             end
@@ -48,44 +47,48 @@ classdef TrialManager < handle
                     t.io.send();
                 end
             end    
-            obj.sweep = [];
         end
 
         function end_trial(obj)
             % read all data in
             obj.wait()
             disp('ended trial')
+            
+            obj.transfer_data();
+            
+            obj.save_data();
 
-            % % read data
-            % out = obj.dq.read('all');
-            % 
-            % % separate data
-            % for r = obj.modules.extract('Reader')
-            %     chn = sprintf('%s_%s', r.io.dev, r.io.channel);
-            %     r.data = out.(chn);
-            % end
+            % cleanup?
+            obj.cleanup();
+        end
 
-            % each module that needs to store data needs to deal with this independently (what data goes where?)
-            % obj.modules.call('store_trial_data'); % this is because the save might include more than just the input data for each thing
+        function cleanup(obj)
+            obj.sweep = [];
+            for p = obj.modules.extract('PulseOutput')
+                p.flush();
+            end
+        end
+        
+        function transfer_data(obj)
             for r = obj.modules.extract('Reader')
                 r.read();
             end
-
-            % transfer to the saver
-            % for s = obj.modules.extract('Saver')
-            %     if obj.params.stream
-            %         s.save('append'); % can turn this off if wanted
-            %     end
-            % end
-        end
-    
-        function cleanup(obj)
-            % clean stuff up
-            % for s = obj.modules.extract('Saver')
-            %     s.write('all'); % final write just in case
-            % end
         end
 
+        function save_data(obj)
+            exp = struct();
+            for c = obj.modules.extract('Component')
+                field_name = c.name;
+                field_name(isspace(field_name)) = [];
+                exp.(field_name) = c.reader.data;
+            end
+            obj.saver.store(exp);
+
+            if obj.stream_to_disk
+                obj.saver.save('append');
+            end
+        end
+        
         function set_save_path(obj, save_path)
             obj.save_path = save_path;
         end

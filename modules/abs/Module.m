@@ -1,6 +1,5 @@
-classdef Module < dynamicprops
+classdef Module < matlab.mixin.Heterogeneous & handle
     properties
-%         submodules
         enabled = true;
     end
     
@@ -9,54 +8,37 @@ classdef Module < dynamicprops
         end
 
         function initialize(obj)
-            components = obj.extract('Component');
-            for c = components
+            for c = obj.extract('Component')
                 c.initialize();
             end
         end
         
-        function out = prepare(obj)
-        end
-
-        function store_trial_data(obj)
-            % check if a saver exists and why it wasn't saved?
-            disp('Did you have trial data for this noe?')
-        end
-        
-        % function add_submodule(obj, submodule)
-        %     obj.submodules.add(submodule);
-        % end
-        
-        function out = get_objs(obj)
-            props = properties(obj);
-            is_obj = cellfun(@(x) isobject(x), props);
-            if ~any(is_obj)
-                return;
+        function prepare(obj)
+            for c = obj.extract('Component')
+                c.prepare();
             end
-            out = cat(2,  obj.get_objs, obj.(props{is_obj})); % will this work?
         end
-
+        
         function out = extract(obj, query)
-            all_objs = obj.get_objs();
-            all_objs(~isa(all_objs, query)) = [];
-            out = all_objs;
+            % recursively find all objects, then query
+            all_objs = obj.get_objs(obj, []);
+            is_queried = cellfun(@(x) isa(x, query), all_objs);
+            out = [all_objs{is_queried}];
         end
 
-        function out = extract2(obj, query)
-            % this needs to be recursive?
-            props = properties(obj);
-            is_queried = cellfun(@(x) isa(obj.(x), query), props);
-            if ~any(is_queried)
-                out = [];
-            else
-                ct = 1;
-                for q = find(is_queried)'
-                    out(ct) = obj.(props{q});
-                    ct = ct + 1;
-                end
+        function all_objs = get_objs(obj, target, all_objs)
+            if isa(target, 'DAQInterface') %prevents it from going too far
+                return; % break
+            end
+
+            props = properties(target);
+            is_obj = cellfun(@(x) isobject(target.(x)), props);
+            for o = find(is_obj)'
+                all_objs = cat(1, all_objs, {target.(props{o})});
+                all_objs = obj.get_objs(target.(props{o}), all_objs);
             end
         end
-        
+
         function out = contains(obj, query)
             props = properties(obj);
             is_queried = cellfun(@(x) isa(obj.(x), query), props);

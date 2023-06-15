@@ -7,13 +7,15 @@ classdef DAQInterface < Interface
     end
 
     methods
-        function obj = DAQInterface(dq, channel)
+        function obj = DAQInterface(dq, channel)                    
             obj.interface = dq;
             dev = daqlist();
             obj.dev = dev.DeviceID(1);
             obj.channel = channel;
             obj.type = obj.derive_type();
             obj.sample_rate = obj.interface.Rate;
+
+            % contsruct based on what it is?
         end
 
         function type = derive_type(obj)

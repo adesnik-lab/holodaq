@@ -1,8 +1,7 @@
 classdef Saver < handle
     
     properties
-        data = []
-        % trial_count
+        data = [];
 
         save_path
         matfile_handle
@@ -12,8 +11,7 @@ classdef Saver < handle
     end
     
     methods
-        function obj = Saver(description)
-            obj.description = description;
+        function obj = Saver()
             % can we get the object name here?
         end
 
@@ -23,7 +21,7 @@ classdef Saver < handle
         end
 
         function store(obj, data)
-            obj.data = cat(2, obj.data, {data}); % append the current data present in the reader
+            obj.data = cat(2, obj.data, data); % append the current data present in the reader
         end
             
         function view(obj)
@@ -42,9 +40,13 @@ classdef Saver < handle
             switch flag
                 case 'append'
                     % mess wit hthis, how can we grow a structure?
-                    obj.matfile_handle.ExpStruct(end+1, 1).(obj.description) = obj.data{end}; % is this dangerous?
+                    try
+                        obj.matfile_handle.data(end+1, 1) = obj.data(end); % is this dangerous?
+                    catch
+                        obj.matfile_handle.data = obj.data(end); % assume first run?
+                    end
                 case 'all'
-                    obj.matfile_handle.ExpStruct.(obj.description) = obj.data; % all
+                    obj.matfile_handle.data = obj.data; % all
             end
         end
     end

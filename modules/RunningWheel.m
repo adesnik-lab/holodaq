@@ -1,18 +1,11 @@
 classdef RunningWheel < Module
     properties
-        reader
-        saver
+        wheel
     end
 
     methods
-        function obj = RunningWheel(dq, input_channel)
-            io = DAQInput(dq, input_channel);
-            obj.reader = Input(io);
-            % obj.saver = Saver('running_wheel');
+        function obj = RunningWheel(wheel)
+            obj.wheel = wheel;
         end
-
-        % function store_trial_data(obj)
-        %     obj.saver.store(obj.reader.data);
-        % end
     end
 end
