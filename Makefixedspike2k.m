@@ -10,11 +10,12 @@ invar = msrecv(ExpStruct.SISocket,.5);
 ExpStruct.exptCorrData = invar;
 holosToUse = invar.holosToUse;
 %}
+
 %% set params
-startTime=1000; %ms; %typically 500
-pulseDuration= 5; %ms Stimulation pulse 
+startTime = 1000; %ms; %typically 500
+pulseDuration = 5; %ms Stimulation pulse 
 TrigDuration = 5; %ms SLM flip command
-stimFreq= 1; % Shouldn't matter but is used
+stimFreq = 1; % Shouldn't matter but is used
 
 % P1=[0.05];%[0.01 0.025 0.05 0.1 .15]; %List of Powers To Use
 
