@@ -39,7 +39,6 @@ disp('Saved Control Output');
 
 % p=1;
 c = 0; %count the output number
-newSeq=[];
 for i = 1:numel(Seq) %Each type of stim
     t=tic;
     for p = 1:numel(holoStimParams.powerList{i})
