@@ -6,7 +6,6 @@ classdef TrialManager < handle
         trial_length
         saver
         save_path
-        sweep
         
         stream_to_disk
     end
@@ -15,7 +14,7 @@ classdef TrialManager < handle
         function obj = TrialManager(dq)
             obj.dq = dq;
             obj.modules = ModuleManager();
-            obj.stream_to_disk = false;
+            obj.stream_to_disk = true;
             % obj.params.stream = params.stream;
         end
         
@@ -24,38 +23,40 @@ classdef TrialManager < handle
             obj.saver = Saver();
             obj.saver.set_save_path(obj.save_path);
         end
-        
+    
         function prepare(obj)
+            sweep = [];
             for o = obj.modules.extract('Output')
                 switch class(o.io)
                     case 'DAQOutput'
                         o.io.set_trial_length(obj.trial_length);
-                        obj.sweep = cat(2, obj.sweep, o.io.generate_sweep());
+                        sweep = cat(2, sweep, o.io.generate_sweep());
                     case 'MSocketInterface'
+                        % o.set_data*('heuhcoreuh')
                 end
             end
-            obj.dq.start();
+            obj.dq.preload(sweep);
         end
 
         function start_trial(obj)
             disp('started trial')
-
-            obj.dq.write(obj.sweep); % because this is now running in background, we can call other stuff
-
             for t = obj.modules.extract('Output') % let's track how long this takes...
                 if isa(t.io, 'MSocketInterface')
                     t.io.send();
                 end
-            end    
+            end
+
+            obj.dq.start(); % because this is now running in background, we can call other stuff
+ 
         end
 
         function end_trial(obj)
             % read all data in
             obj.wait()
+            obj.dq.stop();
             disp('ended trial')
             
             obj.transfer_data();
-            
             obj.save_data();
 
             % cleanup?
@@ -63,12 +64,11 @@ classdef TrialManager < handle
         end
 
         function cleanup(obj)
-            obj.sweep = [];
             for p = obj.modules.extract('PulseOutput')
                 p.flush();
             end
         end
-        
+
         function transfer_data(obj)
             for r = obj.modules.extract('Reader')
                 r.read();

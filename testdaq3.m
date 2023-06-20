@@ -1,13 +1,5 @@
 %% TO DO
 % msocket control? should that happen here or somewhere else?
-% big calls on some things
-% gotta append the data or else it's just going to keep writing bigger and
-% bigger, and there's no benefit there, we want it to save in the middle,
-% right?
-
-% change wait timeout
-
-
 % can we combine the daq somehow?
 
 % bugfixes
@@ -71,20 +63,26 @@ trial_lengths = [2000, 2000];
 
 ct = 1;
 
-for p = powers(1); %repmat(powers(1:2), 1, )
+for p = repmat(powers(1:2), 1, 5)
     disp(ct)
     ts = tic;
     % this section takes ~0.04s, probably not worth worryngi about
     % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
-    tman.set_trial_length(3000);
+    tman.set_trial_length(3000  + randi(200));
     Makefixedspike2k % takes care of laser_eom and slm triggers
     % si.info.set('hello');
     si.trigger.set([1, 25, 1]);
     ptb.trigger.set([1, 25, 1]);
-    tman.prepare()
+    % tman.prepare_old()
     
+    tman.prepare();
+
     ts2 = tic;
     tman.start_trial();
+    % tman.start_trial_old();
+    if ct == 2
+        pause(10);
+    end
     tman.end_trial();
 
 
