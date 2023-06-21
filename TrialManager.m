@@ -94,7 +94,7 @@ classdef TrialManager < handle
         end
 
         function set_trial_length(obj, trial_length)
-            obj.trial_length = trial_length; %
+            obj.trial_length = trial_length;
         end
         
         function wait(obj)

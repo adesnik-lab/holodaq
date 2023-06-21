@@ -49,14 +49,27 @@ tman.modules.add(laser_eom);
 tman.modules.add(rwheel);
 
 %% saving
+fprintf('Initializing DAQ... ')
 tman.set_save_path('D:\data\test.mat');
 tman.initialize(); % initialize all added modules
+fprintf('OK.\n')
 
 %% Select code?
-holosToUse = importdata('holosToUse.mat');
+loc = FrankenScopeRigFile();
+holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
+% holosToUse = importdata('holosToUse.mat');
+
+MakePowerCurveOutput2K();
+%% send to HOLO
+% holoSocket = msocketPrep;
+% holoRequest = transferHRNoDAQ(holoRequest, holoSocket);
+
+% all the seqs need to be pre-generated here
+%% sync to SI
+% SISocket = SImsocketPrep;
 
 %% Generate triggers?
-load('HoloRequest.mat') % replace later with appropriate holorequest get function
+% load('HoloRequest.mat') % replace later with appropriate holorequest get function
 
 powers = [0.1, 0.01];
 trial_lengths = [2000, 2000];
@@ -68,10 +81,11 @@ for p = repmat(powers(1:2), 1, 5)
     ts = tic;
     % this section takes ~0.04s, probably not worth worryngi about
     % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
-    tman.set_trial_length(3000  + randi(200));
-    Makefixedspike2k % takes care of laser_eom and slm triggers
+    tman.set_trial_length((maxSeqDur+1) * 1000  + randi(200));
+    % Makefixedspike2k % takes care of laser_eom and slm triggers
     % si.info.set('hello');
-    si.trigger.set([1, 25, 1]);
+    makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
+    si.trigger.set([1, 25, 1]);             
     ptb.trigger.set([1, 25, 1]);
     % tman.prepare_old()
     
@@ -79,10 +93,8 @@ for p = repmat(powers(1:2), 1, 5)
 
     ts2 = tic;
     tman.start_trial();
-    % tman.start_trial_old();
-    if ct == 2
-        pause(10);
-    end
+    
+    mssend(holoSocket, Seq{1});
     tman.end_trial();
 
 
