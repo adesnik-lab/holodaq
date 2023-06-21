@@ -27,6 +27,8 @@ classdef DAQInput < DAQInterface
             chn = sprintf('%s_%s', obj.dev, obj.channel);
             if any(strcmp(chn, data.Properties.VariableNames))
                 out = data.(chn);
+            else
+                disp('wat')
             end
         end
     end

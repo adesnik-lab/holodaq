@@ -32,8 +32,8 @@ si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
                 Input(DAQInput(dq, 'ai0'), 'SI Frame'));
 
 ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line1'), 'PTB Trigger'),...
-                  Input(DAQInput(dq, 'port0/line15'), 'Stim ONOFF'),...
-                  Input(DAQInput(dq, 'port0/line13'), 'Stim ID'));
+                  Input(DAQInput(dq, 'port0/line2'), 'Stim ONOFF'),...
+                  Input(DAQInput(dq, 'port0/line3'), 'Stim ID'));
 
 rwheel = RunningWheel(Input(DAQInput(dq, 'ai2'), 'Running Wheel'));
 
@@ -48,7 +48,6 @@ tman.modules.add(slm);
 tman.modules.add(laser_eom);
 tman.modules.add(rwheel);
 
-%% saving
 fprintf('Initializing DAQ... ')
 tman.set_save_path('D:\data\test.mat');
 tman.initialize(); % initialize all added modules
@@ -60,14 +59,6 @@ holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep
 % holosToUse = importdata('holosToUse.mat');
 
 MakePowerCurveOutput2K();
-%% send to HOLO
-% holoSocket = msocketPrep;
-% holoRequest = transferHRNoDAQ(holoRequest, holoSocket);
-
-% all the seqs need to be pre-generated here
-%% sync to SI
-% SISocket = SImsocketPrep;
-
 %% Generate triggers?
 % load('HoloRequest.mat') % replace later with appropriate holorequest get function
 
@@ -76,7 +67,7 @@ trial_lengths = [2000, 2000];
 
 ct = 1;
 
-for p = repmat(powers(1:2), 1, 5)
+for p = 1;%repmat(powers(1:2), 1, 1)
     disp(ct)
     ts = tic;
     % this section takes ~0.04s, probably not worth worryngi about
@@ -100,6 +91,7 @@ for p = repmat(powers(1:2), 1, 5)
 
     % tman.do_stuff(); % we can run stuff in the ITI, but be careful, if the thing you run is too long, it might delay the next call
     t2 = toc(ts);
+
     t1 = toc(ts2);
     % fprintf('Trial duration: %0.05f\n', t1);
     fprintf('Total: %0.05f\n', t1)

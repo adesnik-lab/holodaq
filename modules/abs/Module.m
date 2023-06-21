@@ -27,7 +27,7 @@ classdef Module < matlab.mixin.Heterogeneous & handle
         end
 
         function all_objs = get_objs(obj, target, all_objs)
-            if isa(target, 'DAQInterface') %prevents it from going too far
+            if isa(target, 'daq.interfaces.DataAcquisition') %prevents it from going too far
                 return; % break
             end
 

@@ -11,7 +11,7 @@ classdef DAQInterface < Interface
             obj.interface = dq;
             dev = daqlist();
             obj.dev = dev.DeviceID(1);
-            obj.channel = channel;
+            obj.channel = strtrim(channel);
             obj.type = obj.derive_type();
             obj.sample_rate = obj.interface.Rate;
 
