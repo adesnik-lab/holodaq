@@ -9,6 +9,8 @@ clear
 close all
 clc
 
+holography = true;
+
 addpath(genpath('.'))
 addpath(genpath('C:\Users\holos\Documents\_code'))
 
@@ -31,7 +33,7 @@ tman = TrialManager(dq);
 si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
                 Input(DAQInput(dq, 'ai0'), 'SI Frame'));
 
-ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line1'), 'PTB Trigger'),...
+ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line7'), 'PTB Trigger'),...
                   Input(DAQInput(dq, 'port0/line2'), 'Stim ONOFF'),...
                   Input(DAQInput(dq, 'port0/line3'), 'Stim ID'));
 
@@ -54,28 +56,36 @@ tman.initialize(); % initialize all added modules
 fprintf('OK.\n')
 
 %% Select code?
-loc = FrankenScopeRigFile();
-holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
-% holosToUse = importdata('holosToUse.mat');
+if holography
+    loc = FrankenScopeRigFile();
+    holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
+    % holosToUse = importdata('holosToUse.mat');
 
-MakePowerCurveOutput2K();
+    MakePowerCurveOutput2K();
+end
 %% Generate triggers?
 % load('HoloRequest.mat') % replace later with appropriate holorequest get function
 
-powers = [0.1, 0.01];
-trial_lengths = [2000, 2000];
-
 ct = 1;
 
-for p = 1;%repmat(powers(1:2), 1, 1)
+for p = 1:300;%repmat(powers(1:2), 1, 1)
+    % if mod(p, 2) == 1
+    %     holography = true;
+    % else 
+    %     holography = false;
+    % end
     disp(ct)
     ts = tic;
-    % this section takes ~0.04s, probably not worth worryngi about
-    % [maxSeqDur, holoRequest] =  getPTestStimParamsKS(holoRequest, p);
-    tman.set_trial_length((maxSeqDur+1) * 1000  + randi(200));
-    % Makefixedspike2k % takes care of laser_eom and slm triggers
-    % si.info.set('hello');
-    makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
+    if holography
+        tman.set_trial_length((maxSeqDur+1) * 1000  + randi(200));
+    else
+        tman.set_trial_length((maxSeqDur+1) * 1000  + randi(200));
+        % tman.set_trial_length(3*1000);
+    end
+    
+    if holography
+        makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
+    end
     si.trigger.set([1, 25, 1]);             
     ptb.trigger.set([1, 25, 1]);
     % tman.prepare_old()
@@ -85,11 +95,13 @@ for p = 1;%repmat(powers(1:2), 1, 1)
     ts2 = tic;
     tman.start_trial();
     
-    mssend(holoSocket, Seq{1});
+    if holography
+        mssend(holoSocket, Seq{1});
+    end
+
     tman.end_trial();
 
 
-    % tman.do_stuff(); % we can run stuff in the ITI, but be careful, if the thing you run is too long, it might delay the next call
     t2 = toc(ts);
 
     t1 = toc(ts2);
@@ -98,5 +110,5 @@ for p = 1;%repmat(powers(1:2), 1, 1)
     fprintf('ITI: %0.05f\n', t2);    
     ct = ct + 1;
 end
-% obj.saver.save('all');
+%obj.saver.save('all');
 

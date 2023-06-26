@@ -14,7 +14,7 @@ classdef TrialManager < handle
         function obj = TrialManager(dq)
             obj.dq = dq;
             obj.modules = ModuleManager();
-            obj.stream_to_disk = true;
+            obj.stream_to_disk = false;
             % obj.params.stream = params.stream;
         end
         
