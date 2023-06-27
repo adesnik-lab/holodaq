@@ -20,8 +20,7 @@ classdef TrialManager < handle
         
         function initialize(obj)
             obj.modules.call('initialize');
-            obj.saver = Saver();
-            obj.saver.set_save_path(obj.save_path);
+            obj.saver = Saver(obj.save_path);
         end
     
         function prepare(obj)
@@ -39,6 +38,7 @@ classdef TrialManager < handle
         end
 
         function start_trial(obj)
+            % cleanup_obj = onCleanup(@obj.cleanup); % so pretty much anywhere we'll catch this
             disp('started trial')
             for t = obj.modules.extract('Output') % let's track how long this takes...
                 if isa(t.io, 'MSocketInterface')
@@ -51,6 +51,7 @@ classdef TrialManager < handle
         end
 
         function end_trial(obj)
+            cleanup_obj = onCleanup(@obj.cleanup);
             % read all data in
             obj.wait()
             obj.dq.stop();
@@ -67,6 +68,8 @@ classdef TrialManager < handle
             for p = obj.modules.extract('PulseOutput')
                 p.flush();
             end
+            obj.dq.stop();
+            obj.dq.flush();
         end
 
         function transfer_data(obj)
@@ -101,6 +104,11 @@ classdef TrialManager < handle
             while obj.dq.Running()
                 drawnow();
             end
+        end
+    
+        function cleanup_test(obj)
+            disp('Press any key to cleanup and continue (ctrl-c to skip cleanup)...')
+
         end
 
         function show(obj)

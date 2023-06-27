@@ -40,9 +40,13 @@ ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line7'), 'PTB Trigger'),...
 rwheel = RunningWheel(Input(DAQInput(dq, 'ai2'), 'Running Wheel'));
 
 laser_eom = LaserEOM(Output(DAQOutput(dq, 'ao0'), 'Laser Trigger'));
+% 
+% slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
+%           Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
 
-slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
-          Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
+slm = SLM(Output(DAQOutput(dq, 'port0/line6'), 'SLM Trigger'),...
+          Input(DAQInput(dq, 'ai7'), 'SLM FLip'));
+
 
 tman.modules.add(si);
 tman.modules.add(ptb); 
@@ -54,6 +58,7 @@ fprintf('Initializing DAQ... ')
 tman.set_save_path('D:\data\test.mat');
 tman.initialize(); % initialize all added modules
 fprintf('OK.\n')
+
 
 %% Select code?
 if holography
@@ -68,27 +73,26 @@ end
 
 ct = 1;
 
-for p = 1:300;%repmat(powers(1:2), 1, 1)
+for p = 1:200;%repmat(powers(1:2), 1, 1)
     % if mod(p, 2) == 1
     %     holography = true;
     % else 
     %     holography = false;
     % end
+
     disp(ct)
     ts = tic;
     if holography
         tman.set_trial_length((maxSeqDur+1) * 1000  + randi(200));
     else
         tman.set_trial_length((maxSeqDur+1) * 1000  + randi(200));
-        % tman.set_trial_length(3*1000);
     end
-    
+
     if holography
         makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
     end
     si.trigger.set([1, 25, 1]);             
     ptb.trigger.set([1, 25, 1]);
-    % tman.prepare_old()
     
     tman.prepare();
 
@@ -105,10 +109,8 @@ for p = 1:300;%repmat(powers(1:2), 1, 1)
     t2 = toc(ts);
 
     t1 = toc(ts2);
-    % fprintf('Trial duration: %0.05f\n', t1);
     fprintf('Total: %0.05f\n', t1)
     fprintf('ITI: %0.05f\n', t2);    
     ct = ct + 1;
 end
-%obj.saver.save('all');
 

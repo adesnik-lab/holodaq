@@ -103,7 +103,7 @@ for i = 1:numel(Seq) %Each type of stim
                     %     Exp_Defaults.Fs,...
                     %     size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
                     % % added
-                    slm.trigger.set([tm, holoStimParams.TrigDuration, 5]);
+                    slm.trigger.set([tm, holoStimParams.TrigDuration, 1]);
 
                     tm=tm+holoStimParams.waitList(i)+ ...
                         holoStimParams.TrigDuration;
