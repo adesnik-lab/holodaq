@@ -149,7 +149,8 @@ end
 holoRequest.rois = rois;
 
 %% run the universal stuff
-% talk to holo comp, fill in roi weights if its not there
+% talk to holo comp, 
+%eo2a1 roi weights if its not there
 %{
 msocketPrep;
 holoRequest = transferHR(holoRequest);
