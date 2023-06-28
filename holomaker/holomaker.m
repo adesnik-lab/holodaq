@@ -37,7 +37,7 @@ classdef Holomaker < handle
             out = obj.get_slm_pulse_stuff();
         end
 
-        function set_key = generateSetKey(obj)
+        function [rois, set_key] = getSetKeyAndROI(obj)
         end
 
         function chooseCellsToUse(obj)

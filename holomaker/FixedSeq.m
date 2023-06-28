@@ -25,10 +25,17 @@ methods
             c=c+1;
         end
 
+        % more stuff here, general info?
+        
+
         obj.startTime = 1000;
         obj.pulseDuration = 5;
         obj.TrigDuration = 5;
         obj.stimFreq = 1;
+    end
+
+    function [roi, setkey] = getSetKeyAndROI(obj)
+        for ii = 1:
     end
 end
 end
