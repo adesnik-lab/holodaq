@@ -10,6 +10,11 @@ classdef Holomaker < handle
         holoSets
         setlinks
         % these will be dynamically filled in subclasses?
+
+        startTime = 1000;
+        pulseDuration
+        TrigDuration
+        stimFreq
     end
 
     methods
@@ -32,5 +37,10 @@ classdef Holomaker < handle
             out = obj.get_slm_pulse_stuff();
         end
 
+        function set_key = generateSetKey(obj)
+        end
+
+        function chooseCellsToUse(obj)
+        end
     end
 end
