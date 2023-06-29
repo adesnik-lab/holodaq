@@ -3,16 +3,15 @@ classdef PowerCurve < Holomaker
     end
     
     methods
-        function obj = PowerCurve(holoRequest)
+        function obj = PowerCurve(holoRequest, power)
             obj = obj@Holomaker(holoRequest);
             obj.holosToUse = 0;
             numHolos = numel(obj.holosToUse); % where is this from?
             % for k= 1:numel(stimTypeNumPulse)
             
-            p = [0.05];
 
 
-            obj.powerList       = { p };
+            obj.powerList       = { power };
             obj.waitList        = [ 6 ]; %time after stim before next stim ms
             obj.hzList          = [ 30 ];
             obj.pulseList       = [ 5 ]; %previously 10; 5 is standard as of 5/15/19
@@ -25,8 +24,8 @@ classdef PowerCurve < Holomaker
        
             obj.getTotalCells();
 
-            obj.repsList        = obj.divTotalCells./obj.divTotalCells;%floor(nHolos./holosPerCycle);  
-            fprintf('Maximum sequence length: %0.02fs\n', obj.repsList./obj.hzList.*obj.pulseList+obj.startTime/1000);
+            % obj.repsList = floor(numHolos./obj.holosPerCycle); 
+
             % more stuff here, general info?
             % need repsList, pulseList, holosPerCycle, pulseList, holoSets, hzList
             

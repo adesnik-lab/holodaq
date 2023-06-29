@@ -9,7 +9,11 @@ clear
 close all
 clc
 
+
+% PARAMS
 holography = true;
+power = 0.03; % W
+n_trials = 10;
 
 addpath(genpath('.'))
 addpath(genpath('C:\Users\holos\Documents\_code'))
@@ -65,20 +69,21 @@ if holography
     loc = FrankenScopeRigFile();
     holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
     % holosToUse = importdata('holosToUse.mat');
-    fs = PowerCurve(holoRequest);
+    fs = PowerCurve(holoRequest, power);
     holoSocket = fs.run();
     % MakePowerCurveOutput2K();
 end
+disp('Press any key when holography computer is finished...')
+pause
 
 %% Generate triggers?
 % load('HoloRequest.mat') % replace later with appropriate holorequest get function
 
-disp('Press any key when holography computer is finished...')
-pause
-ct = 1;
-maxSeqDur = 2;
 
-for p = 1:10;%repmat(powers(1:2), 1, 1)
+ct = 1;
+
+n_trials = 1;
+for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
     % if mod(p, 2) == 1
     %     holography = true;
     % else 
@@ -87,10 +92,11 @@ for p = 1:10;%repmat(powers(1:2), 1, 1)
 
     disp(ct)
     ts = tic;
+
     if holography
-        tman.set_trial_length((maxSeqDur+1) * 1000  + randi(200));
+        tman.set_trial_length((fs.getMaxSeqDur()+1) * 1000);
     else
-        tman.set_trial_length((maxSeqDur+1) * 1000  + randi(200));
+        tman.set_trial_length(5000);
     end
 
     if holography

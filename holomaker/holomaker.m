@@ -41,10 +41,17 @@ classdef Holomaker < handle
         function holosocket = run(obj)
             obj.getSetKeyAndROI();
             obj.holoRequest.rois = obj.rois;
-            disp('press any key to continue')
+            % temporarily put here
+            obj.repsList = floor(length(obj.holosToUse)./obj.holosPerCycle); 
+ 
+            disp('Run code on Holo computer then press any key to continue...')
             pause
 
             holosocket = obj.connectToOtherComputer();
+        end
+
+        function out = getMaxSeqDur(obj)
+            out = obj.repsList./obj.hzList.*obj.pulseList+obj.startTime/1000;
         end
     
         function holoSocket = connectToOtherComputer(obj)
@@ -66,7 +73,7 @@ classdef Holomaker < handle
             end
         end
 
-        function determineSequenceLength();
+        function determineSequenceLength()
         end
 
         function Seq = makeHoloSequences(obj)
