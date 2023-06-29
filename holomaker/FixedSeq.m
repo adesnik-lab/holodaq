@@ -27,18 +27,8 @@ classdef FixedSeq < Holomaker
                 obj.setlinks(c)        = 1;
                 c=c+1;
             end
-            
-            if ~iscell(obj.holosToUse) && obj.holosToUse==0
-                totalCells =size(holoRequest.targets,1);
-                %disp(['Total Cells Detected ' num2str(totalCells)]);
-                obj.obj.holosToUse = 1:totalCells;
-            elseif iscell(obj.holosToUse)
-                obj.totalCells = numel(unique([obj.holosToUse{:}]));
-                %disp(['Using ' num2str(totalCells) ' Cells']);
-            else
-                obj.totalCells = numel(obj.holosToUse);
-                %disp(['Using ' num2str(totalCells) ' Cells']);
-            end
+
+            obj.getTotalCells();
             
             obj.repsList        = obj.divTotalCells./obj.divTotalCells;%floor(nHolos./holosPerCycle);  
             fprintf('Maximum sequence length: %0.02fs\n', obj.repsList./obj.hzList.*obj.pulseList+obj.startTime/1000);

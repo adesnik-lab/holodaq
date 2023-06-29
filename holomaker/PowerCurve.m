@@ -22,22 +22,9 @@ classdef PowerCurve < Holomaker
             obj.holoSets        = [ 1 ]; %unique groups of cells per
             obj.setlinks        = [ 1 ];
             % obj.bwnGroupPause   = [ 10 ]; %pause between groups in ms (default 10ms for normal 250 for detailed
-
-
        
-            
-            if obj.holosToUse==0
-                obj.totalCells =size(obj.holoRequest.targets,1);
-                %disp(['Total Cells Detected ' num2str(totalCells)]);
-                obj.holosToUse = 1:obj.totalCells;
-            elseif iscell(obj.holosToUse)
-                obj.totalCells = numel(unique([obj.holosToUse{:}]));
-                %disp(['Using ' num2str(totalCells) ' Cells']);
-            else
-                obj.totalCells = numel(obj.holosToUse);
-                %disp(['Using ' num2str(totalCells) ' Cells']);
-            end
-            
+            obj.getTotalCells();
+
             obj.repsList        = obj.divTotalCells./obj.divTotalCells;%floor(nHolos./holosPerCycle);  
             fprintf('Maximum sequence length: %0.02fs\n', obj.repsList./obj.hzList.*obj.pulseList+obj.startTime/1000);
             % more stuff here, general info?

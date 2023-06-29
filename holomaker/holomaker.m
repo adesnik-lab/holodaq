@@ -52,6 +52,23 @@ classdef Holomaker < handle
             obj.holoRequest = transferHRNoDAQ(obj.holoRequest, holoSocket);
         end
 
+        function getTotalCells(obj)
+            if obj.holosToUse==0
+                obj.totalCells =size(obj.holoRequest.targets,1);
+                %disp(['Total Cells Detected ' num2str(totalCells)]);
+                obj.holosToUse = 1:obj.totalCells;
+            elseif iscell(obj.holosToUse)
+                obj.totalCells = numel(unique([obj.holosToUse{:}]));
+                %disp(['Using ' num2str(totalCells) ' Cells']);
+            else
+                obj.totalCells = numel(obj.holosToUse);
+                %disp(['Using ' num2str(totalCells) ' Cells']);
+            end
+        end
+
+        function determineSequenceLength();
+        end
+
         function Seq = makeHoloSequences(obj)
             Seq=[];
             for i =1:numel(obj.hzList)
