@@ -1,5 +1,7 @@
 classdef Holomaker < handle
     properties
+        holoRequest
+
         powerList
         waitList
         hzList
@@ -11,6 +13,7 @@ classdef Holomaker < handle
         setlinks
         % these will be dynamically filled in subclasses?
 
+        repsList
         startTime = 1000;
         pulseDuration
         TrigDuration
@@ -21,19 +24,35 @@ classdef Holomaker < handle
         
         rois
         setKey
+
     end
 
     methods
-        function obj = Holomaker()
-            
+        function obj = Holomaker(holoRequest)
+            obj.holoRequest = holoRequest;
         end
 
         function [slm, laser_eom] = makeHoloSequences_temp(obj, holoRequest, setKey, slm, laser_eom)
-            [slm, laser_eom] = makeHoloTrigSeqs2K(seq, holoRequest, slm, laser_eom);
+            % [slm, laser_eom] = makeHoloTrigSeqs2K(seq, holoRequest, slm, laser_eom);
             % probably here what we'll do is that we will output the pulse start, dur, and vals
         end
 
-        function Seq = makeHoloSequences(obj, setKey)
+
+        function holosocket = run(obj)
+            obj.getSetKeyAndROI();
+            obj.holoRequest.rois = obj.rois;
+            disp('press any key to continue')
+            pause
+
+            holosocket = obj.connectToOtherComputer();
+        end
+    
+        function holoSocket = connectToOtherComputer(obj)
+            holoSocket = msocketPrep;
+            obj.holoRequest = transferHRNoDAQ(obj.holoRequest, holoSocket);
+        end
+
+        function Seq = makeHoloSequences(obj)
             Seq=[];
             for i =1:numel(obj.hzList)
                 tempSeq=[];
@@ -62,6 +81,11 @@ classdef Holomaker < handle
         end
 
         function [rois, set_key] = getSetKeyAndROI(obj)
+        end
+    
+
+        function out = getHoloStimParams(obj)
+            out = struct(obj); % this migth be funky but let's try it?
         end
 
         function chooseCellsToUse(obj)

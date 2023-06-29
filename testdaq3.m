@@ -41,11 +41,11 @@ rwheel = RunningWheel(Input(DAQInput(dq, 'ai2'), 'Running Wheel'));
 
 laser_eom = LaserEOM(Output(DAQOutput(dq, 'ao0'), 'Laser Trigger'));
 % 
-% slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
-%           Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
+slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
+          Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
 
-slm = SLM(Output(DAQOutput(dq, 'port0/line6'), 'SLM Trigger'),...
-          Input(DAQInput(dq, 'ai7'), 'SLM FLip'));
+% slm = SLM(Output(DAQOutput(dq, 'port0/line6'), 'SLM Trigger'),...
+%           Input(DAQInput(dq, 'ai7'), 'SLM FLip'));
 
 
 tman.modules.add(si);
@@ -65,15 +65,17 @@ if holography
     loc = FrankenScopeRigFile();
     holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
     % holosToUse = importdata('holosToUse.mat');
-
-    MakePowerCurveOutput2K();
+    fs = PowerCurve(holoRequest);
+    holoSocket = fs.run();
+    % MakePowerCurveOutput2K();
 end
 %% Generate triggers?
 % load('HoloRequest.mat') % replace later with appropriate holorequest get function
 
 ct = 1;
+maxSeqDur = 2;
 
-for p = 1:200;%repmat(powers(1:2), 1, 1)
+for p = 1:10;%repmat(powers(1:2), 1, 1)
     % if mod(p, 2) == 1
     %     holography = true;
     % else 
@@ -89,7 +91,9 @@ for p = 1:200;%repmat(powers(1:2), 1, 1)
     end
 
     if holography
-        makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
+        % makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
+        Seq = fs.makeHoloSequences();
+        makeHoloTrigSeqs2K(Seq, fs, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
     end
     si.trigger.set([1, 25, 1]);             
     ptb.trigger.set([1, 25, 1]);

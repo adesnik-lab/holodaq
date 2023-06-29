@@ -1,5 +1,7 @@
-function [slm, laser_eom] = makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom)
-holoStimParams = holoRequest.holoStimParams;
+function [slm, laser_eom] = makeHoloTrigSeqs2K(Seq, fs, slm, laser_eom)
+holoStimParams = fs.getHoloStimParams();
+holoRequest = fs.holoRequest;
+% holoStimParams = holoRequest.holoStimParams;
 % global ExpStruct Exp_Defaults
 locations = FrankenScopeRigFile();
 load(locations.PowerCalib,'LaserPower');
@@ -103,7 +105,7 @@ for i = 1:numel(Seq) %Each type of stim
                     %     Exp_Defaults.Fs,...
                     %     size(ExpStruct.StimLaserEOM,1)/Exp_Defaults.Fs);
                     % % added
-                    slm.trigger.set([tm, holoStimParams.TrigDuration, 1]);
+                    slm.trigger.set([tm, holoStimParams.TrigDuration, 5]);
 
                     tm=tm+holoStimParams.waitList(i)+ ...
                         holoStimParams.TrigDuration;
