@@ -69,9 +69,12 @@ if holography
     holoSocket = fs.run();
     % MakePowerCurveOutput2K();
 end
+
 %% Generate triggers?
 % load('HoloRequest.mat') % replace later with appropriate holorequest get function
 
+disp('Press any key when holography computer is finished...')
+pause
 ct = 1;
 maxSeqDur = 2;
 

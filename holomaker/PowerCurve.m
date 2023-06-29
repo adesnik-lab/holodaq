@@ -36,24 +36,41 @@ classdef PowerCurve < Holomaker
             obj.stimFreq = 1;
         end
         
-        function getSetKeyAndROI(obj)
+        function getSetKeyAndROI(obj,  randomize)
+            if nargin < 2 || isempty(randomize)
+                randomize = false;
+            end
+
             obj.rois = {};
             obj.setKey = {};
             these_rois=[];
-            nHolos          = floor(obj.totalCells./obj.divTotalCells./obj.cellsPerHolo); %only make complete holograms
+            nHolos = floor(obj.totalCells./obj.divTotalCells./obj.cellsPerHolo); %only make complete holograms
             setlink_orders = cell(max(obj.setlinks),1);
             for iset = unique(obj.holoSets)
-                if length(unique(obj.cellsPerHolo(obj.holoSets==iset))) > 1 || length(unique(nHolos(obj.holoSets==iset))) > 1 ||  length(unique(obj.setlinks(obj.holoSets==iset))) > 1
-                    error('Holoset has multiple cellsPerHolo or nHolos');
-                else
-                    nPerHolo = obj.cellsPerHolo(find(obj.holoSets==iset,1)); %TODO error if there are multiple cell numbers for sets
-                    nHolo = nHolos(find(obj.holoSets==iset,1));
+                set_idx = find(obj.holoSets == iset);
+                if length(set_idx) > 1
+                    error('Holoset has multiple cellsperHolo or nHolos');
+                    continue
                 end
+                nPerHolo = obj.cellsPerHolo(set_idx);
+                nHolo = nHolos(set_idx);
+
+                % if length(unique(obj.cellsPerHolo(obj.holoSets==iset))) > 1 || length(unique(nHolos(obj.holoSets==iset))) > 1 ||  length(unique(obj.setlinks(obj.holoSets==iset))) > 1
+                %     error('Holoset has multiple cellsPerHolo or nHolos');
+                % else
+                %     nPerHolo = obj.cellsPerHolo(find(obj.holoSets==iset,1)); %TODO error if there are multiple cell numbers for sets
+                %     nHolo = nHolos(find(obj.holoSets==iset,1));
+                % end
                 %then create a unique + random order
-                this_set_order = 1:obj.totalCells;%randperm(totalCells);
+                this_set_order = 1:obj.totalCells;
+                if randomize
+                    this_set_order = this_set_order(randperm(obj.totalCells));
+                end
+                    
+                % this_set_order = 1:obj.totalCells;%randperm(totalCells);
                 %check if this is part of a set
-                if obj.setlinks(obj.holoSets==iset)>0
-                    this_setlink = obj.setlinks(find(obj.holoSets==iset,1));
+                if obj.setlinks(set_idx)>0
+                    this_setlink = obj.setlinks(set_idx);
                     %if already has an order, override the generated one
                     if ~isempty(setlink_orders{this_setlink})
                         this_set_order = setlink_orders{this_setlink};
@@ -64,7 +81,7 @@ classdef PowerCurve < Holomaker
                 this_set_order = this_set_order(1:nHolo*nPerHolo);
                 %     these_rois = randperm(totalCells,nPerHolo); %temp stand in
                 these_rois = makeHoloRois(nPerHolo,this_set_order);
-                obj.setKey{iset} = [numel(obj.rois)+1:numel(obj.rois)+numel(these_rois)];
+                obj.setKey{iset} = [numel(obj.rois) + 1 : numel(obj.rois) + numel(these_rois)];
                 obj.rois = [obj.rois, cellfun(@(x) obj.holosToUse(x),these_rois,'uniformoutput',0)];
             end
         end
