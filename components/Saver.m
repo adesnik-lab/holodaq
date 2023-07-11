@@ -11,12 +11,17 @@ classdef Saver < handle
     end
     
     methods
-        function obj = Saver()
+        function obj = Saver(save_path)
+            obj.set_save_path(save_path);
             % can we get the object name here?
         end
 
         function set_save_path(obj, save_path)
             obj.save_path = save_path;
+            % check exists
+            if isfile(obj.save_path)
+                fprintf('Warning: Data save file already exists, appending...')
+            end
             obj.matfile_handle = matfile(obj.save_path, 'Writable', true);
         end
 
@@ -48,6 +53,12 @@ classdef Saver < handle
                 case 'all'
                     obj.matfile_handle.data = obj.data; % all
             end
+        end
+
+        function reset(obj)
+            disp('Press any key to reset Saver (clears all data)...')
+            pause
+            obj.data = [];
         end
     end
 end

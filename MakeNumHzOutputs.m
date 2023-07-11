@@ -1,30 +1,18 @@
-% %% if desired, load hr
-% locations = FrankenScopeRigFile();
-% load([locations.HoloRequest_DAQ 'holoRequest.mat']);
-
-%companion file is SelectGroupsOfDiffSizes
-
-%% if desired, load in correlation data from SI computer
-%{
-invar = msrecv(ExpStruct.SISocket,.5);
-ExpStruct.exptCorrData = invar;
-holosToUse = invar.holosToUse;
-%}
+%% if desired, load hr
+locations = FrankenScopeRigFile();
+load([locations.HoloRequest_DAQ 'holoRequest.mat']);
 
 %% set params
-startTime = 1000; %ms; %typically 500
-pulseDuration = 5; %ms Stimulation pulse 
+startTime=1000; %ms;
+pulseDuration=5; %ms Stimulation pulse 
 TrigDuration = 5; %ms SLM flip command
-stimFreq = 1; % Shouldn't matter but is used
+stimFreq= 1; % Shouldn't matter but is used
 
-% P1=[0.05];%[0.01 0.025 0.05 0.1 .15]; %List of Powers To Use
+P1=[0.055];%[0.01 0.025 0.05 0.1 .15]; %List of Powers To Use
 
-stimTypeNumTarget = unique(cellfun(@(x) numel(x),holosToUse)); %[3 10 25];%;[3 10];% 33];%[4 10];%[10 4 25];% 11];%[10 5 20]; %also dictates grouping needs to not be redundant
-stimTypeNumPulse = round(200./stimTypeNumTarget);%[33 20 10 5 3];%;[33 10];% 3]; %[25 10];% [10 25 4];% 10];%[10 20 5];
-stimTypeHz = stimTypeNumPulse;%[10 33 3];%10; [30 9];% 2.7];%[30 12]; %[12 30 4.8];% 12];%[15 30 7.5]; %added 10/3/19 to make all stims same length
+HzOptions = [3 10 30 50];
 
 numHolos=numel(holosToUse);
-
 powerList       = {  };
 waitList        = [ ]; %time after stim before next stim ms
 hzList          = [  ];
@@ -35,44 +23,41 @@ divTotalCells   = [  ]; %divide total number of holos
 holoSets        = [  ]; %unique groups of cells per 
 setlinks        = [  ];
 c=1;
-
-% for k= 1:numel(stimTypeNumPulse)
+for k=1:numel(HzOptions);
 for i=1:numHolos
-    k = find(stimTypeNumTarget==numel(holosToUse{i}));
-    powerList{c}       = [p];
+    powerList{c}       = [P1];
     waitList(c)        = 10; %time after stim before next stim ms
-    hzList(c)          = stimTypeHz(k);  %30Hz
-    pulseList(c)       = stimTypeNumPulse(k); %5 is default
+    hzList(c)          = HzOptions(k);  %30Hz
+    pulseList(c)       = 10; %5 is default
     holosPerCycle(c)   = 1; %groups to interleave
     cellsPerHolo(c)    = numel(holosToUse{i});
-    divTotalCells(c)   = numHolos*numel(stimTypeNumPulse); %divide total number of holos %i don't think it matters
+    divTotalCells(c)   = numHolos*numel(HzOptions); %divide total number of holos %i don't think it matters
     holoSets(c)        = c; %unique groups of cells per
     setlinks(c)        = 1;
     c=c+1;
 end
-% end
-cellsToUse =holosToUse;%repmat(holosToUse,[1 numel(stimTypeNumPulse)]);%[holosToUse{:}];% holosToUse;%GroupList;%cellsToShoot;eligibleCells;% 0; %Put List of Targets to shoot here, or zero to use all available.
+end
+cellsToUse =repmat(holosToUse,[1 numel(HzOptions)]);%[holosToUse{:}];% holosToUse;%GroupList;%cellsToShoot;eligibleCells;% 0; %Put List of Targets to shoot here, or zero to use all available.
 % cellsToUse =[cellsToUse{:}];%
-% cellsToUse =[holosToUse{:}];
 
 if ~iscell(cellsToUse) && cellsToUse==0
 totalCells =size(holoRequest.targets,1);
-%disp(['Total Cells Detected ' num2str(totalCells)]);
+disp(['Total Cells Detected ' num2str(totalCells)]);
 cellsToUse = 1:totalCells;
 elseif iscell(cellsToUse)
-    totalCells = numel(unique([cellsToUse{:}]));
-    %disp(['Using ' num2str(totalCells) ' Cells']);
+    totalCells = numel([cellsToUse{:}]);
+    disp(['Using ' num2str(totalCells) ' Cells']);
 else
     totalCells = numel(cellsToUse);
-    %disp(['Using ' num2str(totalCells) ' Cells']);
+    disp(['Using ' num2str(totalCells) ' Cells']);
 end
 
 nHolos          = floor(totalCells./divTotalCells./cellsPerHolo); %only make complete holograms
 repsList        = divTotalCells./divTotalCells;%floor(nHolos./holosPerCycle); 
 
 SequenceDurations =repsList./hzList.*pulseList+startTime/1000; %in s
-maxSeqDur = max(SequenceDurations);
-%disp(['The Longest Sequence is ' num2str(maxSeqDur,3) 's']);
+maxSeqDur =max(SequenceDurations);
+disp(['The Longest Sequence is ' num2str(maxSeqDur,3) 's']);
 
 %%populate stim params
 holoStimParams.powerList = powerList;
@@ -81,7 +66,7 @@ holoStimParams.hzList = hzList;
 holoStimParams.pulseList = pulseList;
 holoStimParams.holosPerCycle = holosPerCycle;
 holoStimParams.cellsPerHolo = cellsPerHolo;
-holoStimParams.divTotalCells = divTotalCells; %not used in subsequent functions
+holoStimParams.divTotalCells = divTotalCells;
 holoStimParams.holoSets = holoSets;
 holoStimParams.setlinks = setlinks;
 % holoStimParams.nHolos = nHolos;
@@ -96,22 +81,26 @@ holoStimParams.TrigDuration = TrigDuration;
 holoStimParams.stimFreq = stimFreq;
 
 holoRequest.holoStimParams = holoStimParams;
-%%gen holo rois
+%% gen holo rois
 
 
 % if size(cellsToUse,1) > max(holoSets) 
-%     %disp('***ERROR*** not enough hologram targets')
+%     disp('***ERROR*** not enough hologram targets')
 % end
 % 
 % if size(cellsToUse,2) > max(cellsPerHolo)
-%     %disp('***ERROR*** not enough cells per hologram')
+%     disp('***ERROR*** not enough cells per hologram')
 % end
 
 setKey = {};
 rois = {};
-for i = 1:numHolos%*numel(stimTypeNumPulse)
-    rois{i} =  cellsToUse{i};
-    setKey{i} = i;
+for i = 1:numHolos*numel(HzOptions)
+    temp = mod(i,numHolos);
+    if temp==0
+        temp=numHolos;
+    end
+    rois{i} =  cellsToUse{temp};%cellsToUse{i};
+    setKey{i} = temp;%i;
 end
 
 % for i = unique(holosets)
@@ -149,21 +138,17 @@ end
 holoRequest.rois = rois;
 
 %% run the universal stuff
-% talk to holo comp, 
-%eo2a1 roi weights if its not there
-%{
+% talk to holo comp, fill in roi weights if its not there
 msocketPrep;
 holoRequest = transferHR(holoRequest);
 
-
 ExpStruct.Holo.holoRequestNumber=ExpStruct.Holo.holoRequestNumber+1;
 ExpStruct.Holo.holoRequests{ExpStruct.Holo.holoRequestNumber}=holoRequest;
-%}
 
 % gen sequence lista
-Seq=makeHoloSequences(holoRequest.holoStimParams, setKey);
+Seq=makeHoloSequences(holoStimParams, setKey);
 % make the daq sequences
-[slm, laser_eom] = makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom);
+makeHoloTrigSeqs(Seq, holoStimParams, holoRequest);
 % save into exp struct
-% saveExpStructVars(holoRequest, holoStimParams);
+saveExpStructVars(holoRequest, holoStimParams);
  

@@ -1,5 +1,7 @@
-function [slm, laser_eom] = makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom)
-holoStimParams = holoRequest.holoStimParams;
+function [slm, laser_eom] = makeHoloTrigSeqs2K(Seq, fs, slm, laser_eom)
+holoStimParams = fs.getHoloStimParams();
+holoRequest = fs.holoRequest;
+% holoStimParams = holoRequest.holoStimParams;
 % global ExpStruct Exp_Defaults
 locations = FrankenScopeRigFile();
 load(locations.PowerCalib,'LaserPower');
