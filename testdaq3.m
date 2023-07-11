@@ -9,6 +9,15 @@ clear
 close all
 clc
 
+<<<<<<< Updated upstream
+=======
+
+% PARAMS
+holography = true;
+power = 0.075; % W
+n_trials = 10;
+
+>>>>>>> Stashed changes
 addpath(genpath('.'))
 addpath(genpath('C:\Users\holos\Documents\_code'))
 
@@ -67,7 +76,18 @@ trial_lengths = [2000, 2000];
 
 ct = 1;
 
+<<<<<<< Updated upstream
 for p = 1;%repmat(powers(1:2), 1, 1)
+=======
+n_trials = 100;
+for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
+    % if mod(p, 2) == 1
+    %     holography = true;
+    % else 
+    %     holography = false;
+    % end
+
+>>>>>>> Stashed changes
     disp(ct)
     ts = tic;
     % this section takes ~0.04s, probably not worth worryngi about
