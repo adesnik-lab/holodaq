@@ -72,7 +72,6 @@ if holography
     holoSocket = fs.run();
     % MakePowerCurveOutput2K();
 end
-
 disp('Press any key when holography computer is finished...')
 pause
 
@@ -82,7 +81,7 @@ pause
 
 ct = 1;
 
-n_trials = 25;
+n_trials = 50;
 for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
     % if mod(p, 2) == 1
     %     holography = true;
