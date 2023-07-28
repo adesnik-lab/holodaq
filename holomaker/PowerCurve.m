@@ -7,9 +7,6 @@ classdef PowerCurve < Holomaker
             obj = obj@Holomaker(holoRequest);
             obj.holosToUse = 0;
             numHolos = numel(obj.holosToUse); % where is this from?
-            % for k= 1:numel(stimTypeNumPulse)
-            
-
 
             obj.powerList       = { power };
             obj.waitList        = [ 6 ]; %time after stim before next stim ms
@@ -20,14 +17,7 @@ classdef PowerCurve < Holomaker
             obj.divTotalCells   = [ 1 ]; %divide total number of holos
             obj.holoSets        = [ 1 ]; %unique groups of cells per
             obj.setlinks        = [ 1 ];
-            % obj.bwnGroupPause   = [ 10 ]; %pause between groups in ms (default 10ms for normal 250 for detailed
        
-            obj.getTotalCells();
-
-            % obj.repsList = floor(numHolos./obj.holosPerCycle); 
-
-            % more stuff here, general info?
-            % need repsList, pulseList, holosPerCycle, pulseList, holoSets, hzList
             
             obj.startTime = 1000;
             obj.pulseDuration = 5;
@@ -39,35 +29,31 @@ classdef PowerCurve < Holomaker
             if nargin < 2 || isempty(randomize)
                 randomize = false;
             end
+            
+            obj.getTotalCells();
 
             obj.rois = {};
             obj.setKey = {};
             these_rois=[];
+
             nHolos = floor(obj.totalCells./obj.divTotalCells./obj.cellsPerHolo); %only make complete holograms
             setlink_orders = cell(max(obj.setlinks),1);
             for iset = unique(obj.holoSets)
                 set_idx = find(obj.holoSets == iset);
+
                 if length(set_idx) > 1
                     error('Holoset has multiple cellsperHolo or nHolos');
                     continue
                 end
+
                 nPerHolo = obj.cellsPerHolo(set_idx);
                 nHolo = nHolos(set_idx);
-
-                % if length(unique(obj.cellsPerHolo(obj.holoSets==iset))) > 1 || length(unique(nHolos(obj.holoSets==iset))) > 1 ||  length(unique(obj.setlinks(obj.holoSets==iset))) > 1
-                %     error('Holoset has multiple cellsPerHolo or nHolos');
-                % else
-                %     nPerHolo = obj.cellsPerHolo(find(obj.holoSets==iset,1)); %TODO error if there are multiple cell numbers for sets
-                %     nHolo = nHolos(find(obj.holoSets==iset,1));
-                % end
-                %then create a unique + random order
                 this_set_order = 1:obj.totalCells;
+                
                 if randomize
                     this_set_order = this_set_order(randperm(obj.totalCells));
                 end
-                    
-                % this_set_order = 1:obj.totalCells;%randperm(totalCells);
-                %check if this is part of a set
+
                 if obj.setlinks(set_idx)>0
                     this_setlink = obj.setlinks(set_idx);
                     %if already has an order, override the generated one
