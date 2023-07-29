@@ -60,17 +60,29 @@ classdef Holomaker < handle
         end
 
         function getTotalCells(obj)
-            if obj.holosToUse==0
-                obj.totalCells =size(obj.holoRequest.targets,1);
-                %disp(['Total Cells Detected ' num2str(totalCells)]);
+            if ~iscell(obj.holosToUse) && obj.holosToUse == 0
+                obj.totalCells =size(obj.holoRequest.targets, 1);
                 obj.holosToUse = 1:obj.totalCells;
             elseif iscell(obj.holosToUse)
                 obj.totalCells = numel(unique([obj.holosToUse{:}]));
+                obj.holosToUse = obj.holosToUse{:};
                 %disp(['Using ' num2str(totalCells) ' Cells']);
             else
                 obj.totalCells = numel(obj.holosToUse);
                 %disp(['Using ' num2str(totalCells) ' Cells']);
             end
+
+            % if obj.holosToUse==0
+            %     obj.totalCells =size(obj.holoRequest.targets,1);
+            %     %disp(['Total Cells Detected ' num2str(totalCells)]);
+            %     obj.holosToUse = 1:obj.totalCells;
+            % elseif iscell(obj.holosToUse)
+            %     obj.totalCells = numel(unique([obj.holosToUse{:}]));
+            %     %disp(['Using ' num2str(totalCells) ' Cells']);
+            % else
+            %     obj.totalCells = numel(obj.holosToUse);
+            %     %disp(['Using ' num2str(totalCells) ' Cells']);
+            % end
         end
 
         function determineSequenceLength()
@@ -136,7 +148,7 @@ classdef Holomaker < handle
                 %     these_rois = randperm(totalCells,nPerHolo); %temp stand in
                 these_rois = makeHoloRois(nPerHolo,this_set_order);
                 obj.setKey{iset} = [numel(obj.rois) + 1 : numel(obj.rois) + numel(these_rois)];
-                obj.rois = [obj.rois, cellfun(@(x) obj.holosToUse(x),these_rois,'uniformoutput',0)];
+                obj.rois = [obj.rois, cellfun(@(x) obj.holosToUse(x),these_rois,'uniformoutput', 1)];
             end
         end
 

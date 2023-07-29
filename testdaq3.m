@@ -68,7 +68,7 @@ if holography
     loc = FrankenScopeRigFile();
     holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
     % holosToUse = importdata('holosToUse.mat');
-    fs = PowerCurve(holoRequest, power);
+    fs = FixedSeq(holoRequest, power);
     holoSocket = fs.run();
     % MakePowerCurveOutput2K();
 end
