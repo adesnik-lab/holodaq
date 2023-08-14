@@ -11,7 +11,7 @@ clc
 
 % PARAMS
 holography = true;
-power = 0.075; % W
+power = 0.040; % W
 n_trials = 10;
 
 addpath(genpath('.'))
@@ -83,12 +83,7 @@ pause
 ct = 1;
 
 n_trials = 25;
-for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
-    % if mod(p, 2) == 1
-    %     holography = true;
-    % else 
-    %     holography = false;
-    % end
+for p = 1:n_trials
     disp(ct)
     ts = tic;
 
@@ -116,7 +111,6 @@ for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
     end
 
     tman.end_trial();
-
 
     t2 = toc(ts);
 
