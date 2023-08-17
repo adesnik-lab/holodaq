@@ -34,7 +34,8 @@ tman = TrialManager(dq);
 
 %% Modules
 si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
-                Input(DAQInput(dq, 'ai0'), 'SI Frame'));
+                Input(DAQInput(dq, 'ai0'), 'SI Frame'));%,... is it worth it here to make a contrnoller?
+                %SIController(MSocketInterface(ip, port)));
 
 ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line7'), 'PTB Trigger'),...
                   Input(DAQInput(dq, 'port0/line2'), 'Stim ONOFF'),...

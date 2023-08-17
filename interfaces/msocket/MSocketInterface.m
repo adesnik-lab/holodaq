@@ -9,8 +9,8 @@ classdef MSocketInterface < Interface
     
     methods
         function obj = MSocketInterface()
-            % obj.ip = ip;
-            % obj.port = socket;
+            obj.ip = ip;
+            obj.port = socket;
         end
 
         function initialize(obj)
@@ -46,8 +46,8 @@ classdef MSocketInterface < Interface
             if nargin < 2 || isempty(data)
                 data = obj.data;
             end
-            fprintf('sent ''%s''\n', data)
-            % mssend(obj.socket, obj.data);
+            % fprintf('sent ''%s''\n', data)
+            mssend(obj.socket, obj.data);
         end
 
         function out =  receive(obj,  timeout)
