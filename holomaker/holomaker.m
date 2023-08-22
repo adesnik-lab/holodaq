@@ -38,26 +38,24 @@ classdef Holomaker < handle
         end
 
 
-        function holosocket = run(obj)
+        function run(obj)
             obj.getSetKeyTest();
             obj.holoRequest.rois = obj.rois;
             % temporarily put here
             obj.repsList = floor(length(obj.holosToUse)./obj.holosPerCycle); 
- 
-            disp('Run code on Holo computer then press any key to continue...')
-            pause
 
-            holosocket = obj.connectToOtherComputer();
+
+            % holosocket = obj.connectToOtherComputer();
         end
 
         function out = getMaxSeqDur(obj)
             out = obj.repsList./obj.hzList.*obj.pulseList+obj.startTime/1000;
         end
     
-        function holoSocket = connectToOtherComputer(obj)
-            holoSocket = msocketPrep;
-            obj.holoRequest = transferHRNoDAQ(obj.holoRequest, holoSocket);
-        end
+        % function holoSocket = connectToOtherComputer(obj)
+        %     holoSocket = msocketPrep;
+        %     obj.holoRequest = transferHRNoDAQ(obj.holoRequest, holoSocket);
+        % end
 
         function getTotalCells(obj)
             if ~iscell(obj.holosToUse) && obj.holosToUse == 0

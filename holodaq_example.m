@@ -12,7 +12,6 @@ clc
 % PARAMS
 holography = true;
 power = 0.075; % W
-n_trials = 10;
 
 addpath(genpath('.'))
 addpath(genpath('C:\Users\holos\Documents\_code'))
@@ -32,37 +31,45 @@ fprintf('OK.\n')
 
 tman = TrialManager(dq);
 
+%% PARAMS
+mouse = 'KKS009-2';
+epoch = '1ori';
+n_trials = 10;
+save_path = 'D:\data\test3.mat';
+
+% These persist through all controllers
 %% Modules
 si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
-                Input(DAQInput(dq, 'ai0'), 'SI Frame'));%,... is it worth it here to make a contrnoller?
-                %SIController(MSocketInterface(ip, port)));
+                Input(DAQInput(dq, 'ai0'), 'SI Frame'), ...
+                SIController(MSocketServer(42045), 'SI Controller'));
 
 ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line7'), 'PTB Trigger'),...
                   Input(DAQInput(dq, 'port0/line2'), 'Stim ONOFF'),...
-                  Input(DAQInput(dq, 'port0/line3'), 'Stim ID'));
+                  Input(DAQInput(dq, 'port0/line3'), 'Stim ID'), ...
+                  PTBController(MSocketServer(42044), 'PTB Controller'));
+
+holo = HoloComputer(HoloController(MSocketServer(42046), 'Holo Controller'));
 
 rwheel = RunningWheel(Input(DAQInput(dq, 'ai2'), 'Running Wheel'));
 
 laser_eom = LaserEOM(Output(DAQOutput(dq, 'ao0'), 'Laser Trigger'));
-% 
+
 slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
           Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
 
-% slm = SLM(Output(DAQOutput(dq, 'port0/line6'), 'SLM Trigger'),...
-%           Input(DAQInput(dq, 'ai7'), 'SLM FLip'));
-
-
 tman.modules.add(si);
 tman.modules.add(ptb); 
-tman.modules.add(slm);
-tman.modules.add(laser_eom);
+tman.modules.add(holo);
 tman.modules.add(rwheel);
+tman.modules.add(laser_eom);
 
-fprintf('Initializing DAQ... ')
-tman.set_save_path('D:\data\test.mat');
+tman.set_save_path(save_path);
 tman.initialize(); % initialize all added modules
-fprintf('OK.\n')
+fprintf('All done.\n')
 
+%% Set stuff
+tman.set_mouse(mouse);
+tman.epoch(epoch);
 
 %% Select code?
 if holography
@@ -70,29 +77,22 @@ if holography
     holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
     % holosToUse = importdata('holosToUse.mat');
     fs = FixedSeq(holoRequest, power);
-    holoSocket = fs.run();
-    
-% MakePowerCurveOutput2K();
+    fs.run();
+    holo.controller.run();
+    fs.holoRequest = transferHRNoDAQ(fs.holoRequest, holo.controller.io.socket);
 end
 
-
-
+ptb.controller.run_stimulus('basic_ori_trigger', 'KKS001-1', '2ori');
+si.controller.prepare();
 disp('Press any key when holography computer is finished...')
 pause
 
+
 %% Generate triggers?
-% load('HoloRequest.mat') % replace later with appropriate holorequest get function
-
-
 ct = 1;
 
 n_trials = 25;
 for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
-    % if mod(p, 2) == 1
-    %     holography = true;
-    % else 
-    %     holography = false;
-    % end
     disp(ct)
     ts = tic;
 
@@ -103,7 +103,6 @@ for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
     end
 
     if holography
-        % makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
         Seq = fs.makeHoloSequences();
         makeHoloTrigSeqs2K(Seq, fs, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
     end
@@ -116,7 +115,7 @@ for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
     tman.start_trial();
     
     if holography
-        mssend(holoSocket, Seq{1});
+        holo.controller.io.send(Seq{1})
     end
 
     tman.end_trial();

@@ -1,62 +1,64 @@
 classdef MSocketInterface < Interface
     properties
-        ip
         port
-        
-        data
         socket
     end
     
     methods
-        function obj = MSocketInterface()
-            obj.ip = ip;
-            obj.port = socket;
-        end
-
-        function initialize(obj)
-            obj.socket = msconnect(obj.ip, obj.port);
-            obj.validate_connection();
-        end
-
-        function validate_connection(obj)
-            while ~strcmp(invar,'A')
-                invar=msrecv(obj.socket,.5);
+        function obj = MSocketInterface(port)
+            if ischar(port)
+                port = str2double(port);
             end
-            sendVar= 'B';
-            mssend(obj.socket, sendVar);
-            disp('input from hologram computer validated');
+            obj.port = port;
         end
 
-        function set(obj, val)
-            obj.data = val;
+        function connect(obj)
         end
 
-        function out = get_data(obj)
-            out = obj.data;
+        function handshake(obj)
         end
 
-        function validated = validate(obj, val)
-            validated = false;
-            if isa(val, 'char')
-                validated = true;
+        function out = listen(obj)
+            in = [];
+            while isempty(in)
+                in = msrecv(obj.socket, 0.1);
             end
+            out = in;
         end
 
         function send(obj, data)
-            if nargin < 2 || isempty(data)
-                data = obj.data;
-            end
-            % fprintf('sent ''%s''\n', data)
-            mssend(obj.socket, obj.data);
+            mssend(obj.socket, data);
         end
 
-        function out =  receive(obj,  timeout)
+        function out =  read(obj,  timeout)
             if nargin < 2 || isempty(timeout)
                 timeout = 0.5; % sec
             end
 
             out = msrecv(obj.socket, timeout);
         end
+
+
+        % function validate(obj)
+        %     sendVar = 'A';
+        %     mssend(obj.socket, sendVar);
+        % 
+        %     invar = [];
+        %     while ~strcmp(invar, 'B')
+        %         invar = msrecv(obj.socket, 0.1);
+        %     end
+        % 
+        %     disp('Connected.')
+        % end
+
+        % 
+        % function out = get_data(obj)
+        %     out = obj.data;
+        % end
+
+
+        % 
+    
     end
 end
 

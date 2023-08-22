@@ -92,6 +92,18 @@ classdef TrialManager < handle
             end
         end
         
+        function set_mouse(obj, mouse)
+            for c = obj.modules.extract('Controller')
+                c.mouse = mouse;
+            end
+        end
+
+        function set_epoch(obj, epoch)
+            for c = obj.modules.extract('Controller')
+                c.epoch = epoch;
+            end
+        end
+
         function set_save_path(obj, save_path)
             obj.save_path = save_path;
         end
