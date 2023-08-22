@@ -2,6 +2,8 @@ classdef MSocketInterface < Interface
     properties
         port
         socket
+
+        data
     end
     
     methods
@@ -28,6 +30,7 @@ classdef MSocketInterface < Interface
 
         function send(obj, data)
             mssend(obj.socket, data);
+            obj.data = data; % store data
         end
 
         function out =  read(obj,  timeout)
@@ -36,6 +39,11 @@ classdef MSocketInterface < Interface
             end
 
             out = msrecv(obj.socket, timeout);
+            obj.data = out; % store data
+        end
+
+        function out = get_data(obj)
+            out = obj.data;
         end
 
 

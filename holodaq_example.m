@@ -10,7 +10,7 @@ close all
 clc
 
 % PARAMS
-holography = true;
+holography = false;
 power = 0.075; % W
 
 addpath(genpath('.'))
@@ -32,7 +32,7 @@ fprintf('OK.\n')
 tman = TrialManager(dq);
 
 %% PARAMS
-mouse = 'KKS009-2';
+mouse = 'KKSTEST-2';
 epoch = '1ori';
 n_trials = 10;
 save_path = 'D:\data\test3.mat';
@@ -48,7 +48,7 @@ ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line7'), 'PTB Trigger'),...
                   Input(DAQInput(dq, 'port0/line3'), 'Stim ID'), ...
                   PTBController(MSocketServer(42044), 'PTB Controller'));
 
-holo = HoloComputer(HoloController(MSocketServer(42046), 'Holo Controller'));
+holo = HoloComputer(HoloController(MSocketServer(42041), 'Holo Controller'));
 
 rwheel = RunningWheel(Input(DAQInput(dq, 'ai2'), 'Running Wheel'));
 
@@ -58,8 +58,8 @@ slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
           Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
 
 tman.modules.add(si);
-tman.modules.add(ptb); 
-tman.modules.add(holo);
+% tman.modules.add(ptb); 
+% tman.modules.add(holo);
 tman.modules.add(rwheel);
 tman.modules.add(laser_eom);
 
@@ -69,7 +69,7 @@ fprintf('All done.\n')
 
 %% Set stuff
 tman.set_mouse(mouse);
-tman.epoch(epoch);
+tman.set_epoch(epoch);
 
 %% Select code?
 if holography
@@ -82,16 +82,13 @@ if holography
     fs.holoRequest = transferHRNoDAQ(fs.holoRequest, holo.controller.io.socket);
 end
 
-ptb.controller.run_stimulus('basic_ori_trigger', 'KKS001-1', '2ori');
-si.controller.prepare();
-disp('Press any key when holography computer is finished...')
-pause
-
-
+ptb.controller.run_stimulus('basic_ori_trigger');
+si.controller.prepare(true);
+si.controller.start();
 %% Generate triggers?
 ct = 1;
 
-n_trials = 25;
+n_trials = 5;
 for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
     disp(ct)
     ts = tic;
