@@ -35,7 +35,6 @@ fprintf('OK.\n')
 
 tman = TrialManager(dq);
 
-%% Modules
 si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
                 Input(DAQInput(dq, 'ai0'), 'SI Frame'), ...
                 SIController(MSocketServer(42045), 'SI Controller'));
@@ -45,7 +44,7 @@ ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line7'), 'PTB Trigger'),...
                   Input(DAQInput(dq, 'port0/line3'), 'Stim ID'), ...
                   PTBController(MSocketServer(42044), 'PTB Controller'));
 
-holo = HoloComputer(HoloController(MSocketServer(42041), 'Holo Controller'));
+holo = HoloComputer(HoloController(MSocketServer(42042), 'Holo Controller'));
 
 rwheel = RunningWheel(Input(DAQInput(dq, 'ai2'), 'Running Wheel'));
 
@@ -55,8 +54,8 @@ slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
           Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
 
 tman.modules.add(si);
-% tman.modules.add(ptb); 
-% tman.modules.add(holo);
+tman.modules.add(ptb); 
+tman.modules.add(holo);
 tman.modules.add(rwheel);
 tman.modules.add(laser_eom);
 tman.set_save_path(save_path);
@@ -64,14 +63,14 @@ tman.set_save_path(save_path);
 % Initialize modules
 tman.initialize(); % initialize all added modules
 tman.set_mouse(mouse);
-tman.set_epoch(epoch);k
+tman.set_epoch(epoch);
 fprintf('All done.\n')
 
 %% Select code?
 if holography
     loc = FrankenScopeRigFile();
-    holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
-    fs = FixedSeq(holoRequest, power);
+    holoRequest = importdata(fullfile(loc.HoloRequest, 'holoRequest.mat'));
+    fs = PowerCurve(holoRequest, power);
     fs.run();
     holo.controller.run();
     fs.holoRequest = transferHRNoDAQ(fs.holoRequest, holo.controller.io.socket);

@@ -67,7 +67,7 @@ classdef PowerCurve < Holomaker
                 %     these_rois = randperm(totalCells,nPerHolo); %temp stand in
                 these_rois = makeHoloRois(nPerHolo,this_set_order);
                 obj.setKey{iset} = [numel(obj.rois) + 1 : numel(obj.rois) + numel(these_rois)];
-                obj.rois = [obj.rois, cellfun(@(x) obj.holosToUse(x),these_rois,'uniformoutput',0)];
+                obj.rois = [obj.rois, cellfun(@(x) obj.holosToUse(x), these_rois,'uniformoutput', 0)];
             end
         end
     end

@@ -39,7 +39,8 @@ classdef Holomaker < handle
 
 
         function run(obj)
-            obj.getSetKeyTest();
+            % obj.getSetKeyTest();
+            obj.getSetKeyAndROI();
             obj.holoRequest.rois = obj.rois;
             % temporarily put here
             obj.repsList = floor(length(obj.holosToUse)./obj.holosPerCycle); 
@@ -58,7 +59,7 @@ classdef Holomaker < handle
         % end
 
         function getTotalCells(obj)
-            if ~iscell(obj.holosToUse) && obj.holosToUse == 0
+            if ~iscell(obj.holosToUse) && obj.holosToUse == 0 % on the initial run, if there's no requested holograms, it'll just go ahead and use em all
                 obj.totalCells =size(obj.holoRequest.targets, 1);
                 obj.holosToUse = 1:obj.totalCells;
             elseif iscell(obj.holosToUse)
@@ -112,7 +113,7 @@ classdef Holomaker < handle
             
             obj.getTotalCells();
 
-            obj.rois = {};
+            obj.rois = [];
             obj.setKey = {};
 
             nHolos = floor(obj.totalCells./obj.divTotalCells./obj.cellsPerHolo); %only make complete holograms
