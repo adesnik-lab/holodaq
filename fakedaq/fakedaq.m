@@ -21,5 +21,9 @@ classdef fakedaq < handle
             disp('readwrite')
             out = [];
         end
+
+        function write(obj, data)
+            disp('wrote')
+        end
     end
 end
