@@ -15,8 +15,9 @@ classdef ModuleManager < dynamicprops
             if ~is_duplicate
                 return
             end
-            module_name = sprintf('%s_%d', class(module), ct + 1);
-            module_name = obj.check_for_duplicate(module_name)
+            module_name(strfind(module_name, '_'):end) = [];
+            module_name = sprintf('%s_%d', module_name, ct + 1);
+            module_name = obj.check_for_duplicate(module_name);
         end
         
         function add(obj, module)

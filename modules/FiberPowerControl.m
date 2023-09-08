@@ -3,6 +3,8 @@ classdef FiberPowerControl < Module
         shutter
         hwp
         hwp_lut
+
+        pwr = 0;
     end
 
     methods
@@ -22,12 +24,15 @@ classdef FiberPowerControl < Module
         end
         
         function prepare(obj)
-            obj.hwp.moveto(pwr2deg(obj.pwr));
+            if ~isempty(obj.hwp_lut)
+            obj.hwp.moveto(obj.pwr2deg(obj.pwr));
+            end
         end
 
         function deg = pwr2deg(obj, pwr)
             if isempty(obj.hwp_lut)
-                error('No LUT provided, cannot convert.')
+                warning('No LUT provided, cannot convert.')
+                return
             end
             deg = obj.hwp_lut(pwr);
         end
