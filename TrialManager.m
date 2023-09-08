@@ -25,6 +25,9 @@ classdef TrialManager < handle
     
         function prepare(obj)
             sweep = [];
+            obj.modules.call('prepare'); % remove if breaks
+
+            % prepare daq sweeps
             for o = obj.modules.extract('Output')
                 switch class(o.io)
                     case 'DAQOutput'
