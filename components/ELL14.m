@@ -26,7 +26,15 @@ classdef ELL14 < Component
         end
         
         function out = cmd(obj, input, params)
-            out = sprintf('%d%s%s', obj.channel, input, params);
+            if nargin < 3 || isempty(params)
+                out = sprintf('%d%s', obj.channel, input);
+            else
+                out = sprintf('%d%s%s', obj.channel, input, params);
+            end
+        end
+
+        function home(obj)
+            obj.io.writeline(obj.cmd('ho'));
         end
 
         function moveto(obj, deg)

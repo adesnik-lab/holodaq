@@ -34,7 +34,7 @@ classdef FiberPowerControl < Module
                 warning('No LUT provided, cannot convert.')
                 return
             end
-            deg = obj.hwp_lut(pwr);
+            deg = obj.hwp_lut.f(pwr);
         end
     end
 end
