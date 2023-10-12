@@ -1,9 +1,16 @@
 %% What is tthe rep rate?
+
+addpath(genpath('C:\Users\holos\Documents\GitHub'))
+addpath(genpath('C:\Users\holos\Documents\_code'))
+
+clear
+clc
+close all;
 % fill this in
 wavelength = 1100;
-used_khz = 100;
+used_khz = 500;
 aom = 0.25;
-gate = 'fast'; % or none or normal?
+gate = 'uni'; % or none or normal?
 
 save_base = 'C:\Users\holos\Documents\power-calibrations\';
 
@@ -11,12 +18,10 @@ save_base = 'C:\Users\holos\Documents\power-calibrations\';
 % note: use instrhwinfo to find the correct dev
 addpath(genpath('C:\Users\holos\Documents\GitHub\holodaq'));
 
+instrreset()
 vinfo = instrhwinfo('visa','ni');
 v = eval(vinfo.ObjectConstructorName{1});
 fopen(v);
-
-disp('device ready.')
-
 
 %% Params
 nsamplesPM = 1000; % counts (at 1000 Hz I think), produces an average
@@ -34,13 +39,18 @@ s = serialport("COM5", ...
     'DataBits', 8);
 s.configureTerminator('CR/LF');
 
-dq.addoutput('Dev1', 'port0/line6', 'Digital'); % 0/5: 920, 0/6: 1100
-hwp = ELL14(SerialInterface(s), 1, 'hwp'); % 0: 900, 1:1100 % might need both? idk
- 
+switch wavelength
+    case 900
+        dq.addoutput('Dev1', 'port0/line5', 'Digital'); % 0/5: 920, 0/6: 1100
+        hwp = ELL14(SerialInterface(s), 0, 'hwp'); % 0: 900, 1:1100 % might need both? idk
+    case 1100
+        dq.addoutput('Dev1', 'port0/line6', 'Digital'); % 0/5: 920, 0/6: 1100
+        hwp = ELL14(SerialInterface(s), 1, 'hwp'); % 0: 900, 1:1100 % might need both? idk
+end
 disp('Devices connected.')
 
 %% 
-hwp.moveto(10); % start at 0
+hwp.moveto(0); % start at 0
 dq.write(0); % close shutter
 
 %%
@@ -78,78 +88,90 @@ dq.write(0);
 max_idx = max_idx + 2;
 min_idx = min_idx + 2;
 
-plot(initial_search_queries, initial_search_values);
+segment = linspace(min_idx, max_idx, abs(max_idx-min_idx) + 1);
+plot(initial_search_queries(segment), initial_search_values(segment));
 fprintf('Initial Search Report\n Max: %0.2fmW at %0.2fdeg \n Min: %0.2fmW and %0.2fdeg\n',...
     max_pwr, initial_search_queries(max_idx), min_pwr, initial_search_queries(min_idx));
 
-%%
-% fine search
-buffer = 2; % degrees
-fraction_split = 5;
-n_pts_per_section = 30;
-
-start = initial_search_queries(min_idx);
-stop = initial_search_queries(max_idx); % in case we miss the min/max
-section = (stop - start)/fraction_split; % if negative ok
-
-start = start - sign(section)*buffer;
-stop = stop + sign(section)*buffer;
-
-% split into 3 sections
-fine_search = cat(2,...
-    linspace(start, start + section, n_pts_per_section),...
-    linspace(start + section + section/n_pts_per_section, stop - section, n_pts_per_section),...
-    linspace(stop - section + section/n_pts_per_section, stop, n_pts_per_section));
-
-%% start fine search
-% start
-dq.write(1); % open shutter
-fine_search_values = zeros(size(fine_search));
-for ii = 1:numel(fine_search)
-    hwp.moveto(fine_search(ii)); % move to deg
-    pause(interStepPause);
-
-    fprintf(v, ['sense:average:count ', num2str(nsamplesPM)]);
-    set(v, 'timeout', 3+1.1*nsamplesPM*3/1000)
-    ret = query(v, 'read?');
-    val = str2double(ret)*1000;
-    if val < 0
-        val = 0;
-    end
-    fine_search_values(ii) = val;
-    disp(['Deg: ' num2str(fine_search(ii)) ' Power (mW):  ' num2str(val)])
+% ensure monotonic
+if any(diff(sign(diff(initial_search_values(segment)))))
+    error('Check it out manually...')
 end
-dq.write(0); % close shutter
 
-%% post-processing
-% scaling
-scale = 500/used_khz;
-% find minmax again
-[max_pwr, max_idx_final] = max(fine_search_values); %exclude ends
-[min_pwr, min_idx_final] = min(fine_search_values);
-use_pts = min_idx_final:max_idx_final;
+% %%
+% % fine search
+% buffer = 2; % degrees
+% fraction_split = 5;
+% n_pts_per_section = 30;
+% 
+% start = initial_search_queries(min_idx);
+% stop = initial_search_queries(max_idx); % in case we miss the min/max
+% section = (stop - start)/fraction_split; % if negative ok
+% 
+% start = start - sign(section)*buffer;
+% stop = stop + sign(section)*buffer;
+% 
+% % split into 3 sections
+% fine_search = cat(2,...
+%     linspace(start, start + section, n_pts_per_section),...
+%     linspace(start + section + section/n_pts_per_section, stop - section, n_pts_per_section),...
+%     linspace(stop - section + section/n_pts_per_section, stop, n_pts_per_section));
+% 
+% %% start fine search
+% % start
+% dq.write(1); % open shutter
+% fine_search_values = zeros(size(fine_search));
+% for ii = 1:numel(fine_search)
+%     hwp.moveto(fine_search(ii)); % move to deg
+%     pause(interStepPause);
+% 
+%     fprintf(v, ['sense:average:count ', num2str(nsamplesPM)]);
+%     set(v, 'timeout', 3+1.1*nsamplesPM*3/1000)
+%     ret = query(v, 'read?');
+%     val = str2double(ret)*1000;
+%     if val < 0
+%         val = 0;
+%     end
+%     fine_search_values(ii) = val;
+%     disp(['Deg: ' num2str(fine_search(ii)) ' Power (mW):  ' num2str(val)])
+% end
+% dq.write(0); % close shutter
 
-[f, gof] = fit(scale * fine_search_values(use_pts)', fine_search(use_pts)', 'poly3', 'Robust', 'Bisquare');
-fprintf('Fit R2: %0.04f\n', gof.rsquare)
+% %% post-processing 
+% % scaling
+% scale = 500/used_khz;
+% % find minmax again
+% [max_pwr, max_idx_final] = max(initial_search_values); %exclude ends
+% [min_pwr, min_idx_final] = min(initial_search_values);
+% use_pts = min_idx_final:max_idx_final;
+% 
+% [f, gof] = fit(scale * fine_search_values(use_pts)', fine_search(use_pts)', 'poly3', 'Robust', 'Bisquare');
+% fprintf('Fit R2: %0.04f\n', gof.rsquare)
+% 
+% figure;
+% plot(f, scale* fine_search_values(use_pts), fine_search(use_pts))
+% legend('Location', 'southeast')
+% ylabel('HWP angle (deg)')
+% xlabel('Power (mW)')
+% shg
 
-figure;
-plot(f, scale* fine_search_values(use_pts), fine_search(use_pts))
-legend('Location', 'southeast')
-ylabel('HWP angle (deg)')
-xlabel('Power (mW)')
-shg
 
+%% interp only
 %% information
 calib = struct();
-calib.max_power = max_pwr * scale;
-calib.min_power = min_pwr * scale;
+% calib.max_power = max_pwr * scale;
+% calib.min_power = min_pwr * scale;
+% 
+calib.max_deg = initial_search_queries(max_idx);
+calib.min_deg = initial_search_queries(min_idx);
+calib.max_power = initial_search_values(max_idx);
+calib.min_power = initial_search_values(min_idx);
 
-calib.max_deg = f(max_pwr);
-calib.min_deg = f(min_pwr);
-
-calib.f = f;
-fprintf('Maximum power: %0.02f mW at %0.02fdeg\n', calib.max_power, calib.max_deg)
-fprintf('Minumum power: %0.02f mW at %0.02fdeg\n', calib.min_power, calib.min_deg)
+calib.degrees = initial_search_queries(segment);
+calib.powers = initial_search_values(segment);
+% 
+% fprintf('Maximum power: %0.02f mW at %0.02fdeg\n', calib.max_power, calib.max_deg)
+% fprintf('Minumum power: %0.02f mW at %0.02fdeg\n', calib.min_power, calib.min_deg)
 
 %% save
 fn = fullfile(save_base, sprintf('%s_%dnm_%dkHz_%dAOM_%s_gate_calibration.mat', datetime('now', 'Format', 'yyMMdd'), wavelength, used_khz, aom*100, gate));

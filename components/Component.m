@@ -14,6 +14,9 @@ classdef Component < matlab.mixin.Heterogeneous & handle
 
         function initialize(obj)
         end
+
+        function prepare(obj)
+        end
     end
 end
 

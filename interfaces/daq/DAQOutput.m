@@ -16,6 +16,13 @@ classdef DAQOutput < DAQInterface
             end
         end
 
+        function idx = channel_idx(obj)
+            names = {obj.interface.Channels.ID};
+            is_output = cellfun(@(x) strcmp(x, 'OutputOnly'), {obj.interface.Channels.MeasurementType});
+            % search
+            idx = find(cellfun(@(x) strcmp(x, obj.channel), names(is_output)));
+        end
+
         function set(obj, val)
             obj.set_pulse(val(:, 1), val(:, 2), val(:, 3));
         end
@@ -35,7 +42,7 @@ classdef DAQOutput < DAQInterface
 
         function set_pulse(obj, start, duration, value)
             if nargin < 3 || isempty(duration)
-                duration = NaN(1, lengttamh(start));
+                duration = NaN(1, length(start));
             end
             obj.pulse.set_pulse(start, duration, value);
         end

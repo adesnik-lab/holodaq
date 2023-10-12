@@ -29,6 +29,10 @@ classdef DAQInterface < Interface
             end
         end
 
+        function n = n_outputs(obj)
+            n = sum(cellfun(@(x) strcmp(x, 'OutputOnly'), {obj.interface.Channels.MeasurementType}));
+        end
+
         function initialize(obj)
         end
 
