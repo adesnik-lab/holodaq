@@ -90,6 +90,7 @@ classdef FiberPowerControl < Module
         end
 
         function prepare(obj)
+<<<<<<< HEAD
             if ~isempty(obj.pwr_fun)
                 obj.hwp.moveto(obj.pwr2deg(obj.pwr));
             end
@@ -101,6 +102,11 @@ classdef FiberPowerControl < Module
             obj.on_time = [];
             obj.frequency = [];
             obj.duration = [];
+=======
+            if ~isempty(obj.hwp_lut)
+                obj.hwp.moveto(obj.pwr2deg(obj.pwr));
+                obj.shutter
+>>>>>>> cf3a8d9 (reorg and update)
             end
         end
 

@@ -95,8 +95,9 @@ for p = 1:n_trials
 
     if holography
         Seq = fs.makeHoloSequences();
-        makeHoloTrigSeqs2K(Seq, fs, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
+        makeHoloTrigSeqs2K(Seq, fs, slm); % here,  we can choose what Seq to send by indexing into it
     end
+
     si.trigger.set([1, 25, 1]); % trigger the start of the trial
     ptb.trigger.set([1, 25, 1]);
     
@@ -106,7 +107,7 @@ for p = 1:n_trials
     tman.start_trial();
     
     if holography
-        holo.controller.io.send(Seq{1})
+        holo.controller.io.send(Seq{1}); % do we want to send it here or above? prior to the start of trial?
     end
 
     tman.end_trial();
