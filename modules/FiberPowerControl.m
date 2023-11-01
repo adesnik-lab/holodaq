@@ -2,17 +2,15 @@ classdef FiberPowerControl < Module
     properties
         shutter
         hwp
+
         pwr_fun
+        pwr
+
+        shutter_params
         min_deg
         max_deg
         min_pwr
         max_pwr
-    
-        pwr;
-        duration
-        delay
-        on_time
-        frequency
     end
 
     methods
@@ -26,14 +24,14 @@ classdef FiberPowerControl < Module
             obj.get_pwr_fun(calib);
             obj.shutter = shutter;
             obj.hwp = hwp;
-            obj.hwp.moveto(obj.min_deg);
             obj.pwr = obj.min_pwr;
+            obj.zero();
         end
         
         function get_pwr_fun(obj, calib)
             obj.pwr_fun = @(x) interp1(calib.powers, calib.degrees, x);
-            obj.max_deg = calib.degrees(end);
-            obj.min_deg = calib.degrees(1);
+            obj.max_deg = calib.max_deg;
+            obj.min_deg = calib.min_deg;
             obj.max_pwr = calib.max_power;
             obj.min_pwr = calib.min_power;
         end
@@ -64,25 +62,19 @@ classdef FiberPowerControl < Module
             obj.close_all()
         end
         
-        function set_delay(obj, delay)
-            obj.delay = delay;
-        end
-
         function set_power(obj, pwr)
             obj.pwr = pwr;
             obj.pwr2deg(pwr); % run checks
         end
-        
-        function set_duration(obj, duration)
-            obj.duration = duration; %ms
-        end
 
-        function set_ontime(obj, on_time)
-            obj.on_time = on_time; %ms
-        end
-
-        function set_frequency(obj, frequency)
-            obj.frequency = frequency; %1/s (hz)
+        function set_shutter(obj, duration, on_time, frequency, delay)
+            if nargin < 5 || isempty(delay)
+                delay = 0;
+            end
+            obj.shutter_params.duration = duration;
+            obj.shutter_params.on_time = on_time;
+            obj.shutter_params.frequency = frequency;
+            obj.shutter_params.delay = delay;
         end
 
         function power(obj, pwr)
@@ -90,46 +82,23 @@ classdef FiberPowerControl < Module
         end
 
         function prepare(obj)
-<<<<<<< HEAD
+            % prepare hwp if power set
             if ~isempty(obj.pwr_fun)
                 obj.hwp.moveto(obj.pwr2deg(obj.pwr));
             end
 
+            % prepare shutter if shutter set
+            duration = obj.shutter_params.duration;
+            on_time = obj.shutter_params.on_time;
+            frequency = obj.shutter_params.frequency;
+            delay = obj.shutter_params.delay;
             n_pulses = max(1, obj.on_time/1000 * obj.frequency);
             if ~isempty(n_pulses)
-            cycle = (1/obj.frequency) * 1000;
-            obj.shutter.set(cat(2, [obj.delay+1:cycle:obj.delay+obj.on_time]', obj.duration * ones(n_pulses, 1), ones(n_pulses, 1)));
-            obj.on_time = [];
-            obj.frequency = [];
-            obj.duration = [];
-=======
-            if ~isempty(obj.hwp_lut)
-                obj.hwp.moveto(obj.pwr2deg(obj.pwr));
-                obj.shutter
->>>>>>> cf3a8d9 (reorg and update)
+                cycle = (1/frequency) * 1000;
+                obj.shutter.set(cat(2, [delay+1:cycle:delay+on_time]', duration * ones(n_pulses, 1), ones(n_pulses, 1)));
+                obj.shutter_params = [];
+                obj.close_all();
             end
         end
-
-        % function deg = pwr2deg(obj, pwr)
-        %     if isempty(obj.hwp_lut)
-        %         warning('No LUT provided, cannot convert.')
-        %         return
-        %     end
-        % 
-        %     if pwr > obj.hwp_lut.max_power
-        %         fprintf('Set to max power (%0.02fmW)\n', obj.hwp_lut.max_power);
-        %         deg = obj.hwp_lut.max_deg;
-        %         return
-        %     end
-        % 
-        %     if pwr < obj.hwp_lut.min_power
-        %         fprintf('Set to min power (%0.02fmW)\n', obj.hwp_lut.min_power);
-        %         deg = obj.hwp_lut.min_deg;
-        %         return
-        %     end
-        % 
-        %     deg = obj.hwp_lut.f(pwr);
-        % 
-        % end
     end
 end
