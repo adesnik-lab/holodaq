@@ -34,7 +34,6 @@ classdef SIController < Controller
             obj.io.send(sprintf('hSI.hChannels.loggingEnable = %d;', val))
         end
 
-
         function prepare(obj, trigger)
             if nargin < 2 || isempty(trigger)
                 trigger = false;
