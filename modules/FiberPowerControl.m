@@ -8,7 +8,7 @@ classdef FiberPowerControl < Module
         min_pwr
         max_pwr
     
-        pwr;
+        pwr
         duration
         delay
         on_time
@@ -16,32 +16,39 @@ classdef FiberPowerControl < Module
     end
 
     methods
-        function obj = FiberPowerControl(shutter, hwp, path_to_lut)
+        function obj = FiberPowerControl(shutter, hwp, path_to_lut, current_khz)
             if nargin < 3 || isempty(path_to_lut)
                 calib = [];
             else
                 calib = importdata(path_to_lut);
             end
 
-            obj.get_pwr_fun(calib);
+            if nargin < 4 || isempty(current_khz)
+                current_khz = calib.khz;
+                fprintf('Assuming calibration khz (%dkHz)\n', calib.khz)
+            end
+
+            obj.get_pwr_fun(calib, current_khz);
             obj.shutter = shutter;
             obj.hwp = hwp;
             obj.hwp.moveto(obj.min_deg);
             obj.pwr = obj.min_pwr;
         end
         
-        function get_pwr_fun(obj, calib)
-            obj.pwr_fun = @(x) interp1(calib.powers, calib.degrees, x);
+        function get_pwr_fun(obj, calib, current_khz)
+            scale = current_khz/calib.khz;
+            obj.pwr_fun = @(x) interp1(calib.powers*scale, calib.degrees, x);
             obj.max_deg = calib.degrees(end);
             obj.min_deg = calib.degrees(1);
-            obj.max_pwr = calib.max_power;
-            obj.min_pwr = calib.min_power;
+            obj.max_pwr = calib.max_power*scale;
+            obj.min_pwr = calib.min_power*scale;
         end
         
         function deg = pwr2deg(obj, pwr)
             deg = obj.pwr_fun(pwr);
             if isnan(deg)
-                error('Outside of range, cannot use this power');
+                warning('Outside of range, cannot use this power');
+                deg = obj.min_deg; % set to min just in case
             end
         end
 
