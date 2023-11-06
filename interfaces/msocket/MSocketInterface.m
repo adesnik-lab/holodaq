@@ -46,27 +46,12 @@ classdef MSocketInterface < Interface
             out = obj.data;
         end
 
-
-        % function validate(obj)
-        %     sendVar = 'A';
-        %     mssend(obj.socket, sendVar);
-        % 
-        %     invar = [];
-        %     while ~strcmp(invar, 'B')
-        %         invar = msrecv(obj.socket, 0.1);
-        %     end
-        % 
-        %     disp('Connected.')
-        % end
-
-        % 
-        % function out = get_data(obj)
-        %     out = obj.data;
-        % end
-
-
-        % 
-    
+        function flush(obj)
+            invar='flush';
+            while ~isempty(invar)
+                invar = obj.read(0.01);
+            end
+        end
     end
 end
 
