@@ -81,6 +81,14 @@ classdef FiberPowerControl < Module
             obj.shutter_params.on_time = on_time;
             obj.shutter_params.frequency = frequency;
             obj.shutter_params.delay = delay;
+
+            n_pulses = round(max(1, on_time/1000 * frequency));
+            if ~isempty(n_pulses)
+                cycle = (1/frequency) * 1000;
+                obj.shutter.set(cat(2, [delay+1:cycle:delay+on_time]', duration * ones(n_pulses, 1), ones(n_pulses, 1)));
+                obj.shutter_params = [];
+                % obj.close_all();
+            end
         end
 
         function power(obj, pwr)
@@ -93,18 +101,18 @@ classdef FiberPowerControl < Module
                 obj.hwp.moveto(obj.pwr2deg(obj.pwr));
             end
 
-            % prepare shutter if shutter set
-            duration = obj.shutter_params.duration;
-            on_time = obj.shutter_params.on_time;
-            frequency = obj.shutter_params.frequency;
-            delay = obj.shutter_params.delay;
-            n_pulses = max(1, obj.on_time/1000 * obj.frequency);
-            if ~isempty(n_pulses)
-                cycle = (1/frequency) * 1000;
-                obj.shutter.set(cat(2, [delay+1:cycle:delay+on_time]', duration * ones(n_pulses, 1), ones(n_pulses, 1)));
-                obj.shutter_params = [];
-                obj.close_all();
-            end
+            % % prepare shutter if shutter set
+            % duration = obj.shutter_params.duration; % ms
+            % on_time = obj.shutter_params.on_time; %ms
+            % frequency = obj.shutter_params.frequency;
+            % delay = obj.shutter_params.delay;
+            % n_pulses = round(max(1, on_time/1000 * frequency));
+            % if ~isempty(n_pulses)
+            %     cycle = (1/frequency) * 1000;
+            %     obj.shutter.set(cat(2, [delay+1:cycle:delay+on_time]', duration * ones(n_pulses, 1), ones(n_pulses, 1)));
+            %     obj.shutter_params = [];
+            %     % obj.close_all();
+            % end
         end
     end
 end

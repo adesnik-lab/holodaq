@@ -41,7 +41,7 @@ classdef Holomaker < handle
         function run(obj)
             obj.getSetKeyTest();
             % obj.getSetKeyAndROI();
-            obj.holoRequest.rois = {obj.rois};
+            obj.holoRequest.rois = obj.rois;
             % temporarily put here
             obj.repsList = floor(length(obj.holosToUse)./obj.holosPerCycle); 
 
@@ -84,7 +84,7 @@ classdef Holomaker < handle
             % end
         end
 
-        function set_slm_triggers(obj, slm)
+        function stim_times = set_slm_triggers(obj, slm)
             sequence = obj.makeHoloSequences();
             holoStimParams = obj.getHoloStimParams();
             disp('Making Sequences...')
@@ -128,6 +128,7 @@ classdef Holomaker < handle
                     end
                 end
             end
+            stim_times = 0; % WORK ON THIS TM
         end
 
         function Seq = makeHoloSequences(obj)
@@ -190,7 +191,7 @@ classdef Holomaker < handle
                 %     these_rois = randperm(totalCells,nPerHolo); %temp stand in
                 these_rois = makeHoloRois(nPerHolo,this_set_order);
                 obj.setKey{iset} = [numel(obj.rois) + 1 : numel(obj.rois) + numel(these_rois)];
-                obj.rois = [obj.rois, cellfun(@(x) obj.holosToUse(x),these_rois,'uniformoutput', 1)];
+                obj.rois = [obj.rois, these_rois];%cellfun(@(x) obj.holosToUse(x),these_rois,'uniformoutput', 1)];
             end
         end
 

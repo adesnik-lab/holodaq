@@ -41,7 +41,7 @@ classdef PulseOutput < handle
             for t = 1:length(start)
                 obj.pulse_starts = [obj.pulse_starts, start(t)];
                 obj.pulse_lengths = [obj.pulse_lengths, max(duration(t), obj.default_trig_length)]; % potentially dangerous, because if trigger is shorter than 5ms it'll fail 
-                obj.pulse_value = [obj.pulse_value, value];
+                obj.pulse_value = [obj.pulse_value, value(t)];
             end
         end
 
