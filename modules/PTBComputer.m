@@ -23,6 +23,9 @@ classdef PTBComputer < Module
             obj.delay = delay;
         end
 
+        function send_stim_idx(obj, idx)
+            obj.controller.io.send(idx);
+        end
         function prepare(obj)
             obj.trigger.set([1+obj.delay, 25, 1])
             obj.prepare@Module(); % again, not sure here
