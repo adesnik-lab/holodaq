@@ -41,7 +41,7 @@ classdef Holomaker < handle
         function run(obj)
             obj.getSetKeyTest();
             % obj.getSetKeyAndROI();
-            obj.holoRequest.rois = obj.rois;
+            obj.holoRequest.rois = {obj.rois};
             % temporarily put here
             obj.repsList = floor(length(obj.holosToUse)./obj.holosPerCycle); 
 
