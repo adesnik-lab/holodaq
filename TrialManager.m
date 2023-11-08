@@ -43,9 +43,9 @@ classdef TrialManager < handle
         function start_trial(obj)
             % cleanup_obj = onCleanup(@obj.cleanup); % so pretty much anywhere we'll catch this
             disp('started trial')
-            for t = obj.modules.extract('Output') % let's track how long this takes...
-                if isa(t.io, 'MSocketInterface')
-                    t.io.send();
+            for t = obj.modules.extract('Controller') % let's track how long this takes...
+                if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
+                    t.io.send(t.data);
                 end
             end
 

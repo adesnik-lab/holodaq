@@ -128,6 +128,7 @@ classdef Holomaker < handle
                     end
                 end
             end
+        end
 
         function Seq = makeHoloSequences(obj)
             Seq = cell(numel(obj.hzList), 1);

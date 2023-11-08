@@ -5,6 +5,8 @@ classdef Controller < Component
         mouse % these are default things that we need for the experiment
         epoch
 
+        data
+
         is_enabled
     end
 
@@ -19,6 +21,10 @@ classdef Controller < Component
             obj.io.send(obj.name);
             obj.controllee = obj.io.read();
             fprintf('OK.\n');
+        end
+
+        function set(obj, data)
+            obj.data = data;
         end
 
         function enable(obj)

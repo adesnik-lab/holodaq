@@ -5,7 +5,7 @@ classdef MSocketInterface < Interface
 
         data
     end
-    
+
     methods
         function obj = MSocketInterface(port)
             if ischar(port)
@@ -30,7 +30,6 @@ classdef MSocketInterface < Interface
 
         function send(obj, data)
             mssend(obj.socket, data);
-            obj.data = data; % store data
         end
 
         function out =  read(obj,  timeout)
@@ -50,23 +49,23 @@ classdef MSocketInterface < Interface
         % function validate(obj)
         %     sendVar = 'A';
         %     mssend(obj.socket, sendVar);
-        % 
+        %
         %     invar = [];
         %     while ~strcmp(invar, 'B')
         %         invar = msrecv(obj.socket, 0.1);
         %     end
-        % 
+        %
         %     disp('Connected.')
         % end
 
-        % 
+        %
         % function out = get_data(obj)
         %     out = obj.data;
         % end
 
 
-        % 
-    
+        %
+
     end
 end
 

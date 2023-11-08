@@ -30,7 +30,6 @@ classdef FiberPowerControl < Module
             obj.shutter = shutter;
             obj.hwp = hwp;
             obj.pwr = obj.min_pwr;
-            obj.zero();
         end
         
         function get_pwr_fun(obj, calib, current_khz)
