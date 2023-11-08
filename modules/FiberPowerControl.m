@@ -78,7 +78,7 @@ classdef FiberPowerControl < Module
                 delay = 0;
             end
             obj.shutter_params.duration = duration;
-            obj.shutter_params.on_time = on_time;
+            obj.shutter_params.on_time = on_time; % in ms
             obj.shutter_params.frequency = frequency;
             obj.shutter_params.delay = delay;
 

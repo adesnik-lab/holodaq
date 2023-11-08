@@ -39,10 +39,9 @@ classdef Holomaker < handle
 
 
         function run(obj)
-            obj.getSetKeyTest();
-            % obj.getSetKeyAndROI();
+            % obj.getSetKeyTest();
+            obj.getSetKeyAndROI();
             obj.holoRequest.rois = obj.rois;
-            % temporarily put here
             obj.repsList = floor(length(obj.holosToUse)./obj.holosPerCycle); 
 
 
@@ -53,35 +52,17 @@ classdef Holomaker < handle
             out = obj.repsList./obj.hzList.*obj.pulseList+obj.startTime/1000;
         end
     
-        % function holoSocket = connectToOtherComputer(obj)
-        %     holoSocket = msocketPrep;
-        %     obj.holoRequest = transferHRNoDAQ(obj.holoRequest, holoSocket);
-        % end
 
         function getTotalCells(obj)
-            if ~iscell(obj.holosToUse) && obj.holosToUse == 0 % on the initial run, if there's no requested holograms, it'll just go ahead and use em all
+            if ~iscell(obj.holosToUse) && all(obj.holosToUse == 0) % on the initial run, if there's no requested holograms, it'll just go ahead and use em all
                 obj.totalCells =size(obj.holoRequest.targets, 1);
                 obj.holosToUse = 1:obj.totalCells;
             elseif iscell(obj.holosToUse)
                 obj.totalCells = numel(unique([obj.holosToUse{:}]));
                 obj.holosToUse = obj.holosToUse{:};
-                %disp(['Using ' num2str(totalCells) ' Cells']);
             else
                 obj.totalCells = numel(obj.holosToUse);
-                %disp(['Using ' num2str(totalCells) ' Cells']);
             end
-
-            % if obj.holosToUse==0
-            %     obj.totalCells =size(obj.holoRequest.targets,1);
-            %     %disp(['Total Cells Detected ' num2str(totalCells)]);
-            %     obj.holosToUse = 1:obj.totalCells;
-            % elseif iscell(obj.holosToUse)
-            %     obj.totalCells = numel(unique([obj.holosToUse{:}]));
-            %     %disp(['Using ' num2str(totalCells) ' Cells']);
-            % else
-            %     obj.totalCells = numel(obj.holosToUse);
-            %     %disp(['Using ' num2str(totalCells) ' Cells']);
-            % end
         end
 
         function stim_times = set_slm_triggers(obj, slm)
@@ -150,6 +131,16 @@ classdef Holomaker < handle
             end
         end
 
+        function rois = makeHoloRois(obj, nPerHolo, order)
+            %make as many holos as necessary to get order, but don't make any
+            %partial ones
+            nHolos = floor(length(order)/nPerHolo);
+        %     disp(nHolos)
+            for i=1:nHolos
+                rois{i} = order((i-1)*nPerHolo+1:i*nPerHolo);
+            end
+        end
+
         function getSetKeyTest(obj,  randomize)
             if nargin < 2 || isempty(randomize)
                 randomize = false;
@@ -188,8 +179,7 @@ classdef Holomaker < handle
                     setlink_orders{this_setlink} = this_set_order(nHolo*nPerHolo+1:end);
                 end
                 this_set_order = this_set_order(1:nHolo*nPerHolo);
-                %     these_rois = randperm(totalCells,nPerHolo); %temp stand in
-                these_rois = makeHoloRois(nPerHolo,this_set_order);
+                these_rois = obj.makeHoloRois(nPerHolo,this_set_order);
                 obj.setKey{iset} = [numel(obj.rois) + 1 : numel(obj.rois) + numel(these_rois)];
                 obj.rois = [obj.rois, these_rois];%cellfun(@(x) obj.holosToUse(x),these_rois,'uniformoutput', 1)];
             end
@@ -205,6 +195,7 @@ classdef Holomaker < handle
         end
 
         function [rois, set_key] = getSetKeyAndROI(obj)
+            % this is overloaded in children
         end
     
 
