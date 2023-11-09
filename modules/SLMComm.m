@@ -11,7 +11,7 @@ classdef SLMComm < Module
         end
 
         function set_flip(obj, t)
-            obj.trigger.set([t, 25, 1]); %standard digital trigger
+            obj.trigger.set([t, 5, 5]); %standard digital trigger
         end
     end
 end

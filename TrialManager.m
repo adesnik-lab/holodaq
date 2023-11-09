@@ -48,7 +48,6 @@ classdef TrialManager < handle
                     t.io.send(t.data);
                 end
             end
-
             obj.dq.start(); % because this is now running in background, we can call other stuff
  
         end
