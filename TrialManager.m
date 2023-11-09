@@ -42,7 +42,7 @@ classdef TrialManager < handle
 
         function start_trial(obj)
             % cleanup_obj = onCleanup(@obj.cleanup); % so pretty much anywhere we'll catch this
-            disp('started trial')
+            % disp('started trial')
             for t = obj.modules.extract('Controller') % let's track how long this takes...
                 if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
                     t.io.send(t.data);
@@ -57,7 +57,7 @@ classdef TrialManager < handle
             % read all data in
             obj.wait()
             obj.dq.stop();
-            disp('ended trial')
+            % disp('ended trial')
             
             obj.transfer_data();
             obj.save_data();

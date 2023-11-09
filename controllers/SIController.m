@@ -16,7 +16,7 @@ classdef SIController < Controller
             obj.io.send(sprintf('mkdir(''%s'')', path));
 
             if ~obj.io.read()
-                fprintf('Something went wrong with creating the folder\n');
+                fprintf('Something went wrong with creating the folder\ncontro');
                 return
             end
             obj.io.send(sprintf('hSI.hScan2D.logFilePath = ''%s'';', path));
@@ -35,30 +35,30 @@ classdef SIController < Controller
         end
 
         function prepare(obj, trigger)
-            if nargin < 2 || isempty(trigger)
-                trigger = false;
-            end
-            
-            obj.set_external_trigger(trigger);
-            obj.set_logging(true);
-            
-            filename = sprintf('%s_%s_%s', datetime('now', 'Format', 'yyMMdd'), obj.mouse, obj.epoch);
-            obj.set_filename(filename);
-            
-            % this is for my computer specifically
-            base_path = 'D:';
-            obj.set_save_path(fullfile(base_path, string(datetime('now', 'Format', 'yyMMdd')), obj.mouse, obj.epoch))
-            obj.update();
+            % if nargin < 2 || isempty(trigger)
+            %     trigger = false;
+            % end
+            % 
+            % obj.set_external_trigger(trigger);
+            % obj.set_logging(true);
+            % 
+            % filename = sprintf('%s_%s_%s', datetime('now', 'Format', 'yyMMdd'), obj.mouse, obj.epoch);
+            % obj.set_filename(filename);
+            % 
+            % % this is for my computer specifically
+            % base_path = 'D:';
+            % obj.set_save_path(fullfile(base_path, string(datetime('now', 'Format', 'yyMMdd')), obj.mouse, obj.epoch))
+            % obj.update();
         end
 
         function start(obj)
             % I'm so sorry...
-            obj.io.send(join(['hSI.abort();',...
-                'hSI.startLoop();',...
-                'while ~strcmp(evalin(''base'', ''hSI.acqState''), ''idle'');',...
-                'hSICtl.updateView(); pause(0.1);',...
-                'end; disp(''exited'')']))
-            
+            % obj.io.send(join(['hSI.abort();',...
+            %     'hSI.startLoop();',...
+            %     'while ~strcmp(evalin(''base'', ''hSI.acqState''), ''idle'');',...
+            %     'hSICtl.updateView(); pause(0.1);',...
+            %     'end; disp(''exited'')']))
+            % 
             % obj.io.send('hSI.abort()')
             % obj.io.send('hSI.startLoop()');
             % obj.io.send('stoploop');
