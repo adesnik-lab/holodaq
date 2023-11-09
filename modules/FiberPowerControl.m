@@ -77,8 +77,8 @@ classdef FiberPowerControl < Module
             if nargin < 5 || isempty(delay)
                 delay = 0;
             end
-            obj.shutter_params.duration = duration;
-            obj.shutter_params.on_time = on_time; % in ms
+            obj.shutter_params.duration = duration; % how long the shutter is open for
+            obj.shutter_params.on_time = on_time; % total on time...
             obj.shutter_params.frequency = frequency;
             obj.shutter_params.delay = delay;
 
