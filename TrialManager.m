@@ -59,11 +59,19 @@ classdef TrialManager < handle
             obj.dq.stop();
             % disp('ended trial')
             
-            obj.transfer_data();
-            obj.save_data();
+            % obj.transfer_data();
+            % obj.save_data();
 
             % cleanup?
             obj.cleanup();
+        end
+
+        function finish(obj)
+            obj.set_trial_length(50); %supershort
+            obj.modules.SIComputer.controller.set('done'); % might error here if you don't have an SI Computer but ok
+            obj.prepare();
+            obj.start_trial();
+            obj.end_trial();
         end
 
         function cleanup(obj)

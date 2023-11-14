@@ -44,7 +44,7 @@ classdef FiberPowerControl < Module
         function deg = pwr2deg(obj, pwr)
             deg = obj.pwr_fun(pwr);
             if isnan(deg)
-                warning('Outside of range, cannot use this power');
+                disp('Outside of range, cannot use this power');
                 deg = obj.min_deg; % set to min just in case
             end
         end
