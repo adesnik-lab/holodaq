@@ -9,14 +9,11 @@ classdef PTBComputer < Module
     end
     
     methods
-        function obj = PTBComputer(trigger, stim_onoff, stim_id, controller)
-            if nargin < 4
-                controller = [];
-            end
+        function obj = PTBComputer(trigger, stim_onoff, stim_id)
             obj.trigger = trigger;
             obj.stim_onoff = stim_onoff;
             obj.stim_id = stim_id;
-            obj.controller = controller;
+            obj.controller = HolochatInterface('daq');
         end
 
         function set_delay(obj, delay)
@@ -24,7 +21,7 @@ classdef PTBComputer < Module
         end
 
         function send_stim_idx(obj, idx)
-            obj.controller.io.send(idx);
+            obj.controller.send(idx, 'ptb');
         end
         function prepare(obj)
             obj.trigger.set([1+obj.delay, 25, 1])

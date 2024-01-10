@@ -6,11 +6,8 @@ classdef HoloComputer < Module
     end
     
     methods
-        function obj = HoloComputer(controller)
-            if nargin < 0
-                controller = [];
-            end
-            obj.controller = controller;
+        function obj = HoloComputer()
+            obj.controller = HolochatInterface('daq');
         end
         
         function set_sequence(obj, sequence)
@@ -18,7 +15,7 @@ classdef HoloComputer < Module
         end
         
         function prepare(obj)
-            obj.controller.io.send(obj.sequence);
+            obj.controller.send(obj.sequence, 'holo');
             obj.prepare@Module();
         end
     end

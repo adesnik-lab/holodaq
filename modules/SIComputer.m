@@ -6,13 +6,10 @@ classdef SIComputer < Module
     end
     
     methods
-        function obj = SIComputer(trigger, flip, controller)
-            if nargin < 3 
-                controller = [];
-            end
+        function obj = SIComputer(trigger, flip)
             obj.trigger = trigger;
             obj.flip = flip;    
-            obj.controller = controller;
+            obj.controller = HolochatInterface('daq');
         end 
 
         function prepare(obj)
