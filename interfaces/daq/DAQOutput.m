@@ -10,15 +10,15 @@ classdef DAQOutput < DAQInterface
         end
 
         function initialize(obj)
-            ch = obj.interface.addoutput(obj.dev, obj.channel, obj.type);
+            ch = obj.io.addoutput(obj.dev, obj.channel, obj.type);
             if strcmp(obj.type, 'voltage')
                 ch.TerminalConfig = 'SingleEnded';
             end
         end
 
         function idx = channel_idx(obj)
-            names = {obj.interface.Channels.ID};
-            is_output = cellfun(@(x) strcmp(x, 'OutputOnly'), {obj.interface.Channels.MeasurementType});
+            names = {obj.io.Channels.ID};
+            is_output = cellfun(@(x) strcmp(x, 'OutputOnly'), {obj.io.Channels.MeasurementType});
             % search
             idx = find(cellfun(@(x) strcmp(x, obj.channel), names(is_output)));
         end
