@@ -19,7 +19,6 @@ classdef HolochatInterface < Interface
         end
         
         function initialize(obj)
-            obj.reset(); % just in case
         end
         
         function send(obj, data, dest)
@@ -33,9 +32,15 @@ classdef HolochatInterface < Interface
             end
         end
         
-        function [out, recv] = read(obj)
+        function [out, recv] = read(obj, timeout)
+            if nargin < 2 || isempty(timeout)
+                timeout = 5;
+            end
+            ops = obj.ops;
+            ops.Timeout = timeout;
+
             try
-                recv = webread(obj.get_url('msg', obj.id), obj.ops);
+                recv = webread(obj.get_url('msg', obj.id), ops);
             catch ME
                 warning(ME.message);
                 if strcmp(ME.identifier, 'MATLAB:webservices:HTTP404StatusCodeError')
@@ -58,7 +63,6 @@ classdef HolochatInterface < Interface
         end
 
         function flush(obj)
-            warning('Clearing all message history');
             try
                 webread(obj.get_url('msg', obj.id), weboptions('RequestMethod', 'delete')); % delete everything on the server?? (bad?)
             end
