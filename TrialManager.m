@@ -37,17 +37,24 @@ classdef TrialManager < handle
                         % o.set_data*('heuhcoreuh')
                 end
             end
+
+            for t = obj.modules.extract('Controller') % let's track how long this takes...
+                if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
+                    t.io.send(t.data);
+                end
+            end
+
             obj.dq.preload(sweep);
         end
 
         function start_trial(obj)
             % cleanup_obj = onCleanup(@obj.cleanup); % so pretty much anywhere we'll catch this
             % disp('started trial')
-            for t = obj.modules.extract('Controller') % let's track how long this takes...
-                if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
-                    t.io.send(t.data);
-                end
-            end
+            % for t = obj.modules.extract('Controller') % let's track how long this takes...
+            %     if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
+            %         t.io.send(t.data);
+            %     end
+            % end
             obj.dq.start(); % because this is now running in background, we can call other stuff
  
         end
