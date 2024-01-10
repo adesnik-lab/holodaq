@@ -1,5 +1,6 @@
 classdef Interface < handle
 properties
+    io
 end
 
 methods

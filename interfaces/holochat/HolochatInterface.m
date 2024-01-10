@@ -16,6 +16,7 @@ classdef HolochatInterface < Interface
             obj.server = server;
             obj.id = id;
             obj.ops = weboptions('MediaType', 'application/json');
+            obj.reset()
         end
         
         function initialize(obj)
@@ -42,10 +43,11 @@ classdef HolochatInterface < Interface
             try
                 recv = webread(obj.get_url('msg', obj.id), ops);
             catch ME
-                warning(ME.message);
                 if strcmp(ME.identifier, 'MATLAB:webservices:HTTP404StatusCodeError')
+                    out = [];
                     return
                 end
+                warning(ME.message);
             end
 
             if strcmp(recv.message_status, 'read')

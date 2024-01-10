@@ -4,7 +4,6 @@ classdef DAQInterface < Interface
         type
         sample_rate
         dev
-        io
     end
 
     methods
