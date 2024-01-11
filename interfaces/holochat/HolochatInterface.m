@@ -1,10 +1,6 @@
 classdef HolochatInterface < Interface
     properties
-        server
         id
-        ops
-
-        debug = false
     end
 
     methods
@@ -12,83 +8,35 @@ classdef HolochatInterface < Interface
             if nargin < 2 || isempty(server)
                 server = 'http://136.152.58.120:8000';
             end
-
-            obj.server = server;
             obj.id = id;
-            obj.ops = weboptions('MediaType', 'application/json');
-            obj.reset()
+            obj.io = RESTio(server);
+
+            obj.io.reset(obj.id);
         end
         
         function initialize(obj)
         end
-        
-        function send(obj, data, dest)
-            try
-               recv = webwrite(obj.get_url('msg', dest), obj.encode(data), obj.ops);
-            catch ME
-                warning(ME.message);
-            end
-            if obj.debug
-                disp(recv)
-            end
+
+        function send(obj, data, target)
+            obj.io.send(data, target, obj.id);
         end
-        
-        function [out, recv] = read(obj, timeout)
+
+        function out = read(obj, timeout, target)
             if nargin < 2 || isempty(timeout)
                 timeout = 5;
             end
-            ops = obj.ops;
-            ops.Timeout = timeout;
-
-            try
-                recv = webread(obj.get_url('msg', obj.id), ops);
-            catch ME
-                if strcmp(ME.identifier, 'MATLAB:webservices:HTTP404StatusCodeError')
-                    out = [];
-                    return
-                end
-                warning(ME.message);
+            
+            if nargin < 3 || isempty(target)
+                target = obj.id;
             end
-
-            if strcmp(recv.message_status, 'read')
-                out = [];
-                return
-            end
-
-            out = jsondecode(recv.message);
-            if obj.debug
-                disp(recv)
-            end
-        end
-        
-        function config(obj, data, dest)
-            webwrite(obj.get_url('config', dest), obj.encode(data), obj.ops);
+            
+            out = obj.io.read(target, timeout);
         end
 
         function flush(obj)
-            try
-                webread(obj.get_url('msg', obj.id), weboptions('RequestMethod', 'delete')); % delete everything on the server?? (bad?)
-            end
+            obj.io.flush(obj.id);
         end
+        
 
-        function out = encode(obj, data)
-            out = struct();
-            out.sender = obj.id;
-            out.message = jsonencode(data);
-            out = jsonencode(out); % wrap everything ok
-        end
-
-        function reset(obj)
-            try
-                webread(obj.get_url('db', obj.id), weboptions('RequestMethod', 'delete'));
-            end
-        end
-
-        function url = get_url(obj, path, target)
-            if nargin < 3 || isempty(target)
-                target = [];
-            end
-            url = sprintf('%s/%s/%s', obj.server, path, target) ;
-        end
     end
 end
