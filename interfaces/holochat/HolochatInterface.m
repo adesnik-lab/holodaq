@@ -51,6 +51,7 @@ classdef HolochatInterface < Interface
             end
 
             if strcmp(recv.message_status, 'read')
+                out = [];
                 return
             end
 
