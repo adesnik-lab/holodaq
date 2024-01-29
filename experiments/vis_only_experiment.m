@@ -10,8 +10,8 @@ close all
 clc
 
 %% PARAMS
-n_trials = 10;
-save_path = 'D:\data\test2.mat';
+n_trials = 300;
+save_path = 'D:\data\test3.mat';
 
 %%
 addpath(genpath('.'))
