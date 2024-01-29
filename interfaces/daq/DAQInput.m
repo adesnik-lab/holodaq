@@ -8,7 +8,7 @@ classdef DAQInput < DAQInterface
         end
         
         function initialize(obj)
-            ch = obj.interface.addinput(obj.dev, obj.channel, obj.type);
+            ch = obj.io.addinput(obj.dev, obj.channel, obj.type);
             if strcmp(obj.type, 'voltage')
                 ch.TerminalConfig = 'SingleEnded';
             end
@@ -16,8 +16,8 @@ classdef DAQInput < DAQInterface
 
         function out = get_daq_data(obj)
             persistent data; % not sure a better way to do this, this way it's shared across all intsances and not read everytime
-            if obj.interface.NumScansAvailable > 0   
-                data = obj.interface.read('all');
+            if obj.io.NumScansAvailable > 0   
+                data = obj.io.read('all');
             end
             out = data;
         end

@@ -8,12 +8,12 @@ classdef DAQInterface < Interface
 
     methods
         function obj = DAQInterface(dq, channel)                    
-            obj.interface = dq;
+            obj.io = dq;
             dev = daqlist();
             obj.dev = dev.DeviceID(1);
             obj.channel = strtrim(channel);
             obj.type = obj.derive_type();
-            obj.sample_rate = obj.interface.Rate;
+            obj.sample_rate = obj.io.Rate;
 
             % contsruct based on what it is?
         end
@@ -27,6 +27,10 @@ classdef DAQInterface < Interface
                 otherwise
                     disp('wat');
             end
+        end
+
+        function n = n_outputs(obj)
+            n = sum(cellfun(@(x) strcmp(x, 'OutputOnly'), {obj.io.Channels.MeasurementType}));
         end
 
         function initialize(obj)

@@ -5,89 +5,85 @@
 % bugfixes
 % add checknig for trial length vs actual sweep
 
+%% Clean workspace
 clear
 close all
 clc
-
-% PARAMS
-holography = true;
-power = 0.075; % W
-n_trials = 10;
-
 addpath(genpath('.'))
 addpath(genpath('C:\Users\holos\Documents\_code'))
 
+%% PARAMS
+holography = false;
+power = 0.075; % W
+mouse = 'KKSTEST-2';
+epoch = '1ori';
+save_path = 'D:\data\test3.mat';
+stimulus = 'basic_ori_trigger';
+n_trials = 5;
+
+%%
 fprintf('Starting daq...\r')
 
 fprintf('Loading defaults... ')
 setup = getDefaults();  
-pause(0.1)
 fprintf('OK.\n')
 
 fprintf('Making MATLAB NIDAQ object... ')
 dq = daq('ni');
 dq.Rate = setup.daqrate;
-pause(0.1)
 fprintf('OK.\n')
 
 tman = TrialManager(dq);
 
-%% Modules
 si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
-                Input(DAQInput(dq, 'ai0'), 'SI Frame'));
+                Input(DAQInput(dq, 'ai0'), 'SI Frame'), ...
+                SIController(MSocketServer(42045), 'SI Controller'));
 
 ptb = PTBComputer(Output(DAQOutput(dq, 'port0/line7'), 'PTB Trigger'),...
                   Input(DAQInput(dq, 'port0/line2'), 'Stim ONOFF'),...
-                  Input(DAQInput(dq, 'port0/line3'), 'Stim ID'));
+                  Input(DAQInput(dq, 'port0/line3'), 'Stim ID'), ...
+                  PTBController(MSocketServer(42044), 'PTB Controller'));
+
+holo = HoloComputer(HoloController(MSocketServer(42042), 'Holo Controller'));
 
 rwheel = RunningWheel(Input(DAQInput(dq, 'ai2'), 'Running Wheel'));
 
 laser_eom = LaserEOM(Output(DAQOutput(dq, 'ao0'), 'Laser Trigger'));
-% 
+
 slm = SLM(Output(DAQOutput(dq, 'ao1'), 'SLM Trigger'),...
           Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
 
-% slm = SLM(Output(DAQOutput(dq, 'port0/line6'), 'SLM Trigger'),...
-%           Input(DAQInput(dq, 'ai7'), 'SLM FLip'));
-
-
 tman.modules.add(si);
 tman.modules.add(ptb); 
-tman.modules.add(slm);
-tman.modules.add(laser_eom);
+tman.modules.add(holo);
 tman.modules.add(rwheel);
+tman.modules.add(laser_eom);
+tman.set_save_path(save_path);
 
-fprintf('Initializing DAQ... ')
-tman.set_save_path('D:\data\test.mat');
+% Initialize modules
 tman.initialize(); % initialize all added modules
-fprintf('OK.\n')
-
+tman.set_mouse(mouse);
+tman.set_epoch(epoch);
+fprintf('All done.\n')
 
 %% Select code?
 if holography
     loc = FrankenScopeRigFile();
-    holoRequest = importdata(sprintf('%s%sholoRequest.mat', loc.HoloRequest, filesep));
-    % holosToUse = importdata('holosToUse.mat');
+    holoRequest = importdata(fullfile(loc.HoloRequest, 'holoRequest.mat'));
     fs = PowerCurve(holoRequest, power);
-    holoSocket = fs.run();
-    % MakePowerCurveOutput2K();
+    fs.run();
+    holo.controller.run();
+    fs.holoRequest = transferHRNoDAQ(fs.holoRequest, holo.controller.io.socket);
 end
-disp('Press any key when holography computer is finished...')
-pause
+
+ptb.controller.run_stimulus(stimulus); % choose your stimulus here?
+si.controller.prepare(true); % ask for triggering
+si.controller.start();
 
 %% Generate triggers?
-% load('HoloRequest.mat') % replace later with appropriate holorequest get function
-
-
 ct = 1;
 
-n_trials = 50;
-for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
-    % if mod(p, 2) == 1
-    %     holography = true;
-    % else 
-    %     holography = false;
-    % end
+for p = 1:n_trials
     disp(ct)
     ts = tic;
 
@@ -98,11 +94,11 @@ for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
     end
 
     if holography
-        % makeHoloTrigSeqs2K(Seq, holoRequest, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
         Seq = fs.makeHoloSequences();
-        makeHoloTrigSeqs2K(Seq, fs, slm, laser_eom); % here,  we can choose what Seq to send by indexing into it
+        makeHoloTrigSeqs2K(Seq, fs, slm); % here,  we can choose what Seq to send by indexing into it
     end
-    si.trigger.set([1, 25, 1]);             
+
+    si.trigger.set([1, 25, 1]); % trigger the start of the trial
     ptb.trigger.set([1, 25, 1]);
     
     tman.prepare();
@@ -111,7 +107,7 @@ for p = 1:n_trials;%repmat(powers(1:2), 1, 1)
     tman.start_trial();
     
     if holography
-        mssend(holoSocket, Seq{1});
+        holo.controller.io.send(Seq{1}); % do we want to send it here or above? prior to the start of trial?
     end
 
     tman.end_trial();

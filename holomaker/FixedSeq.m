@@ -3,7 +3,7 @@ classdef FixedSeq < Holomaker
     end
     
     methods
-        function obj = FixedSeq(holoRequest)
+        function obj = FixedSeq(holoRequest, p)
             obj = obj@Holomaker(holoRequest);
             obj.holosToUse = {1};
             numHolos = numel(obj.holosToUse); % where is this from?

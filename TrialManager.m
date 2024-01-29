@@ -25,27 +25,36 @@ classdef TrialManager < handle
     
         function prepare(obj)
             sweep = [];
+            obj.modules.call('prepare'); % remove if breaks
+
+            % prepare daq sweeps
             for o = obj.modules.extract('Output')
-                switch class(o.io)
+                switch class(o.interface)
                     case 'DAQOutput'
-                        o.io.set_trial_length(obj.trial_length);
-                        sweep = cat(2, sweep, o.io.generate_sweep());
+                        o.interface.set_trial_length(obj.trial_length);
+                        sweep = cat(2, sweep, o.interface.generate_sweep());
                     case 'MSocketInterface'
                         % o.set_data*('heuhcoreuh')
                 end
             end
+
+            for t = obj.modules.extract('Controller') % let's track how long this takes...
+                if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
+                    t.interface.send(t.data);
+                end
+            end
+
             obj.dq.preload(sweep);
         end
 
         function start_trial(obj)
             % cleanup_obj = onCleanup(@obj.cleanup); % so pretty much anywhere we'll catch this
-            disp('started trial')
-            for t = obj.modules.extract('Output') % let's track how long this takes...
-                if isa(t.io, 'MSocketInterface')
-                    t.io.send();
-                end
-            end
-
+            % disp('started trial')
+            % for t = obj.modules.extract('Controller') % let's track how long this takes...
+            %     if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
+            %         t.io.send(t.data);
+            %     end
+            % end
             obj.dq.start(); % because this is now running in background, we can call other stuff
  
         end
@@ -55,13 +64,21 @@ classdef TrialManager < handle
             % read all data in
             obj.wait()
             obj.dq.stop();
-            disp('ended trial')
+            % disp('ended trial')
             
-            obj.transfer_data();
-            obj.save_data();
+            % obj.transfer_data();
+            % obj.save_data();
 
             % cleanup?
             obj.cleanup();
+        end
+
+        function finish(obj)
+            obj.set_trial_length(50); %supershort
+            obj.modules.SIComputer.controller.set('done'); % might error here if you don't have an SI Computer but ok
+            obj.prepare();
+            obj.start_trial();
+            obj.end_trial();
         end
 
         function cleanup(obj)
@@ -92,6 +109,18 @@ classdef TrialManager < handle
             end
         end
         
+        function set_mouse(obj, mouse)
+            for c = obj.modules.extract('Controller')
+                c.mouse = mouse;
+            end
+        end
+
+        function set_epoch(obj, epoch)
+            for c = obj.modules.extract('Controller')
+                c.epoch = epoch;
+            end
+        end
+
         function set_save_path(obj, save_path)
             obj.save_path = save_path;
         end

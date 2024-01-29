@@ -6,18 +6,24 @@ classdef ModuleManager < dynamicprops
         function obj = ModuleManager();
         end
 
-        function add(obj, module)
-            try
-                obj.addprop(class(module));
-            catch ME
-                if strcmp(ME.identifier, 'MATLAB:class:PropertyInUse')
-                    warning('Module %s already exists.\n', class(module));
-                    return
-                else
-                    rethrow(ME);
-                end
+        function module_name = check_for_duplicate(obj, module_name)
+            persistent ct
+            if isempty(ct)
+                ct = 0;
             end
-            obj.(class(module)) = module;
+            is_duplicate = any(cellfun(@(x) strcmp(module_name, x), properties(obj)));
+            if ~is_duplicate
+                return
+            end
+            module_name(strfind(module_name, '_'):end) = [];
+            module_name = sprintf('%s_%d', module_name, ct + 1);
+            module_name = obj.check_for_duplicate(module_name);
+        end
+        
+        function add(obj, module)
+            module_name = obj.check_for_duplicate(class(module));
+            obj.addprop(module_name);
+            obj.(module_name) = module;
         end
         
          function out = call(obj, function_name, varargin)
