@@ -9,20 +9,20 @@ classdef ELL14 < Component
 
     methods
 
-        function obj = ELL14(io, channel, name)
-            obj = obj@Component(io, name);
+        function obj = ELL14(interface, channel, name)
+            obj = obj@Component(interface, name);
             obj.channel = channel;
         end
 
         function initialize(obj)
-            obj.io.initialize();
+            obj.interface.initialize();
         end
 
         function get_position(obj)
         end
 
         function go_home(obj)
-            obj.io.writeline(obj.cmd('ho', '0'));
+            obj.interface.writeline(obj.cmd('ho', '0'));
         end
         
         function out = cmd(obj, input, params)
@@ -34,18 +34,18 @@ classdef ELL14 < Component
         end
 
         function home(obj)
-            obj.io.writeline(obj.cmd('ho'));
+            obj.interface.writeline(obj.cmd('ho'));
         end
 
         function moveto(obj, deg)
             count = obj.deg2count(deg);
             pos = string(dec2hex(count, 8));
-            obj.io.writeline(obj.cmd('ma', pos)); % this will backlog with stuff, but its ok
+            obj.interface.writeline(obj.cmd('ma', pos)); % this will backlog with stuff, but its ok
             obj.wait();
         end
 
         function wait(obj)
-            obj.io.readline(); % fast read, most things come back with something so this will lock out until ready
+            obj.interface.readline(); % fast read, most things come back with something so this will lock out until ready
         end
 
         function deg = count2deg(obj, count)

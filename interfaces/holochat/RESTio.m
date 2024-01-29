@@ -16,11 +16,11 @@ classdef RESTio < handle
         end
 
         function send(obj, data, target, sender)
-            try
+            % try
                 recv = webwrite(obj.get_url('msg', target), obj.encode(data, sender), obj.ops);
-            catch ME
-                warning(ME.message);
-            end
+            % catch ME
+            %     warning(ME.message);
+            % end
             if obj.debug
                 disp(recv)
             end

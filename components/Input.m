@@ -3,17 +3,17 @@ classdef Input < Component
         data
     end
     methods
-        function obj = Input(io, name)
-            obj = obj@Component(io, name);
+        function obj = Input(interface, name)
+            obj = obj@Component(interface, name);
         end
         
         function initialize(obj)
-            obj.io.initialize();
+            obj.interface.initialize();
         end
 
         function read(obj)
             tic
-            obj.data = obj.io.get_data();
+            obj.data = obj.interface.get_data();
             tco
         end
 

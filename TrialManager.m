@@ -29,10 +29,10 @@ classdef TrialManager < handle
 
             % prepare daq sweeps
             for o = obj.modules.extract('Output')
-                switch class(o.io)
+                switch class(o.interface)
                     case 'DAQOutput'
-                        o.io.set_trial_length(obj.trial_length);
-                        sweep = cat(2, sweep, o.io.generate_sweep());
+                        o.interface.set_trial_length(obj.trial_length);
+                        sweep = cat(2, sweep, o.interface.generate_sweep());
                     case 'MSocketInterface'
                         % o.set_data*('heuhcoreuh')
                 end
@@ -40,7 +40,7 @@ classdef TrialManager < handle
 
             for t = obj.modules.extract('Controller') % let's track how long this takes...
                 if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
-                    t.io.send(t.data);
+                    t.interface.send(t.data);
                 end
             end
 

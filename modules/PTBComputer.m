@@ -26,6 +26,7 @@ classdef PTBComputer < Module
 
         function go(obj)
             obj.controller.send('go', 'ptb');
+            pause(1);
         end
         
         function prepare(obj)

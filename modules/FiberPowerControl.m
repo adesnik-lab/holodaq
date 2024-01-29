@@ -50,17 +50,17 @@ classdef FiberPowerControl < Module
         end
 
         function open(obj)
-            sweep = zeros(1, obj.shutter.io.n_outputs);
-            sweep(obj.shutter.io.channel_idx) = 1;
-            obj.shutter.io.interface.write(sweep);
+            sweep = zeros(1, obj.shutter.interface.n_outputs);
+            sweep(obj.shutter.interface.channel_idx) = 1;
+            obj.shutter.interface.io.write(sweep);
         end 
 
         function close_all(obj)
             % this is kinda meh rn, because it closes everything, but
             % that's fine
-            sweep = zeros(1, obj.shutter.io.n_outputs);
-            sweep(obj.shutter.io.channel_idx) = 0;
-            obj.shutter.io.interface.write(sweep);
+            sweep = zeros(1, obj.shutter.interface.n_outputs);
+            sweep(obj.shutter.interface.channel_idx) = 0;
+            obj.shutter.interface.io.write(sweep); % ew
         end
 
         function zero(obj)

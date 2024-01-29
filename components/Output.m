@@ -3,32 +3,32 @@ classdef Output < Component
     end
     
     methods
-        function obj = Output(io, name)
-            obj = obj@Component(io, name);
+        function obj = Output(interface, name)
+            obj = obj@Component(interface, name);
         end
         
         function initialize(obj)
-            obj.io.initialize();
+            obj.interface.initialize();
         end
     
         function set(obj, input)
-            if obj.io.validate(input)
-                obj.io.set(input);
+            if obj.interface.validate(input)
+                obj.interface.set(input);
             else
                 fprintf('Invalid input, nothing set \n');
             end
         end
 
         function prepare(obj)
-            obj.io.prepare();
+            obj.interface.prepare();
         end
         
         function start(obj)
-            obj.io.start();
+            obj.interface.start();
         end
         
         function finish(obj)
-            obj.io.finish();
+            obj.interface.finish();
         end
     end
     
