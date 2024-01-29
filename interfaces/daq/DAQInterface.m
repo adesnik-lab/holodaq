@@ -24,6 +24,8 @@ classdef DAQInterface < Interface
                 type = 'digital';
                 case regexp(obj.channel, 'a[i,o][0-9]')
                 type = 'voltage';
+                case regexp(obj.channel, 'ctr[0-9]')
+                    type = 'Position';
                 otherwise
                     disp('wat');
             end

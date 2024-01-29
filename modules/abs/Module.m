@@ -18,6 +18,9 @@ classdef Module < matlab.mixin.Heterogeneous & handle
                 c.prepare();
             end
         end
+
+        function save(obj)
+        end
         
         function out = extract(obj, query)
             % recursively find all objects, then query

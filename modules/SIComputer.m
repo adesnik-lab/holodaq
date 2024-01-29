@@ -8,7 +8,7 @@ classdef SIComputer < Module
     methods
         function obj = SIComputer(trigger, flip)
             obj.trigger = trigger;
-            obj.flip = flip;    
+            obj.flip = flip; 
             obj.controller = HolochatInterface('daq');
         end 
 

@@ -12,9 +12,7 @@ classdef Input < Component
         end
 
         function read(obj)
-            tic
             obj.data = obj.interface.get_data();
-            tco
         end
 
         function start(obj)

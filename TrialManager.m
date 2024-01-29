@@ -66,8 +66,8 @@ classdef TrialManager < handle
             obj.dq.stop();
             % disp('ended trial')
             
-            % obj.transfer_data();
-            % obj.save_data();
+            obj.transfer_data();
+            obj.save_data();
 
             % cleanup?
             obj.cleanup();
@@ -92,6 +92,20 @@ classdef TrialManager < handle
         function transfer_data(obj)
             for r = obj.modules.extract('Reader')
                 r.read();
+            end
+        end
+
+
+        function save_data2(obj)
+            exp = struct();
+            for m = obj.modules.contains('Reader')
+                temp = m.save();
+                % concatenate the structs here ok
+            end
+            obj.saver.store(exp)
+
+            if obj.stream_to_disk
+                obj.saver.save('append')
             end
         end
 
