@@ -1,7 +1,7 @@
 function s = getDefaults()
 
 % nidaq configs
-s.daqrate = 50000;%20000;
+s.daqrate = 20000;%20000;
 s.device = 'Dev1';
 
 % paths

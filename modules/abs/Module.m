@@ -19,7 +19,7 @@ classdef Module < matlab.mixin.Heterogeneous & handle
             end
         end
 
-        function save(obj)
+        function get_data(obj)
         end
         
         function out = extract(obj, query)

@@ -3,27 +3,36 @@ classdef TrialManager < handle
     properties
         modules
         dq
-        trial_length
-        saver
-        save_path
-        
-        stream_to_disk
+        trial_length        
     end
 
     methods
         function obj = TrialManager(dq)
             obj.dq = dq;
             obj.modules = ModuleManager();
-            obj.stream_to_disk = false;
-            % obj.params.stream = params.stream;
         end
         
         function initialize(obj)
             obj.modules.call('initialize');
-            obj.saver = Saver(obj.save_path);
+        end
+
+        function out = run_trial(obj, time)
+            if nargin < 2 || isempty(time)
+                time = false;
+            end
+
+            obj.prepare(time);
+            obj.start_trial(time);
+            out = obj.end_trial(time);
         end
     
-        function prepare(obj)
+        function prepare(obj, time)
+            if nargin < 2 || isempty(time)
+                time = 0;
+            end
+            if time
+                tic;
+            end
             sweep = [];
             obj.modules.call('prepare'); % remove if breaks
 
@@ -33,21 +42,19 @@ classdef TrialManager < handle
                     case 'DAQOutput'
                         o.interface.set_trial_length(obj.trial_length);
                         sweep = cat(2, sweep, o.interface.generate_sweep());
-                    case 'MSocketInterface'
-                        % o.set_data*('heuhcoreuh')
                 end
             end
-
-            for t = obj.modules.extract('Controller') % let's track how long this takes...
-                if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
-                    t.interface.send(t.data);
-                end
-            end
-
             obj.dq.preload(sweep);
+            % obj.dq.start();
+            if time
+                fprintf('Preparing took %0.02fs\n', toc)
+            end
         end
 
-        function start_trial(obj)
+        function start_trial(obj, time)
+            if nargin < 2 || isempty(time)
+                time = false;
+            end
             % cleanup_obj = onCleanup(@obj.cleanup); % so pretty much anywhere we'll catch this
             % disp('started trial')
             % for t = obj.modules.extract('Controller') % let's track how long this takes...
@@ -55,31 +62,41 @@ classdef TrialManager < handle
             %         t.io.send(t.data);
             %     end
             % end
+            if time
+                tic
+            end
+            % obj.dq.write(obj.sweep);
             obj.dq.start(); % because this is now running in background, we can call other stuff
- 
+            if time
+                fprintf('Starting took %0.02fs\n', toc)
+            end
         end
 
-        function end_trial(obj)
+        function out = end_trial(obj, time)
+            if nargin < 2 || isempty(time)
+                time = false;
+            end
             cleanup_obj = onCleanup(@obj.cleanup);
             % read all data in
             obj.wait()
+            if time
+                tic
+            end
             obj.dq.stop();
-            % disp('ended trial')
             
-            obj.transfer_data();
-            obj.save_data2();
+            out = obj.transfer_data();
+            % obj.save_data2();
 
             % cleanup?
             obj.cleanup();
+            if time
+                fprintf('Finishing took %0.02fs\n', toc)
+            end
         end
 
-        function finish(obj)
-            obj.set_trial_length(50); %supershort
-            obj.modules.SIComputer.controller.set('done'); % might error here if you don't have an SI Computer but ok
-            obj.prepare();
-            obj.start_trial();
-            obj.end_trial();
-        end
+        % function finish(obj)
+        %     obj.saver.save('all');
+        % end
 
         function cleanup(obj)
             for p = obj.modules.extract('PulseOutput')
@@ -89,25 +106,20 @@ classdef TrialManager < handle
             obj.dq.flush();
         end
 
-        function transfer_data(obj)
+        function out = transfer_data(obj)
             for r = obj.modules.extract('Reader')
                 r.read();
             end
+            out = obj.modules.call('get_data');
         end
 
-
-        function save_data2(obj)
-            exp = struct();
-            for m = obj.modules.contains('Reader')
-                temp = m.save();
-                % concatenate the structs here ok
-            end
-            obj.saver.store(exp)
-
-            if obj.stream_to_disk
-                obj.saver.save('append')
-            end
-        end
+        % function save_data2(obj)
+        %     exp = obj.modules.call('get_data');
+        %     obj.saver.store(exp)
+        %     % if obj.stream_to_disk
+        %     %     obj.saver.save('append')
+        %     % end
+        % end
 
         function save_data(obj)
             exp = struct();
@@ -144,7 +156,7 @@ classdef TrialManager < handle
         end
         
         function wait(obj)
-            while obj.dq.Running()
+            while obj.dq.NumScansQueued > 0
                 drawnow();
             end
         end

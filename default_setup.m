@@ -28,3 +28,5 @@ pause(0.1)
 fprintf('OK.\n')
 
 power_calibrations;
+
+tm = TrialManager(dq);

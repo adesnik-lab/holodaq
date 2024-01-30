@@ -1,34 +1,72 @@
 classdef Saver < handle
-    
+    properties (Constant = true)
+        base_path = 'K://KKS//stim-data'
+    end
+
     properties
         data = [];
 
-        save_path
+
         matfile_handle
 
-        description
-        name
+        mouse char
+        epoch double
+        experiment char
+
+        stream_to_disk = false;
     end
-    
+
     methods
-        function obj = Saver(save_path)
-            obj.set_save_path(save_path);
-            % can we get the object name here?
+        function obj = Saver(mouse, epoch, experiment)
+            obj.mouse = mouse;
+            obj.epoch = epoch;
+            obj.experiment = experiment;
+            obj.set_save_path(obj.derive_save_path())
+        end
+
+        function out = derive_save_path(obj)
+            out = fullfile(obj.base_path, obj.date, sprintf('%s_%d%s.mat', obj.mouse, obj.epoch, obj.experiment));
         end
 
         function set_save_path(obj, save_path)
-            obj.save_path = save_path;
-            % check exists
-            if isfile(obj.save_path)
-                fprintf('Warning: Data save file already exists, appending...')
+            if exist(save_path, 'file')
+                switch input('Save file already exists, overwrite? (y/n):', 's')
+                    case 'y'
+                    case 'n'
+                        error('Did you forget to change your epoch?')
+                end
             end
-            obj.matfile_handle = matfile(obj.save_path, 'Writable', true);
+            fprintf('Saving data in ''%s''\n', save_path);
+            if ~exist(fileparts(save_path), 'dir')
+                mkdir(fileparts(save_path))
+            end
+            obj.matfile_handle = matfile(save_path, 'Writable', true);
+        end
+
+        function add(obj, data, name)
+            obj.matfile_handle.(name) = data;
+        end
+
+        function set_mouse(obj, mouse)
+            obj.mouse = mouse;
+        end
+
+        function set_epoch(obj, epoch)
+            obj.epoch = epoch;
+        end
+
+        function set_experiment(obj, experiment)
+            obj.experiment = experiment;
+        end
+
+        function out = date(obj)
+            out = string(datetime('today', 'Format', 'yyMMdd'));
         end
 
         function store(obj, data)
             obj.data = cat(2, obj.data, data); % append the current data present in the reader
         end
-            
+
         function view(obj)
             n_trials = length(obj.data);
             trial_lengths = cellfun(@length, obj.data);

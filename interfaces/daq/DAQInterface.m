@@ -35,6 +35,13 @@ classdef DAQInterface < Interface
             n = sum(cellfun(@(x) strcmp(x, 'OutputOnly'), {obj.io.Channels.MeasurementType}));
         end
 
+
+        function ch = get_channel(obj)
+            chids = {obj.io.Channels.ID};
+            idx =  find(cellfun(@(x) strcmp(x, obj.channel), chids)); 
+            ch = obj.io.Channels(idx);
+        end
+
         function initialize(obj)
         end
 

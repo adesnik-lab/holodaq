@@ -7,7 +7,7 @@ classdef SLMComm < Module
     methods
         function obj = SLMComm(trigger, flip)
             obj.trigger = trigger;
-            obj.flip = flip; 
+            % obj.flip = flip; 
         end
 
         function set_flip(obj, t)
