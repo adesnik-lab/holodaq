@@ -67,7 +67,7 @@ classdef TrialManager < handle
             % disp('ended trial')
             
             obj.transfer_data();
-            obj.save_data();
+            obj.save_data2();
 
             % cleanup?
             obj.cleanup();
