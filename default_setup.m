@@ -2,8 +2,8 @@ addpath(genpath('.'))
 addpath('K:\')
 addpath(genpath('C:\Users\holos\Documents\_code'))
 loc = FrankenScopeRigFile();
+warning('off', 'MATLAB:structOnObject');
 
-fprintf('Starting daq...\r')
 
 fprintf('Loading defaults... ')
 setup = getDefaults();

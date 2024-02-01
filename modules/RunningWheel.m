@@ -2,7 +2,7 @@ classdef RunningWheel < Module
     properties
         wheel
         init_ct = (2^32)/2;
-        radius = 0.1; % in m
+        radius = 0.1524; % in m
         cpr = 360; % counts per rev
     end
 
@@ -15,7 +15,7 @@ classdef RunningWheel < Module
         function out = get_data(obj)
             out = struct();
             deg = obj.wheel.reader.data * (360/obj.cpr);
-            speed = movmean(obj.deg2speed(deg), 100);
+            speed = movmean(obj.deg2speed(deg), 0.01 * obj.wheel.interface.sample_rate);
             out.(obj.wheel.name(~isspace(obj.wheel.name))) = speed;
         end
 
@@ -24,7 +24,6 @@ classdef RunningWheel < Module
             angular_speed = diff(deg) * obj.wheel.interface.sample_rate; % make sure in s
             speed = angular_speed * ((2 * obj.radius * pi) / 360);
         end
-
         function prepare(obj)
             prepare@Module(obj); 
             ch = obj.wheel.interface.get_channel();

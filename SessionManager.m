@@ -17,12 +17,12 @@ classdef SessionManager < handle
             obj.epoch = epoch;
             obj.experiment = experiment;
             obj.tm = tm;
+            obj.saver = Saver(mouse, epoch, experiment);
         end
 
         function start_session(obj)
             fprintf('Starting session...\n')
             obj.tm.initialize();
-            obj.saver = Saver(obj.mouse, obj.epoch, obj.experiment);
         end
         
         function end_session(obj)

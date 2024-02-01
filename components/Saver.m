@@ -25,15 +25,20 @@ classdef Saver < handle
         end
 
         function out = derive_save_path(obj)
-            out = fullfile(obj.base_path, obj.date, sprintf('%s_%d%s.mat', obj.mouse, obj.epoch, obj.experiment));
+            out = fullfile(obj.base_path, obj.date, sprintf('%s_%s_%d%s.mat', obj.date, obj.mouse, obj.epoch, obj.experiment));
         end
 
         function set_save_path(obj, save_path)
             if exist(save_path, 'file')
-                switch input('Save file already exists, overwrite? (y/n):', 's')
-                    case 'y'
-                    case 'n'
-                        error('Did you forget to change your epoch?')
+                while true
+                    switch input('Save file already exists, overwrite? (y/n):', 's')
+                        case 'y'
+                            break
+                        case 'n'
+                            error('Did you forget to change your epoch?')
+                        otherwise
+                            continue
+                    end
                 end
             end
             fprintf('Saving data in ''%s''\n', save_path);
