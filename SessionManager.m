@@ -12,7 +12,8 @@ classdef SessionManager < handle
     end
     
     methods
-        function obj = SessionManager(tm, mouse, epoch, experiment)
+        function obj = SessionManager(tm, experiment)
+            [mouse, epoch] = obj.query();
             obj.mouse = mouse;
             obj.epoch = epoch;
             obj.experiment = experiment;
@@ -23,6 +24,12 @@ classdef SessionManager < handle
         function start_session(obj)
             fprintf('Starting session...\n')
             obj.tm.initialize();
+        end
+
+        function [mouse, epoch] = query(obj)
+            answer = inputdlg({'Mouse', 'Epoch #', 'Session information'});
+            mouse = answer{1};
+            epoch = str2num(answer{2});
         end
         
         function end_session(obj)
