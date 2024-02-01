@@ -1,4 +1,4 @@
-classdef AnalogPulseOuput < PulseOutput
+classdef AnalogPulseOuput < PulseGenerator
 
     properties (Dependent)
         pulse_lengths_samples

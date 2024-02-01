@@ -29,6 +29,7 @@ classdef Saver < handle
         end
 
         function set_save_path(obj, save_path)
+            fprintf('Saving data in ''%s''\n', save_path);
             if exist(save_path, 'file')
                 while true
                     switch input('Save file already exists, overwrite? (y/n):', 's')
@@ -41,10 +42,11 @@ classdef Saver < handle
                     end
                 end
             end
-            fprintf('Saving data in ''%s''\n', save_path);
+
             if ~exist(fileparts(save_path), 'dir')
                 mkdir(fileparts(save_path))
             end
+
             obj.matfile_handle = matfile(save_path, 'Writable', true);
         end
 

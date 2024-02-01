@@ -6,13 +6,15 @@ classdef DAQOutput < DAQInterface
     methods
         function obj = DAQOutput(dq, channel)
             obj = obj@DAQInterface(dq, channel);
-            obj.pulse = PulseOutput(obj.sample_rate);
         end
 
         function initialize(obj)
             ch = obj.io.addoutput(obj.dev, obj.channel, obj.type);
             if strcmp(obj.type, 'voltage')
                 ch.TerminalConfig = 'SingleEnded';
+                obj.pulse = SweepGenerator(obj.sample_rate);
+            else
+                obj.pulse = PulseGenerator(obj.sample_rate);
             end
         end
 
@@ -24,8 +26,15 @@ classdef DAQOutput < DAQInterface
         end
 
         function set(obj, val)
-            obj.set_pulse(val(:, 1), val(:, 2), val(:, 3));
+            obj.pulse.set(val)
         end
+        % function set(obj, val)
+        %     obj.set_pulse(val(:, 1), val(:, 2));
+        % end
+
+        % function feed(obj, val)
+
+        % end
 
         function validated = validate(obj, val)
             validated = false;
@@ -37,24 +46,22 @@ classdef DAQOutput < DAQInterface
         function out = get_data(obj)
             out.starts = obj.pulse.pulse_starts;
             out.lengths = obj.pulse.pulse_lengths;
-            out.values = obj.pulse.pulse_value;
         end
 
-        function set_pulse(obj, start, duration, value)
+        function set_pulse(obj, start, duration)
             if nargin < 3 || isempty(duration)
                 duration = NaN(1, length(start));
             end
-            obj.pulse.set_pulse(start, duration, value);
+            obj.pulse.set(start, duration);
         end
 
         function sweep = generate_sweep(obj)
             % generate the pulse and get it ready to go
-            sweep = obj.pulse.generate_sweep();
-            sweep = obj.pulse.add_pulse(sweep);
+            sweep = obj.pulse.generate();
         end
 
-        function set_trial_length(obj, sweep_length)
-            obj.pulse.sweep_length = sweep_length;
+        function set_trial_length(obj, trial_length)
+            obj.pulse.set_trial_length(trial_length);
         end
 
     end

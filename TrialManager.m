@@ -37,12 +37,17 @@ classdef TrialManager < handle
             obj.modules.call('prepare'); % remove if breaks
 
             % prepare daq sweeps
-            for o = obj.modules.extract('Output')
-                switch class(o.interface)
-                    case 'DAQOutput'
-                        o.interface.set_trial_length(obj.trial_length);
-                        sweep = cat(2, sweep, o.interface.generate_sweep());
-                end
+            % for o = obj.modules.extract('Output') % can we directly get DAQOutputs?
+            %     switch class(o.interface)
+            %         case 'DAQOutput'
+            %             o.interface.set_trial_length(obj.trial_length);
+            %             sweep = cat(2, sweep, o.interface.generate_sweep());
+            %     end
+            % end
+            % try this
+            for o = obj.modules.extract('DAQOutput')
+                o.set_trial_length(obj.trial_length);
+                sweep = cat(2, sweep, o.generate_sweep());
             end
             obj.dq.preload(sweep);
             % obj.dq.start();
@@ -99,7 +104,7 @@ classdef TrialManager < handle
         % end
 
         function cleanup(obj)
-            for p = obj.modules.extract('PulseOutput')
+            for p = obj.modules.extract('Generator')
                 p.flush();
             end
             obj.dq.stop();
