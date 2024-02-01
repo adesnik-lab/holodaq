@@ -2,17 +2,17 @@ addpath(genpath('.'))
 addpath('K:\')
 addpath(genpath('C:\Users\holos\Documents\_code'))
 loc = FrankenScopeRigFile();
+
 warning('off', 'MATLAB:structOnObject');
 
 
 fprintf('Loading defaults... ')
-setup = getDefaults();
 pause(0.1)
 fprintf('OK.\n')
 
 fprintf('Making MATLAB NIDAQ object... ')
 dq = daq('ni');
-dq.Rate = setup.daqrate;
+dq.Rate = 20000;
 pause(0.1)
 fprintf('OK.\n')
 
