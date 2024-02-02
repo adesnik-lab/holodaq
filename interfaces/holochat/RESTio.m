@@ -15,20 +15,16 @@ classdef RESTio < handle
             obj.ops = weboptions('MediaType', 'application/json');
         end
 
-        function send(obj, data, target, sender)
-            % try
-                recv = webwrite(obj.get_url('msg', target), obj.encode(data, sender), obj.ops);
-            % catch ME
-            %     warning(ME.message);
-            % end
+        function post(obj, data, target, sender, path)
+                recv = webwrite(obj.get_url(path, target), obj.encode(data, sender), obj.ops);
             if obj.debug
                 disp(recv)
             end
         end
 
-        function recv = scan(obj, target)
+        function recv = scan(obj, target, path)
             try
-                recv = webread(obj.get_url('msg', target), obj.ops); % cause error 404 when nothing
+                recv = webread(obj.get_url(path, target), obj.ops); % cause error 404 when nothing
             catch ME
                 if ~strcmp(ME.identifier, 'MATLAB:webservices:HTTP404StatusCodeError')
                     warning(ME.message)
@@ -44,11 +40,10 @@ classdef RESTio < handle
             end
         end
 
-        function [out, recv] = read(obj, target, timeout)
-            tic
+        function [out, recv] = read(obj, target, timeout, path)
             recv = [];
             while isempty(recv) && toc < timeout
-                recv = scan(obj, target);
+                recv = scan(obj, target, path);
             end
 
             out = obj.decode(recv);
@@ -56,10 +51,6 @@ classdef RESTio < handle
             if obj.debug
                 disp(recv)
             end
-        end
-
-        function config(obj, data, target)
-            webwrite(obj.get_url('config', target), obj.encode(data), obj.ops);
         end
 
         function flush(obj, target)

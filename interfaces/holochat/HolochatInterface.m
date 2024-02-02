@@ -23,7 +23,15 @@ classdef HolochatInterface < Interface
         end
 
         function send(obj, data, target)
-            obj.io.send(data, target, obj.id);
+            obj.io.post(data, target, obj.id, 'msg');
+        end
+
+        function set_config(obj, data, target)
+            obj.io.post(data, target, obj.id, 'config');
+        end
+
+        function get_config(obj, target)
+            obj.io.read(target, 30, 'config');
         end
 
         function out = read(obj, timeout, target)
@@ -35,7 +43,7 @@ classdef HolochatInterface < Interface
                 target = obj.id;
             end
             
-            out = obj.io.read(target, timeout);
+            out = obj.io.read(target, timeout, 'msg');
         end
 
         function flush(obj)

@@ -1,13 +1,11 @@
 classdef HoloComputer < Module
     properties
-        controller
-
         sequence
     end
 
     methods
         function obj = HoloComputer()
-            obj.controller = HolochatInterface('daq');
+            obj.controller = Controller(HolochatInterface('daq'), 'holo');
         end
 
         function set_sequence(obj, sequence)
@@ -15,7 +13,7 @@ classdef HoloComputer < Module
         end
 
         function prepare(obj)
-            obj.controller.send(obj.sequence, 'holo');
+            obj.controller.send(obj.sequence);
             obj.prepare@Module();
         end
 
@@ -24,8 +22,7 @@ classdef HoloComputer < Module
             if ~isfield(holoRequest, 'roiWeights')
                 holoRequest.roiWeights = ones(1,size(holoRequest.targets,1));
             end
-            obj.controller.send(holoRequest, 'holo');
-            % mssend(control, holoRequest);
+            obj.controller.send(holoRequest);
             holoRequest.DE_list = [];
             fprintf('Waiting for DE...')
             while isempty(holoRequest.DE_list)

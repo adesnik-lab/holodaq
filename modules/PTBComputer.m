@@ -3,7 +3,6 @@ classdef PTBComputer < Module
         trigger
         stim_onoff
         stim_id
-        controller
 
         delay = 0
     end
@@ -13,7 +12,7 @@ classdef PTBComputer < Module
             obj.trigger = trigger;
             obj.stim_onoff = stim_onoff;
             obj.stim_id = stim_id;
-            obj.controller = HolochatInterface('daq');
+            obj.controller = Controller(HolochatInterface('daq'), 'ptb');;
         end
 
         function set_delay(obj, delay)
@@ -21,11 +20,11 @@ classdef PTBComputer < Module
         end
 
         function send_stim_idx(obj, idx)
-            obj.controller.send(idx, 'ptb');
+            obj.controller.send(idx);
         end
 
         function go(obj)
-            obj.controller.send('go', 'ptb');
+            obj.controller.send('go');
             pause(1);
         end
         

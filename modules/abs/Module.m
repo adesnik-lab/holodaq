@@ -1,6 +1,7 @@
 classdef Module < matlab.mixin.Heterogeneous & handle
     properties
         enabled = true;
+        controller
     end
     
     methods

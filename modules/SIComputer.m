@@ -2,14 +2,13 @@ classdef SIComputer < Module
     properties
         trigger
         flip
-        controller
     end
     
     methods
         function obj = SIComputer(trigger, flip)
             obj.trigger = trigger;
             obj.flip = flip; 
-            obj.controller = HolochatInterface('daq');
+            obj.controller = Controller(HolochatInterface('daq'), 'si');
         end 
 
         function prepare(obj)

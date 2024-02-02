@@ -9,6 +9,7 @@ classdef SessionManager < handle
         mouse
         epoch
         experiment
+        controller
     end
     
     methods
@@ -19,11 +20,22 @@ classdef SessionManager < handle
             obj.experiment = experiment;
             obj.tm = tm;
             obj.saver = Saver(mouse, epoch, experiment);
+            
+            obj.controller = HolochatInterface('daq');
         end
 
         function start_session(obj)
             fprintf('Starting session...\n')
+            session_info.mouse = obj.mouse;
+            session_info.epoch = obj.epoch;
+            session_info.experiment = obj.experiment;
+
+            % initialize the trial manager and daq
             obj.tm.initialize();
+
+
+            obj.tm.modules.extract('controller')
+            keyboard()
         end
 
         function [mouse, epoch] = query(obj)
@@ -32,6 +44,7 @@ classdef SessionManager < handle
             epoch = str2num(answer{2});
         end
         
+
         function end_session(obj)
             fprintf('Ending session.\n')
             obj.saver.save('all');
