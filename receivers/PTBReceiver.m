@@ -1,6 +1,6 @@
 classdef PTBReceiver < Receiver
     properties
-        expts
+        expts struct
     end
 
     methods
@@ -10,14 +10,8 @@ classdef PTBReceiver < Receiver
         end
 
         function run(obj)
-            % get info from the config here and do something...
-            obj.expts.(fanocon)
-            switch obj.config.experiment
-                case 'fanocon'
-                    % run some kinda thing here
-                case 'oricon'
-                    % run something else here...
-            end
+            % ex: expts.fanocon = @fanofactor_contrast_stimulus
+            feval(obj.expts.(obj.config.experiment));
         end
     end
 end

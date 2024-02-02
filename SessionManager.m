@@ -34,7 +34,7 @@ classdef SessionManager < handle
             obj.tm.initialize();
 
 
-            obj.tm.modules.extract('controller')
+            obj.tm.modules.extract('Controller')
             keyboard()
         end
 
