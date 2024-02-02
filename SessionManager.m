@@ -39,7 +39,7 @@ classdef SessionManager < handle
         end
 
         function [mouse, epoch] = query(obj)
-            answer = inputdlg({'Mouse', 'Epoch #', 'Session information'});
+            answer = inputdlg({'Mouse', 'Epoch #'}, 'Session information');
             mouse = answer{1};
             epoch = str2num(answer{2});
         end

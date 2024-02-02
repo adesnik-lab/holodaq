@@ -49,6 +49,7 @@ classdef TrialManager < handle
                 o.set_trial_length(obj.trial_length);
                 sweep = cat(2, sweep, o.generate_sweep());
             end
+
             obj.dq.preload(sweep);
             % obj.dq.start();
             if time

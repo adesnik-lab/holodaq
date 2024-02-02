@@ -15,6 +15,7 @@ classdef Output < Component
             if obj.interface.validate(input)
                 obj.interface.set(input);
             else
+                keyboard();
                 fprintf('Invalid input, nothing set \n');
             end
         end

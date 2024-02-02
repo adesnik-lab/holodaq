@@ -15,7 +15,7 @@ classdef PulseGenerator < Generator
 
         function sweep = generate(obj)
             sweep = zeros(obj.to_samples(obj.sweep_length), 1);
-            sweep = add_pulse(sweep);
+            sweep = obj.add_pulse(sweep);
         end
     end
 
@@ -30,9 +30,8 @@ classdef PulseGenerator < Generator
         end
 
         function set(obj, in)
-            keyboard()
-            start = in(1, :);
-            duration = in(2, :);
+            start = in(:, 1);
+            duration = in(:, 2);
             duration = repmat(duration, [1, length(start)/length(duration)]);
             for t = 1:length(start)
                 obj.pulse_starts = [obj.pulse_starts, start(t)];
