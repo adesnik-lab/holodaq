@@ -4,14 +4,19 @@ classdef HolochatInterface < Interface
     end
 
     methods
-        function obj = HolochatInterface(id, server)
+        function obj = HolochatInterface(id, server, reset)
             if nargin < 2 || isempty(server)
                 server = 'http://136.152.58.120:8000';
             end
+
+            if nargin < 3 || isempty(reset)
+                reset = true;
+            end
             obj.id = id;
             obj.io = RESTio(server);
-
-            obj.io.reset(obj.id);
+            if reset
+                obj.io.reset(obj.id);
+            end
         end
         
         function initialize(obj)
