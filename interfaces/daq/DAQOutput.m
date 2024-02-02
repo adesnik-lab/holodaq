@@ -38,7 +38,7 @@ classdef DAQOutput < DAQInterface
 
         function validated = validate(obj, val)
             validated = false;
-            if isa(val, 'numeric') && size(val, 2) == 3
+            if isa(val, 'numeric')% && size(val, 2) == 2
                 validated = true;
             end
         end

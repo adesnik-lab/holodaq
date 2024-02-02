@@ -21,7 +21,11 @@ classdef SweepGenerator < Generator
         end
 
         function out = generate(obj)
-            out = obj.sweep;
+            if isempty(obj.sweep)
+                out = zeros(obj.to_samples(obj.sweep_length), 1);
+            else
+                out = obj.sweep;
+            end
         end
 
     end

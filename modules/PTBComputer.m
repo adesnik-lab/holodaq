@@ -1,18 +1,14 @@
 classdef PTBComputer < Module
     properties
         trigger
-        stim_onoff
-        stim_id
         controller
 
         delay = 0
     end
     
     methods
-        function obj = PTBComputer(trigger, stim_onoff, stim_id)
+        function obj = PTBComputer(trigger)
             obj.trigger = trigger;
-            obj.stim_onoff = stim_onoff;
-            obj.stim_id = stim_id;
             obj.controller = HolochatInterface('daq');
         end
 

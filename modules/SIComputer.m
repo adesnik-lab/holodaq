@@ -13,7 +13,7 @@ classdef SIComputer < Module
         end 
 
         function prepare(obj)
-            obj.trigger.set([1, 25, 1]);
+            obj.trigger.set([1, 25]);
             obj.prepare@Module(); % how do we call superclass methods again?
         end
     end

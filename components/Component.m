@@ -1,6 +1,5 @@
 classdef Component < matlab.mixin.Heterogeneous & handle
     properties
-        reader
         interface
         name
     end
@@ -8,7 +7,6 @@ classdef Component < matlab.mixin.Heterogeneous & handle
     methods
         function obj = Component(interface, name)
             obj.interface = interface;
-            obj.reader = Reader(interface);
             obj.name = name;
         end
 
