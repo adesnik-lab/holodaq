@@ -36,6 +36,7 @@ classdef SessionManager < handle
 
             for c = obj.tm.modules.extract('Controller')
                 c.set_config(session_info);
+                c.send('go');
             end
         end
 
