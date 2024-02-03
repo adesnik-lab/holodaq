@@ -11,12 +11,14 @@ classdef SIReceiver < Receiver
 
         function run(obj)
             % get info from config
+            % ABORT HERE
             mouse = obj.config.mouse;
             epoch = obj.config.epoch;
             expt = obj.config.experiment;
 
             obj.hSI = evalin('base', 'hSI');
             obj.hSICtl = evalin('base', 'hSICtl');
+
             obj.hSI.extTrigEnable = 1;
             obj.hSI.hChannels.loggingEnable = 1;
             obj.hSI.hScan2D.logFilePath = sprintf('D:/%s/%s/%d%s', datetime('now', 'format', 'yyMMdd'), mouse, epoch, expt);
