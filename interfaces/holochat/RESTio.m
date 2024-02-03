@@ -29,8 +29,7 @@ classdef RESTio < handle
                 if ~strcmp(ME.identifier, 'MATLAB:webservices:HTTP404StatusCodeError')
                     warning(ME.message)
                 end
-                disp(ME);
-
+                
                 recv = [];
 
                 return

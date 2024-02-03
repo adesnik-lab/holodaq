@@ -5,10 +5,8 @@ classdef SIReceiver < Receiver
     end
 
     methods
-        function obj = SIReceiver(hSI, hSICtl)
+        function obj = SIReceiver()
             obj = obj@Receiver('si');
-            obj.hSI = hSI;
-            obj.hSICtl = hSICtl;
         end
 
         function run(obj)
@@ -17,7 +15,8 @@ classdef SIReceiver < Receiver
             epoch = obj.config.epoch;
             expt = obj.config.experiment;
 
-               
+            obj.hSI = evalin('base', 'hSI');
+            obj.hSICtl = evalin('base', 'hSICtl');
             obj.hSI.extTrigEnable = 1;
             obj.hSI.hChannels.loggingEnable = 1;
             obj.hSI.hScan2D.logFilePath = sprintf('D:/%s/%s/%d%s', datetime('now', 'format', 'yyMMdd'), mouse, epoch, expt);
@@ -25,21 +24,30 @@ classdef SIReceiver < Receiver
             obj.hSI.hScan2D.logFileCounter = 1;
             obj.hSICtl.updateView();
 
-            obj.hSI.startGrab();
-            % set trigger
-            % set filename
-            % start loop
-            % enable callbacks?
-            
+            obj.callback(expt);
+
+            obj.hSI.startLoop();      
+            disp('Started!')
         end
 
         function callback(obj, expt)
+            obj.disable_all_user_functions();
             switch expt
                 case 'oricon'
                     % set the oricon callback
-                otherwise
-                    % turn off callbacks
+                    obj.enable_user_function('ori_contrast_callback');
             end
+        end
+
+        function disable_all_user_functions(obj)
+            for ii = 1:numel(obj.hSI.hUserFunctions.userFunctionsCfg)
+                obj.hSI.hUserFunctions.userFunctionsCfg(ii).Enable = 0;
+            end
+        end
+
+        function enable_user_function(obj, user_function)
+            idx = cellfun(@(x) strcmp(x, user_function), {obj.hSI.hUserFunctions.userFunctionsCfg.UserFcnName});
+            obj.hSI.hUserFunctions.userFunctionsCfg(idx).Enable = 1;
         end
     end
 end
