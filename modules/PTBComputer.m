@@ -1,7 +1,6 @@
 classdef PTBComputer < Module
     properties
         trigger
-        controller
 
         delay = 0
     end
