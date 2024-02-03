@@ -4,14 +4,15 @@ classdef PTBReceiver < Receiver
     end
 
     methods
-        function obj = PTBReceiver(expts)
+        function obj = PTBReceiver()
             obj = obj@Receiver('ptb');
-            obj.expts = expts;
         end
 
         function run(obj)
             % ex: expts.fanocon = @fanofactor_contrast_stimulus
-            feval(obj.expts.(obj.config.experiment));
+            addpath('C:\Users\holos\OneDrive\Documents');
+            stim_database; % bad don't like itn
+            feval(stims.(obj.config.experiment));
         end
     end
 end
