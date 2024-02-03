@@ -34,8 +34,9 @@ classdef SessionManager < handle
             obj.tm.initialize();
 
 
-            obj.tm.modules.extract('Controller')
-            keyboard()
+            for c = obj.tm.modules.extract('Controller')
+                c.set_config(session_info);
+            end
         end
 
         function [mouse, epoch] = query(obj)

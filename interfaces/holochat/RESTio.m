@@ -29,21 +29,25 @@ classdef RESTio < handle
                 if ~strcmp(ME.identifier, 'MATLAB:webservices:HTTP404StatusCodeError')
                     warning(ME.message)
                 end
+                disp(ME);
 
                 recv = [];
 
                 return
             end
 
+            if strcmp(path, 'msg')
             if strcmp(recv.message_status, 'read')
                 recv = [];
+            end
             end
         end
 
         function [out, recv] = read(obj, target, timeout, path)
             recv = [];
+            tic;
             while isempty(recv) && toc < timeout
-                recv = scan(obj, target, path);
+                recv = obj.scan(target, path);
             end
 
             out = obj.decode(recv);

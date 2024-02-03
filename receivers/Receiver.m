@@ -6,8 +6,8 @@ classdef Receiver < handle
 
     methods
         function obj = Receiver(name)
-            obj.interface = HolochatInterface(name);
-            obj.config = obj.interface.get_config(name);
+            obj.interface = HolochatInterface(name, [], false);
+            obj.config = obj.interface.get_config();
             obj.run();
         end
 

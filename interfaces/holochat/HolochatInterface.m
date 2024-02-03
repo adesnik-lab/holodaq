@@ -30,20 +30,15 @@ classdef HolochatInterface < Interface
             obj.io.post(data, target, obj.id, 'config');
         end
 
-        function get_config(obj, target)
-            obj.io.read(target, 30, 'config');
+        function out = get_config(obj)
+            out = obj.io.read(obj.id, 30, 'config');
         end
 
-        function out = read(obj, timeout, target)
+        function out = read(obj, timeout)
             if nargin < 2 || isempty(timeout)
                 timeout = 5;
             end
-            
-            if nargin < 3 || isempty(target)
-                target = obj.id;
-            end
-            
-            out = obj.io.read(target, timeout, 'msg');
+            out = obj.io.read(obj.id, timeout, 'msg');
         end
 
         function flush(obj)

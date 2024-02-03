@@ -11,12 +11,15 @@ classdef Controller < Component
             obj.interface.send(data, obj.name);
         end
 
-        function read(obj)
-
+        function out = read(obj)
+            out = obj.interface.read();
         end
 
-        function config(obj, data)
-            obj.interface.config(data, obj.name);
+        function set_config(obj, data)
+            obj.interface.set_config(data, obj.name);
+        end
+
+        function get_config(obj)
         end
     end
 end
