@@ -28,13 +28,6 @@ classdef DAQOutput < DAQInterface
         function set(obj, val)
             obj.pulse.set(val)
         end
-        % function set(obj, val)
-        %     obj.set_pulse(val(:, 1), val(:, 2));
-        % end
-
-        % function feed(obj, val)
-
-        % end
 
         function validated = validate(obj, val)
             validated = false;

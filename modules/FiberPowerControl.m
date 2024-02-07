@@ -87,7 +87,6 @@ classdef FiberPowerControl < Module
                 cycle = (1/frequency) * 1000;
                 obj.shutter.set(cat(2, [delay+1:cycle:delay+on_time]', duration * ones(n_pulses, 1)));
                 obj.shutter_params = [];
-                % obj.close_all();
             end
         end
 

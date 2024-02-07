@@ -3,7 +3,8 @@ classdef TrialManager < handle
     properties
         modules
         dq
-        trial_length        
+        trial_length     
+        sweep
     end
 
     methods
@@ -31,7 +32,7 @@ classdef TrialManager < handle
                 time = 0;
             end
             if time
-                tic;
+                t = tic;
             end
             sweep = [];
             obj.modules.call('prepare'); % remove if breaks
@@ -49,11 +50,11 @@ classdef TrialManager < handle
                 o.set_trial_length(obj.trial_length);
                 sweep = cat(2, sweep, o.generate_sweep());
             end
-
+            % obj.sweep = sweep;
             obj.dq.preload(sweep);
             % obj.dq.start();
             if time
-                fprintf('Preparing took %0.02fs\n', toc)
+                fprintf('Preparing took %0.02fs\n', toc(t))
             end
         end
 
@@ -66,16 +67,18 @@ classdef TrialManager < handle
             % for t = obj.modules.extract('Controller') % let's track how long this takes...
             %     if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
             %         t.io.send(t.data);
-            %     end
+            %     endo
+            
             % end
             if time
-                tic
+                t = tic;
             end
             % obj.dq.write(obj.sweep);
             obj.dq.start(); % because this is now running in background, we can call other stuff
+            % obj.dq.readwrite(obj.sweep);
             if time
-                fprintf('Starting took %0.02fs\n', toc)
-            end
+                fprintf('Starting took %0.02fs\n', toc(t))
+            end 
         end
 
         function out = end_trial(obj, time)
@@ -86,9 +89,9 @@ classdef TrialManager < handle
             % read all data in
             obj.wait()
             if time
-                tic
+                t = tic;
             end
-            obj.dq.stop();
+            % obj.dq.stop();
             
             out = obj.transfer_data();
             % obj.save_data2();
@@ -96,7 +99,7 @@ classdef TrialManager < handle
             % cleanup?
             obj.cleanup();
             if time
-                fprintf('Finishing took %0.02fs\n', toc)
+                fprintf('Finishing took %0.02fs\n', toc(t))
             end
         end
 
@@ -118,28 +121,6 @@ classdef TrialManager < handle
             end
             out = obj.modules.call('get_data');
         end
-
-        % function save_data2(obj)
-        %     exp = obj.modules.call('get_data');
-        %     obj.saver.store(exp)
-        %     % if obj.stream_to_disk
-        %     %     obj.saver.save('append')
-        %     % end
-        % end
-
-        function save_data(obj)
-            exp = struct();
-            for c = obj.modules.extract('Component')
-                field_name = c.name;
-                field_name(isspace(field_name)) = [];
-                exp.(field_name) = c.reader.data;
-            end
-            obj.saver.store(exp);
-
-            if obj.stream_to_disk
-                obj.saver.save('append');
-            end
-        end
         
         function set_mouse(obj, mouse)
             for c = obj.modules.extract('Controller')
@@ -153,16 +134,13 @@ classdef TrialManager < handle
             end
         end
 
-        function set_save_path(obj, save_path)
-            obj.save_path = save_path;
-        end
-
         function set_trial_length(obj, trial_length)
             obj.trial_length = trial_length;
         end
         
         function wait(obj)
             while obj.dq.NumScansQueued > 0
+                % disp(obj.dq.NumScansQueued)
                 drawnow();
             end
         end
@@ -171,17 +149,5 @@ classdef TrialManager < handle
             disp('Press any key to cleanup and continue (ctrl-c to skip cleanup)...')
 
         end
-
-        function show(obj)
-            triggers = obj.modules.contains('Triggerer');
-            module_names = properties(triggers);
-            n_modules = length(module_names);
-            figure;
-            for o = 1:n_modules
-                subplot(n_modules, 1, o)
-                plot(obj.sweep(:, o));
-                ylabel(module_names{o})
-            end
-        end  
     end
 end

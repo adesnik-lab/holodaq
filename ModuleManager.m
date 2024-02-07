@@ -42,7 +42,23 @@ classdef ModuleManager < dynamicprops
                     end
                     ct = ct + 1;
                 end
-                out = cat(2, out{:});
+                out(cellfun(@isempty, out)) = [];
+                if ~isempty(out)
+                if all(cellfun(@isstruct, out))
+                    out = obj.mergestructs(out);
+                else
+                    out = cat(2, out{:});
+                end
+                end
+         end
+
+         function out = mergestructs(obj, in)
+             out = struct();
+             for s = in
+                 for f = fieldnames(s{:})
+                    out.(f{:}) = s{:}.(f{:});
+                 end
+             end
          end
 
         
