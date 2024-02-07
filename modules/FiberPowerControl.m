@@ -70,7 +70,6 @@ classdef FiberPowerControl < Module
         
         function set_power(obj, pwr)
             obj.pwr = pwr;
-            obj.pwr2deg(pwr); % run checks
         end
 
         function set_shutter(obj, duration, on_time, frequency, delay)

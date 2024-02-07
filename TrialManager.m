@@ -3,8 +3,11 @@ classdef TrialManager < handle
     properties
         modules
         dq
-        trial_length     
+        trial_length
         sweep
+
+        trial_timer
+        trial_data
     end
 
     methods
@@ -12,9 +15,13 @@ classdef TrialManager < handle
             obj.dq = dq;
             obj.modules = ModuleManager();
         end
-        
+
         function initialize(obj)
             obj.modules.call('initialize');
+            % obj.trial_timer = timer('ExecutionMode', 'FixedRate',...
+            %     'BusyMode', 'drop',...
+            %     'Period', 1/2,...
+            %     'TimerFcn', @(~,~)obj.wait);
         end
 
         function out = run_trial(obj, time)
@@ -26,7 +33,7 @@ classdef TrialManager < handle
             obj.start_trial(time);
             out = obj.end_trial(time);
         end
-    
+
         function prepare(obj, time)
             if nargin < 2 || isempty(time)
                 time = 0;
@@ -52,7 +59,6 @@ classdef TrialManager < handle
             end
             % obj.sweep = sweep;
             obj.dq.preload(sweep);
-            % obj.dq.start();
             if time
                 fprintf('Preparing took %0.02fs\n', toc(t))
             end
@@ -62,23 +68,15 @@ classdef TrialManager < handle
             if nargin < 2 || isempty(time)
                 time = false;
             end
-            % cleanup_obj = onCleanup(@obj.cleanup); % so pretty much anywhere we'll catch this
-            % disp('started trial')
-            % for t = obj.modules.extract('Controller') % let's track how long this takes...
-            %     if isa(t.io, 'MSocketInterface') && ~isempty(t.data)
-            %         t.io.send(t.data);
-            %     endo
-            
-            % end
+
             if time
                 t = tic;
             end
-            % obj.dq.write(obj.sweep);
             obj.dq.start(); % because this is now running in background, we can call other stuff
-            % obj.dq.readwrite(obj.sweep);
+
             if time
                 fprintf('Starting took %0.02fs\n', toc(t))
-            end 
+            end
         end
 
         function out = end_trial(obj, time)
@@ -86,15 +84,13 @@ classdef TrialManager < handle
                 time = false;
             end
             cleanup_obj = onCleanup(@obj.cleanup);
+            waitfor(obj.dq, 'Running', 0); % wait until  daq is finished
             % read all data in
-            obj.wait()
             if time
                 t = tic;
             end
-            % obj.dq.stop();
             
             out = obj.transfer_data();
-            % obj.save_data2();
 
             % cleanup?
             obj.cleanup();
@@ -121,7 +117,7 @@ classdef TrialManager < handle
             end
             out = obj.modules.call('get_data');
         end
-        
+
         function set_mouse(obj, mouse)
             for c = obj.modules.extract('Controller')
                 c.mouse = mouse;
@@ -137,17 +133,6 @@ classdef TrialManager < handle
         function set_trial_length(obj, trial_length)
             obj.trial_length = trial_length;
         end
-        
-        function wait(obj)
-            while obj.dq.NumScansQueued > 0
-                % disp(obj.dq.NumScansQueued)
-                drawnow();
-            end
-        end
-    
-        function cleanup_test(obj)
-            disp('Press any key to cleanup and continue (ctrl-c to skip cleanup)...')
 
-        end
     end
 end

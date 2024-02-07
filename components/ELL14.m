@@ -45,7 +45,8 @@ classdef ELL14 < Component
         end
 
         function wait(obj)
-            obj.interface.readline(); % fast read, most things come back with something so this will lock out until ready
+            fscanf(obj.interface.io);
+            % obj.interface.readline(); % fast read, most things come back with something so this will lock out until ready
         end
 
         function deg = count2deg(obj, count)
