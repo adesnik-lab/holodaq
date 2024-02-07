@@ -18,6 +18,9 @@ classdef TrialManager < handle
 
         function initialize(obj)
             obj.modules.call('initialize');
+            % obj.dq.start();
+            % obj.dq.write(zeros([2, length(obj.modules.extract('DAQOutput'))]));
+            % obj.dq.read(0.01); % blip
             % obj.trial_timer = timer('ExecutionMode', 'FixedRate',...
             %     'BusyMode', 'drop',...
             %     'Period', 1/2,...
@@ -73,7 +76,7 @@ classdef TrialManager < handle
                 t = tic;
             end
             obj.dq.start(); % because this is now running in background, we can call other stuff
-
+            % obj.dq.readwrite(obj.sweep);
             if time
                 fprintf('Starting took %0.02fs\n', toc(t))
             end
@@ -107,7 +110,7 @@ classdef TrialManager < handle
             for p = obj.modules.extract('Generator')
                 p.flush();
             end
-            obj.dq.stop();
+            % obj.dq.stop();
             obj.dq.flush();
         end
 
