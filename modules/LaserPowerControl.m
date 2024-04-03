@@ -34,7 +34,7 @@ classdef LaserPowerControl < Module
         
         function get_pwr_fun(obj, calib, current_khz)
             scale = current_khz/calib.khz;
-            obj.pwr_fun = @(x) interp1(calib.powers*scale, calib.control, x);
+            obj.pwr_fun = @(x) interp1(calib.powers*scale, calib.degrees, x);
             % when generating this, maybe set some things..
             % obj.max_deg = calib.degrees(end);
             % obj.min_deg = calib.degrees(1);
@@ -67,7 +67,7 @@ classdef LaserPowerControl < Module
         end
         
         function set_power(obj, pwr)
-            if any(obj.pwr < obj.min_pwr) % lets us put in a vector
+            if any(pwr < obj.min_pwr) % lets us put in a vector
                 disp('Outside of range, cannot use this power'); 
                 obj.pwr = obj.min_pwr;
             end
@@ -99,6 +99,11 @@ classdef LaserPowerControl < Module
         function prepare(obj)
             % prepare hwp if power set
             if ~isempty(obj.pwr_fun)
+                val = obj.pwr_fun(obj.pwr_request);
+                if isnan(val)
+                    disp('power out of range')
+                    return
+                end
                 obj.control.set(obj.pwr_fun(obj.pwr_request));
             end
 
