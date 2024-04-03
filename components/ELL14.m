@@ -37,7 +37,7 @@ classdef ELL14 < Component
             obj.interface.writeline(obj.cmd('ho'));
         end
 
-        function moveto(obj, deg)
+        function set(obj, deg)
             count = obj.deg2count(deg);
             pos = string(dec2hex(count, 8));
             obj.interface.writeline(obj.cmd('ma', pos)); % this will backlog with stuff, but its ok
