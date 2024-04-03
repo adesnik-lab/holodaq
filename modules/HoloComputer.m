@@ -26,7 +26,7 @@ classdef HoloComputer < Module
             holoRequest.DE_list = [];
             fprintf('Waiting for DE...')
             while isempty(holoRequest.DE_list)
-                holoRequest.DE_list = obj.controller.read(0.5);
+                holoRequest.DE_list = obj.controller.read();
                 % holoRequest.DE_list=msrecv(control,.5);
             end
             fprintf('OK\n')
