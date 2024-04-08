@@ -26,16 +26,18 @@ classdef LaserModulator < Component
             % here somehow derive the trial length and get daq sweep length, then take that to create a trace
             % generate the waveform here...
             % ok let's check here...
-            % if numel(in) == 1
-            %     waveform = obj.generate_waveform(in);
-            % else
-            %     waveform = in; % then this needs to be a waveform
-            % end
-            % obj.feed_waveform(waveform);
+            if numel(in) == 1
+                waveform = obj.generate_waveform(in);
+            else
+                waveform = in; % then this needs to be a waveform
+            end
+            obj.feed_waveform(waveform);
         end
 
         function out = generate_waveform(obj, in)
-            keyboard()
+            sweep = zeros(obj.interface.pulse.sample_rate * obj.interface.pulse.sweep_length/1000, 1);
+            sweep(1:end-1) = 1;%in;
+            out = sweep;
         end
 
     end

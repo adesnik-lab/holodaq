@@ -101,7 +101,7 @@ classdef FiberPowerControl < Module
         function prepare(obj)
             % prepare hwp if power set
             if ~isempty(obj.pwr_fun)
-                obj.hwp.moveto(obj.pwr2deg(obj.pwr));
+                obj.hwp.set(obj.pwr2deg(obj.pwr));
             end
 
             % % prepare shutter if shutter set
