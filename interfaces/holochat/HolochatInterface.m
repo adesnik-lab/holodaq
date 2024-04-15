@@ -36,7 +36,7 @@ classdef HolochatInterface < Interface
 
         function out = read(obj, timeout)
             if nargin < 2 || isempty(timeout)
-                timeout = 5;
+                timeout = 10;
             end
             out = obj.io.read(obj.id, timeout, 'msg');
         end
