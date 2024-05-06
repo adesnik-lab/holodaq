@@ -21,7 +21,7 @@ classdef Saver < handle
             obj.mouse = mouse;
             obj.epoch = epoch;
             obj.experiment = experiment;
-            %obj.set_save_path(obj.derive_save_path())
+            obj.set_save_path(obj.derive_save_path())
         end
 
         function out = derive_save_path(obj)

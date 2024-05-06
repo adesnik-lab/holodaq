@@ -36,7 +36,9 @@ classdef LaserPowerControl < Module
         
         function get_pwr_fun(obj, calib, current_khz)
             scale = current_khz/calib.khz;
-            obj.pwr_fun = @(x) interp1(calib.powers(2:end)*scale, calib.degrees(2:end), x);
+            % get unique only
+            [~, u_idx] = unique(calib.powers);
+            obj.pwr_fun = @(x) interp1(calib.powers(u_idx)*scale, calib.degrees(u_idx), x);
             % when generating this, maybe set some things..
             % obj.max_deg = calib.degrees(end);
             % obj.min_deg = calib.degrees(1);
@@ -93,24 +95,24 @@ classdef LaserPowerControl < Module
             end
         end
 
-        % function power(obj, pwr)
-        %     obj.control.set(obj.(pwr));
-        %     % obj.hwp.moveto(obj.pwr2deg(pwr_request));
-        % end
+        function power(obj, pwr)
+            obj.control.set(obj.pwr_fun(pwr));
+            % obj.hwp.moveto(obj.pwr2deg(pwr_request));
+        end
 
         function prepare(obj)
-            % prepare hwp if power set
-            % if isempty(obj.control.interface.pulse.sweep)
-            % if ~isempty(obj.pwr_fun)
-            %     val = obj.pwr_fun(obj.pwr_request);
-            %     if isnan(val)
-            %         disp('power out of range')
-            %         return
-            %     end
-            % 
-            %     obj.control.set(obj.pwr_fun(obj.pwr_request));
-            % end
-            % end
+            %prepare hwp if power set
+            if isempty(obj.control.interface.pulse.sweep)
+            if ~isempty(obj.pwr_fun)
+                val = obj.pwr_fun(obj.pwr_request);
+                if isnan(val)
+                    disp('power out of range')
+                    return
+                end
+
+                obj.control.set(obj.pwr_fun(obj.pwr_request));
+            end
+            end
 
             % % prepare shutter if shutter set
             % duration = obj.shutter_params.duration; % ms

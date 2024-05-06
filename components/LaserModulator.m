@@ -36,7 +36,7 @@ classdef LaserModulator < Component
 
         function out = generate_waveform(obj, in)
             sweep = zeros(obj.interface.pulse.sample_rate * obj.interface.pulse.sweep_length/1000, 1);
-            sweep(1:end-1) = in;
+            sweep(1:end-1) = in; % always ensure the last bit is off...
             out = sweep;
         end
 
