@@ -1,4 +1,3 @@
-addpath(genpath('.'))
 addpath('K:\')
 addpath(genpath('C:\Users\holos\Documents\_code'))
 loc = FrankenScopeRigFile();

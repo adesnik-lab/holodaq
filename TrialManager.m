@@ -18,7 +18,11 @@ classdef TrialManager < handle
 
         function initialize(obj)
             obj.modules.call('initialize');
-            % obj.dq.start();
+            obj.dq.start();
+            % obj.dq.start("continuous");
+            % obj.dq.ScansAvailableFcn = @obj.transfer_data;
+            % obj.dq.ScansAvailableFcnCount = 60000;
+            % obj.dq.ScansRequiredFcn = @(x) obj.dq.write(obj.dq.UserData.data);
             % obj.dq.write(zeros([2, length(obj.modules.extract('DAQOutput'))]));
             % obj.dq.read(0.01); % blip
             % obj.trial_timer = timer('ExecutionMode', 'FixedRate',...
@@ -44,6 +48,11 @@ classdef TrialManager < handle
             if time
                 t = tic;
             end
+
+            % set all trial lengtsh first
+            for o = obj.modules.extract('DAQOutput')
+                o.set_trial_length(obj.trial_length);
+            end
             sweep = [];
             obj.modules.call('prepare'); % remove if breaks
 
@@ -57,7 +66,7 @@ classdef TrialManager < handle
             % end
             % try this
             for o = obj.modules.extract('DAQOutput')
-                o.set_trial_length(obj.trial_length);
+                % o.set_trial_length(obj.trial_length);
                 sweep = cat(2, sweep, o.generate_sweep());
             end
             % obj.sweep = sweep;
@@ -75,8 +84,9 @@ classdef TrialManager < handle
             if time
                 t = tic;
             end
-            obj.dq.start(); % because this is now running in background, we can call other stuff
-            % obj.dq.readwrite(obj.sweep);
+            obj.dq.readwrite();
+            % obj.dq.start('NumScans', obj.dq.NumScans); % because this is now running in background, we can call other stuff
+            % obj.dq.write(obj.sweep);
             if time
                 fprintf('Starting took %0.02fs\n', toc(t))
             end
@@ -87,6 +97,9 @@ classdef TrialManager < handle
                 time = false;
             end
             cleanup_obj = onCleanup(@obj.cleanup);
+            % wait for daq here...
+            
+            
             waitfor(obj.dq, 'Running', 0); % wait until  daq is finished
             % read all data in
             if time
@@ -111,7 +124,7 @@ classdef TrialManager < handle
                 p.flush();
             end
             % obj.dq.stop();
-            obj.dq.flush();
+            % obj.dq.flush();
         end
 
         function out = transfer_data(obj)

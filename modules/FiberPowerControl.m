@@ -34,7 +34,8 @@ classdef FiberPowerControl < Module
         
         function get_pwr_fun(obj, calib, current_khz)
             scale = current_khz/calib.khz;
-            obj.pwr_fun = @(x) interp1(calib.powers*scale, calib.degrees, x);
+            [~, u_idx] = unique(calib.powers);
+            obj.pwr_fun = @(x) interp1(calib.powers(u_idx)*scale, calib.degrees(u_idx), x);
             obj.max_deg = calib.degrees(end);
             obj.min_deg = calib.degrees(1);
             obj.max_pwr = calib.max_power*scale;
@@ -111,7 +112,9 @@ classdef FiberPowerControl < Module
             % delay = obj.shutter_params.delay;
             % n_pulses = round(max(1, on_time/1000 * frequency));
             % if ~isempty(n_pulses)
-            %     cycle = (1/frequency) * 1000;
+            %     cycle = (1/frequency) * )
+            % )
+            % 1000;
             %     obj.shutter.set(cat(2, [delay+1:cycle:delay+on_time]', duration * ones(n_pulses, 1), ones(n_pulses, 1)));
             %     obj.shutter_params = [];
             %     % obj.close_all();

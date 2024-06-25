@@ -59,7 +59,9 @@ classdef SessionManager < handle
 
         function end_session(obj)
             fprintf('Ending session.\n')
+            if ~isempty(obj.saver)
             obj.saver.save('all');
+            end
         end
     end
 end

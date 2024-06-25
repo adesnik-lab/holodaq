@@ -103,15 +103,15 @@ classdef LaserPowerControl < Module
         function prepare(obj)
             %prepare hwp if power set
             if isempty(obj.control.interface.pulse.sweep)
-            if ~isempty(obj.pwr_fun)
-                val = obj.pwr_fun(obj.pwr_request);
-                if isnan(val)
-                    disp('power out of range')
-                    return
-                end
+                if ~isempty(obj.pwr_fun)
+                    val = obj.pwr_fun(obj.pwr_request);
+                    if isnan(val)
+                        disp('power out of range')
+                        return
+                    end
 
-                obj.control.set(obj.pwr_fun(obj.pwr_request));
-            end
+                    obj.control.set(obj.pwr_fun(obj.pwr_request));
+                end
             end
 
             % % prepare shutter if shutter set

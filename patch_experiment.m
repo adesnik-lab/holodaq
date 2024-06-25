@@ -43,19 +43,6 @@ tm.modules.add(slm_1100);
 tm.modules.add(fpc_900);
 tm.modules.add(fpc_1100);
 tm.modules.add(patch);
-
-
-% 
-% %% below is holography setup
-% pause(0.5)
-% holoRequest = importdata(fullfile(loc.HoloRequest, 'holoRequest.mat'));
-% 
-% holoRequest.rois = {1:size(holoRequest.targets, 1)};%makeseq(holoRequest);
-% % eventually some kind of code that gathers them, rigth now one at a time?
-% 
-% % overlapping cells
-% holo.transferHR(holoRequest);
-% holo.transferHR(holoRequest);
  sm.start_session();
 
 %%
