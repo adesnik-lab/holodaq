@@ -18,7 +18,7 @@ classdef TrialManager < handle
 
         function initialize(obj)
             obj.modules.call('initialize');
-            obj.dq.start();
+            % obj.dq.start();
             % obj.dq.start("continuous");
             % obj.dq.ScansAvailableFcn = @obj.transfer_data;
             % obj.dq.ScansAvailableFcnCount = 60000;
@@ -84,8 +84,8 @@ classdef TrialManager < handle
             if time
                 t = tic;
             end
-            obj.dq.readwrite();
-            % obj.dq.start('NumScans', obj.dq.NumScans); % because this is now running in background, we can call other stuff
+            % obj.dq.readwrite();
+            obj.dq.start(); % because this is now running in background, we can call other stuff
             % obj.dq.write(obj.sweep);
             if time
                 fprintf('Starting took %0.02fs\n', toc(t))
@@ -123,8 +123,8 @@ classdef TrialManager < handle
             for p = obj.modules.extract('Generator')
                 p.flush();
             end
-            % obj.dq.stop();
-            % obj.dq.flush();
+            obj.dq.stop();
+            obj.dq.flush();
         end
 
         function out = transfer_data(obj)
