@@ -9,9 +9,9 @@ classdef Reader < matlab.mixin.Heterogeneous & handle
             obj.io = io;
         end
         
-        function read(obj)
+        function read(obj, data)
             if obj.enabled
-            obj.data = obj.io.get_data();
+                obj.data = obj.io.get_data(data);
             end
         end
 

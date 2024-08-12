@@ -1,6 +1,6 @@
 classdef Input < Component
     properties
-        data
+        % data
         reader
     end
     methods
@@ -13,9 +13,9 @@ classdef Input < Component
             obj.interface.initialize();
         end
 
-        function read(obj)
-            obj.data = obj.interface.get_data();
-        end
+        % function read(obj)
+        %     obj.data = obj.interface.get_data();
+        % end
 
         function start(obj)
         end

@@ -22,13 +22,18 @@ classdef HoloComputer < Module
             if ~isfield(holoRequest, 'roiWeights')
                 holoRequest.roiWeights = ones(1,size(holoRequest.targets,1));
             end
+            % need to turn patterns into struct
+            holoRequest.patterns = arrayfun(@struct, holoRequest.patterns);
+
             obj.controller.send(holoRequest);
-            holoRequest.DE_list = [];
-            fprintf('Waiting for DE...')
-            while isempty(holoRequest.DE_list)
-                holoRequest.DE_list = obj.controller.read();
-                % holoRequest.DE_list=msrecv(control,.5);
+            % holoRequest.DE_list = [];
+            fprintf('Waiting for Patterns...\n')
+            recv = [];
+            while isempty(recv)
+                recv = obj.controller.read();
             end
+            holoRequest.pattern_struct = recv;
+            holoRequest.patterns = arrayfun(@Pattern.from_struct, recv);
             fprintf('OK\n')
         end
     end

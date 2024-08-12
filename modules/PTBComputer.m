@@ -8,7 +8,7 @@ classdef PTBComputer < Module
     methods
         function obj = PTBComputer(trigger)
             obj.trigger = trigger;
-            obj.controller = Controller(HolochatInterface('daq'), 'ptb');;
+            obj.controller = Controller(HolochatInterface('daq'), 'ptb');
         end
 
         function set_delay(obj, delay)

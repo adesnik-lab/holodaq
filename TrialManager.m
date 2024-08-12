@@ -22,8 +22,7 @@ classdef TrialManager < handle
             % obj.dq.start("continuous");
             % obj.dq.ScansAvailableFcn = @obj.transfer_data;
             % obj.dq.ScansAvailableFcnCount = 60000;
-            % obj.dq.ScansRequiredFcn = @(x) obj.dq.write(obj.dq.UserData.data);
-            % obj.dq.write(zeros([2, length(obj.modules.extract('DAQOutput'))]));
+            obj.dq.write(zeros([5, length(obj.modules.extract('DAQOutput'))]));
             % obj.dq.read(0.01); % blip
             % obj.trial_timer = timer('ExecutionMode', 'FixedRate',...
             %     'BusyMode', 'drop',...
@@ -69,8 +68,11 @@ classdef TrialManager < handle
                 % o.set_trial_length(obj.trial_length);
                 sweep = cat(2, sweep, o.generate_sweep());
             end
-            % obj.sweep = sweep;
-            obj.dq.preload(sweep);
+            obj.sweep = sweep;
+            obj.dq.flush();
+            % clear out the DAQ by reading it
+            % obj.dq.read(obj.dq.NumScansAvailable);
+            % obj.dq.preload(sweep);
             if time
                 fprintf('Preparing took %0.02fs\n', toc(t))
             end
@@ -84,9 +86,8 @@ classdef TrialManager < handle
             if time
                 t = tic;
             end
-            % obj.dq.readwrite();
-            obj.dq.start(); % because this is now running in background, we can call other stuff
-            % obj.dq.write(obj.sweep);
+            obj.trial_data = obj.dq.readwrite(obj.sweep);
+            % obj.dq.start(); % because this is now running in background, we can call other stuff
             if time
                 fprintf('Starting took %0.02fs\n', toc(t))
             end
@@ -96,7 +97,7 @@ classdef TrialManager < handle
             if nargin < 2 || isempty(time)
                 time = false;
             end
-            cleanup_obj = onCleanup(@obj.cleanup);
+            % cleanup_obj = onCleanup(@obj.cleanup);
             % wait for daq here...
             
             
@@ -123,13 +124,13 @@ classdef TrialManager < handle
             for p = obj.modules.extract('Generator')
                 p.flush();
             end
-            obj.dq.stop();
+            % obj.dq.stop();
             obj.dq.flush();
         end
 
         function out = transfer_data(obj)
             for r = obj.modules.extract('Reader')
-                r.read();
+                r.read(obj.trial_data);
             end
             out = obj.modules.call('get_data');
         end

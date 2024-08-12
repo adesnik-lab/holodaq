@@ -1,16 +1,16 @@
-%% TO DO
+% TO DO
 
 clear
 close all
 clc
 
-%% PARAMS
+% PARAMS
 
-%%
+%
 default_setup();
 sm = SessionManager(tm, 'bleh');
 
-%% Modules
+% Modules
 si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
     Input(DAQInput(dq, 'ai0'), 'SI Frame'));
 
@@ -34,7 +34,7 @@ slm_1100 = SLMComm(Output(DAQOutput(dq, 'port0/line3'), 'SLM Trigger2'),...
 patch = Patch(Output(DAQOutput(dq, 'ao0'), 'patch output'),... 
     Input(DAQInput(dq, 'ai7'), 'patch input'));
 
-% rwheel = RunningWheel(); % add running wheel here
+rwheel = RunningWheel(); % add running wheel here
 
 tm.modules.add(si);
 tm.modules.add(holo);
@@ -45,20 +45,20 @@ tm.modules.add(fpc_1100);
 tm.modules.add(patch);
  sm.start_session();
 
-%%
+%
 n_trials = 5;
 red_power = 0.01;
 scale = 2;
 
-% randomly sample powers...
+randomly sample powers...
 clear stims
 for n = 1:n_trials
     stims{1, n} = StimInfo(1, 1, red_power, 1000, 20);
     stims{2, n} = StimInfo(1, 1, red_power*scale, 1000, 20);
 end
 
-% lastly, need to get info about stimulus
- %%
+lastly, need to get info about stimulus
+ %
 disp('Press any key to continue...')
 pause
 ct = 1;
@@ -70,13 +70,13 @@ for p = 1:n_trials
     s = [stims{:, p}];
     
     patch.control.set(randi(3, [30000, 1]));
-    % determine overall trial length
-    % trial_length = max([s(1).trial_length, s(2).trial_length]);
+    determine overall trial length
+    trial_length = max([s(1).trial_length, s(2).trial_length]);
     trial_length = 1000 + start_delay;
     tm.set_trial_length(trial_length); % stimulus on
     fprintf('This trial duration is %ds\n', trial_length/1000)
     fprintf('Red power: %0.02fmW | Blue power: %0.02fmW\n', s(1).power*1000, s(2).power*1000)
-    % optogenetic params
+    optogenetic params
     fpc_1100.set_power(s(1).power); % rigth now, power can only be a single value throughout the trial... we don't have the ability to trigger changes (yet)
     if s(1).power > 0
         for ii = 1:s.N % number of holos?
@@ -84,7 +84,7 @@ for p = 1:n_trials
         end
     end
 
-    % optogenetic params
+    optogenetic params
 
     fpc_900.set_power(s(2).power); % rigth now, power can only be a single value throughout the trial... we don't have the ability to trigger changes (yet)
     if s(2).power > 0
@@ -93,21 +93,21 @@ for p = 1:n_trials
         end
     end
 
-    % set SLM stuff?
+    set SLM stuff?
     for ii = 1:s.N
         slm_1100.set_flip(sum(s(1).total_stimulation_time(1:ii-1))+1);
         slm_900.set_flip(sum(s(2).total_stimulation_time(1:ii-1))+1);
     end
 
-    % prepare machinery
+    prepare machinery
     holo.set_sequence({s.firing_order}); % sequenc is a cell array for multislm
 
-    % run the trial
+    run the trial
     out = tm.run_trial();
     sm.saver.store(out);
     toc
     ct = ct + 1;
 end
-%%
+%
 sm.end_session();
 fprintf('All done and saved!\n')
