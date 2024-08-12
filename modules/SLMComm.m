@@ -10,8 +10,10 @@ classdef SLMComm < Module
             % obj.flip = flip; 
         end
 
-        function set_flip(obj, t)
-            obj.trigger.set([t, 5]); %standard digital trigger
+        function set(obj, s)
+            for ps = s.pulse_start
+                obj.trigger.set([ps, 0.025]); %standard digital trigger
+            end
         end
     end
 end

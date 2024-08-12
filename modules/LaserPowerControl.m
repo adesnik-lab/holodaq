@@ -69,6 +69,19 @@ classdef LaserPowerControl < Module
             % obj.hwp.moveto(obj.min_deg)
             obj.close_all()
         end
+
+        function set(obj, s)
+            % use the stiminfo to generate EVERYTHING you might need
+            % first let's unpack the stim info
+            % power control
+            % convert from power to power per cell...
+            obj.set_power(s.power/s.sequence.average_de);
+            
+            % ok... now we need to set the shutter, but it might be weird?
+            % (idk)
+            %timing now..
+            obj.set_shutter(s.pulse_start', s.pulse_duration');
+        end
         
         function set_power(obj, pwr)
             if any(pwr < obj.min_pwr) % lets us put in a vector
@@ -78,7 +91,16 @@ classdef LaserPowerControl < Module
             obj.pwr_request = pwr;
         end
 
-        function set_shutter(obj, duration, on_time, frequency, delay)
+
+        function set_shutter(obj, starts, durations)
+            % ensure column
+            if size(starts, 2) ~= 1
+                error('not a col');
+            end
+            obj.shutter.set([starts, durations])
+        end
+
+        function set_shutter_old(obj, duration, on_time, frequency, delay)
             if nargin < 5 || isempty(delay)
                 delay = 0;
             end
@@ -102,7 +124,7 @@ classdef LaserPowerControl < Module
 
         function prepare(obj)
             %prepare hwp if power set
-            if isempty(obj.control.interface.pulse.sweep)
+            % if isempty(obj.control.interface.pulse.sweep)
                 if ~isempty(obj.pwr_fun)
                     val = obj.pwr_fun(obj.pwr_request);
                     if isnan(val)
@@ -112,7 +134,7 @@ classdef LaserPowerControl < Module
 
                     obj.control.set(obj.pwr_fun(obj.pwr_request));
                 end
-            end
+            % end
 
             % % prepare shutter if shutter set
             % duration = obj.shutter_params.duration; % ms
