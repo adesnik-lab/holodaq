@@ -1,0 +1,6 @@
+SimpleHolochatReader.py
+setup.py
+holochatreader.egg-info/PKG-INFO
+holochatreader.egg-info/SOURCES.txt
+holochatreader.egg-info/dependency_links.txt
+holochatreader.egg-info/top_level.txt

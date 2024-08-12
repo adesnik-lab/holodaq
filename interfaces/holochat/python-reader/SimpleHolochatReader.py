@@ -10,6 +10,7 @@ class SimpleReader:
         # delete and clear up stuff
         requests.delete(f'{self.url}/db/{self.name}')
         self.flush()
+        
     def read(self, timeout=2):
         t = time.time()
         recv = None
