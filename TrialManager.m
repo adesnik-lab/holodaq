@@ -68,6 +68,9 @@ classdef TrialManager < handle
                 % o.set_trial_length(obj.trial_length);
                 sweep = cat(2, sweep, o.generate_sweep());
             end
+
+            % lastly, set last bit to 0
+            sweep(end, :) = 0;
             obj.sweep = sweep;
             obj.dq.flush();
             % clear out the DAQ by reading it
@@ -148,7 +151,8 @@ classdef TrialManager < handle
         end
 
         function set_trial_length(obj, trial_length)
-            obj.trial_length = trial_length;
+            obj.trial_length = trial_length; % s to ms
+            fprintf('This trial length is %0.02fs\n', trial_length)
         end
 
     end

@@ -5,7 +5,7 @@ classdef PulseGenerator < Generator
     end
 
     properties (GetAccess = private)
-        default_trig_length = 5; % ms
+        default_trig_length = 0.005; % s
     end
 
     methods
@@ -25,7 +25,7 @@ classdef PulseGenerator < Generator
                 error('Trigger longer than sweep length')
             end
             for o = 1:length(obj.pulse_starts)
-                sweep(obj.to_samples(obj.pulse_starts(o)) : obj.to_samples(obj.pulse_starts(o)) + obj.to_samples(obj.pulse_lengths(o))) = 1;
+                sweep(obj.to_samples(obj.pulse_starts(o)) + 1 : obj.to_samples(obj.pulse_starts(o)) + obj.to_samples(obj.pulse_lengths(o))) = 1;
             end
         end
 
