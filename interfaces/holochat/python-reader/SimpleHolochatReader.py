@@ -16,16 +16,27 @@ class SimpleReader:
         recv = None
         while (recv is None) and (time.time() - t) < timeout:
             recv = self.scan()
-        return self.decode(recv)
+        if recv is not None:
+            return self.decode(recv)
 
     def scan(self):
         response = requests.get(f'{self.url}/msg/{self.name}')
         if (response.status_code == 404) or (response.json()['message_status'] == 'read'):
             return None
-        return json.loads(response.json()['message'])
+        else:
+            return json.loads(response.json()['message'])
 
     def decode(self, recv):
-        return recv['mwdata'][0]
+        if recv['mwtype'] == 'struct':
+            # now we need to turn this into a dict...
+            output = dict()
+            tmp = recv['mwdata']
+            for k, v in tmp.items():
+                output[k] = v[0]['mwdata']
+        else:
+            output = recv['mwdata']
+        return output
+
     
     def flush(self):
         requests.delete(f'{self.url}/msg/{self.name}')
