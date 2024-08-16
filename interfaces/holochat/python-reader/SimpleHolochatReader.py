@@ -32,7 +32,7 @@ class SimpleReader:
             output = dict()
             tmp = recv['mwdata']
             for k, v in tmp.items():
-                output[k] = v[0]['mwdata']
+                output[k] = v[0]['mwdata'][:]
         else:
             output = recv['mwdata']
         return output
