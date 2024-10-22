@@ -20,6 +20,9 @@ classdef Module < matlab.mixin.Heterogeneous & handle
             end
         end
 
+        function conclude(obj)
+        end
+
         function get_data(obj)
         end
         

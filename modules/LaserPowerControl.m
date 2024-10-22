@@ -59,7 +59,7 @@ classdef LaserPowerControl < Module
         function close_all(obj)
             % this is kinda meh rn, because it closes everything, but
             % that's fine
-            sweep = zeros(1, obj.shutter.interface.n_outputs);
+            sweep = zeros(1, numel(obj.shutter.interface.io.Channels));
             sweep(obj.shutter.interface.channel_idx) = 0;
             obj.shutter.interface.io.write(sweep); % ew
         end

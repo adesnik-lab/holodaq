@@ -18,6 +18,10 @@ classdef PTBComputer < Module
         function send_stim_idx(obj, idx)
             obj.controller.send(idx);
         end
+           
+        function send_stim_info(obj, stim)
+            
+        end
 
         function go(obj)
             obj.controller.send('go');
@@ -25,7 +29,7 @@ classdef PTBComputer < Module
         end
         
         function prepare(obj)
-            obj.trigger.set([1+obj.delay, 0.025, 1])
+            obj.trigger.set([obj.delay, 0.005, 1])
             obj.prepare@Module(); % again, not sure here
         end
     end

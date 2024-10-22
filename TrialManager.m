@@ -22,7 +22,7 @@ classdef TrialManager < handle
             % obj.dq.start("continuous");
             % obj.dq.ScansAvailableFcn = @obj.transfer_data;
             % obj.dq.ScansAvailableFcnCount = 60000;
-            obj.dq.write(zeros([5, length(obj.modules.extract('DAQOutput'))]));
+            obj.dq.readwrite(zeros([5, length(obj.modules.extract('DAQOutput'))]));
             % obj.dq.read(0.01); % blip
             % obj.trial_timer = timer('ExecutionMode', 'FixedRate',...
             %     'BusyMode', 'drop',...
@@ -113,6 +113,8 @@ classdef TrialManager < handle
             out = obj.transfer_data();
 
             % cleanup?
+            obj.modules.call('conclude');
+            
             obj.cleanup();
             if time
                 fprintf('Finishing took %0.02fs\n', toc(t))
