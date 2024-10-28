@@ -24,6 +24,7 @@ classdef HolochatInterface < Interface
 
         function send(obj, data, target)
             obj.io.post(data, target, obj.id, 'msg');
+            pause(0.1);
         end
 
         function set_config(obj, data, target)
