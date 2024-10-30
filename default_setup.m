@@ -27,11 +27,11 @@ pause(0.1)
 fprintf('OK.\n')
 
 % 
-% fprintf('Connecting running wheel...')
-% arduino = serialport("COM3", 115200);
-% arduino.configureTerminator("CR/LF");
-% pause(0.1)
-% fprintf('OK.\n')
+fprintf('Connecting running wheel...')
+arduino = serialport("COM3", 115200);
+arduino.configureTerminator("CR/LF");
+pause(0.1)
+fprintf('OK.\n')
 
 power_calibrations;
 

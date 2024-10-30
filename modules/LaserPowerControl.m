@@ -74,19 +74,19 @@ classdef LaserPowerControl < Module
             % use the stiminfo to generate EVERYTHING you might need
             % first let's unpack the stim info
             % power control
-            % convert from power to power per cell...
+            % convert from power to power per cell...     
             obj.set_power(s.power/s.sequence.average_de);
             
             % ok... now we need to set the shutter, but it might be weird?
             % (idk)
-            %timing now..
+            %timing now..a
             obj.set_shutter(s.pulse_start', s.pulse_duration');
         end
         
         function set_power(obj, pwr)
             if any(pwr < obj.min_pwr) % lets us put in a vector
                 disp('Outside of range, cannot use this power'); 
-                obj.pwr = obj.min_pwr;
+                pwr = obj.min_pwr;
             end
             obj.pwr_request = pwr;
         end
