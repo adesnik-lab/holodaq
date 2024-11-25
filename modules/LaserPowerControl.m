@@ -74,8 +74,14 @@ classdef LaserPowerControl < Module
             % use the stiminfo to generate EVERYTHING you might need
             % first let's unpack the stim info
             % power control
-            % convert from power to power per cell...     
-            obj.set_power(s.power/s.sequence.average_de);
+            % convert from power to power per cell...   
+            if ~isempty(s.sequence)
+                de = s.sequence.average_de;
+            else
+                de = 1;
+            end
+            
+            obj.set_power(s.power/de);
             
             % ok... now we need to set the shutter, but it might be weird?
             % (idk)
