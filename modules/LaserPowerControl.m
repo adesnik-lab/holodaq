@@ -81,7 +81,7 @@ classdef LaserPowerControl < Module
                 de = 1;
             end
             
-            obj.set_power(s.power/de);
+            obj.set_power(s.power); % this is precalculated now
             
             % ok... now we need to set the shutter, but it might be weird?
             % (idk)
