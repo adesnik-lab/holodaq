@@ -86,7 +86,9 @@ classdef LaserPowerControl < Module
             % ok... now we need to set the shutter, but it might be weird?
             % (idk)
             %timing now..a
-            obj.set_shutter(s.pulse_start', s.pulse_duration');
+            if s.power > 0 % only set this if there's power...
+                obj.set_shutter(s.pulse_start', s.pulse_duration');
+            end
         end
         
         function set_power(obj, pwr)

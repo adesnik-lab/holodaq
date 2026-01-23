@@ -18,4 +18,3 @@ classdef Patch < Module
         end
     end
 end
-
