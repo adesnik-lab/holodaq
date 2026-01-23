@@ -8,9 +8,6 @@ classdef RESTio < handle
 
     methods
         function obj = RESTio(server)
-            if nargin < 2 || isempty(server)
-                server = 'http://136.152.58.120:8000';
-            end
             obj.server = server;
             obj.ops = weboptions('MediaType', 'application/json');
         end
