@@ -65,9 +65,9 @@ classdef LaserPowerControl < Module
         end
 
         function zero(obj)
+            obj.close_all()
             obj.control.set(obj.pwr_fun(obj.min_pwr));
             % obj.hwp.moveto(obj.min_deg)
-            obj.close_all()
         end
 
         function set(obj, s)
