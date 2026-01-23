@@ -21,6 +21,7 @@ classdef SessionManager < handle
             if nargin < 3 || isempty(save_flag)
                 save_flag = true;
             end
+
             if save_flag
                 [mouse, epoch] = obj.query();
                 obj.mouse = mouse;
@@ -29,7 +30,7 @@ classdef SessionManager < handle
                 obj.vis_stim = vis_stim;
                 obj.saver = Saver(mouse, epoch, experiment);
             end
-                        obj.tm = tm;
+            obj.tm = tm;
 
             obj.controller = HolochatInterface('daq');
         end

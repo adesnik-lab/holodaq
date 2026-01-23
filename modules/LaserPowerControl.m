@@ -65,22 +65,30 @@ classdef LaserPowerControl < Module
         end
 
         function zero(obj)
+            obj.close_all()
             obj.control.set(obj.pwr_fun(obj.min_pwr));
             % obj.hwp.moveto(obj.min_deg)
-            obj.close_all()
         end
 
         function set(obj, s)
             % use the stiminfo to generate EVERYTHING you might need
             % first let's unpack the stim info
             % power control
-            % convert from power to power per cell...     
-            obj.set_power(s.power/s.sequence.average_de);
+            % convert from power to power per cell...   
+            if ~isempty(s.sequence)
+                de = s.sequence.average_de;
+            else
+                de = 1;
+            end
+            
+            obj.set_power(s.power); % this is precalculated now
             
             % ok... now we need to set the shutter, but it might be weird?
             % (idk)
             %timing now..a
-            obj.set_shutter(s.pulse_start', s.pulse_duration');
+            if s.power > 0 % only set this if there's power...
+                obj.set_shutter(s.pulse_start', s.pulse_duration');
+            end
         end
         
         function set_power(obj, pwr)
