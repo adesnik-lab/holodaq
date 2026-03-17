@@ -75,16 +75,16 @@ classdef LaserPowerControl < Module
             % obj.hwp.moveto(obj.min_deg)
         end
 
-        function set(obj, s)
+        function set(obj, s, trial_duration)
             % use the stiminfo to generate EVERYTHING you might need
             % first let's unpack the stim info
             % power control
             % convert from power to power per cell...   
-            if ~isempty(s.sequence)
-                de = s.sequence.average_de;
-            else
-                de = 1;
-            end
+            % if ~isempty(s.sequence)
+            %     de = s.sequence.average_de;
+            % else
+            %     de = 1;
+            % end
             
             obj.set_power(s.power); % this is precalculated now
             
@@ -92,9 +92,10 @@ classdef LaserPowerControl < Module
             % (idk)
             %timing now..a
             % get trial duration here... where can i extract it from?o
-            obj.shutter.set(0, ); % open at the beginning for the duration of the experiment
+            % obj.shutter.set(0); % open at the beginning for the duration of the experiment
             if s.power > 0 % only set this if there's power...
-                obj.set_gate(s.pulse_start', s.pulse_duration');
+                obj.set_shutter(0, trial_duration)
+                % obj.set_shutter(s.pulse_start', s.pulse_duration');
             end
         end
         
@@ -106,34 +107,13 @@ classdef LaserPowerControl < Module
             obj.pwr_request = pwr;
         end
 
-
-        function set_gate(obj, starts, durations)
+        function set_shutter(obj, starts, durations)
             % ensure column
             if size(starts, 2) ~= 1
                 error('not a col');
             end
-
-            !! % generate the appropriate sweep here...
-            
-            obj.gate.set(sweep)
+            obj.shutter.set([starts, durations])
         end
-
-        % function set_shutter(obj, starts, durations)
-        %     fs = obj.gate.interface.sample_rate;
-        %     sweep = zeros(trial_duration*fs, 1);
-        %     for i = 1:length(starts)
-        %         sweep(round(starts(i)*fs) : round((starts(i) + durations(i))*fs)) = 1;
-        %     end
-        %     obj.shutter.set(sweep);
-        % end
-
-        % function set_shutter(obj, starts, durations)
-        %     % ensure column
-        %     if size(starts, 2) ~= 1
-        %         error('not a col');
-        %     end
-        %     obj.shutter.set([starts, durations])
-        % end
 
         function set_shutter_old(obj, duration, on_time, frequency, delay)
             if nargin < 5 || isempty(delay)
