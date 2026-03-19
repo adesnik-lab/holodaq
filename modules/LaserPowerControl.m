@@ -77,8 +77,8 @@ classdef LaserPowerControl < Module
             % (idk)
             %timing now..a
             % get trial duration here... where can i extract it from?o
-            obj.shutter.set(0, ); % open at the beginning for the duration of the experiment
             if s.power > 0 % only set this if there's power...
+                obj.shutter.set(0, trial_duration); % open at the beginning for the duration of the experiment
                 obj.set_gate(s.pulse_start', s.pulse_duration');
             end
         end
