@@ -16,7 +16,7 @@ pause(0.1)
 fprintf('OK.\n')
 
 fprintf('Making serialport object... ')
-sp = serialport("COM5", ...
+sp = serialport("COM4", ...
     9600,...
     'ByteOrder', 'big-endian',...
     'Parity', 'none',...
@@ -28,11 +28,9 @@ fprintf('OK.\n')
 
 
 fprintf('Connecting running wheel...')
-arduino = serialport("COM3", 115200);
-arduino.configureTerminator("CR/LF");
+arduino_obj = serialport("COM3", 115200);
+arduino_obj.configureTerminator("CR/LF");
 pause(0.1)
 fprintf('OK.\n')
 
 power_calibrations;
-
-tm = TrialManager(dq);

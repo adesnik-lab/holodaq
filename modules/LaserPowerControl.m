@@ -18,20 +18,15 @@ classdef LaserPowerControl < Module
     end
 
     methods
-        function obj = LaserPowerControl(shutter, gate, control, path_to_lut, current_khz)
+        function obj = LaserPowerControl(shutter, gate, control, path_to_lut)
             if nargin < 3 || isempty(path_to_lut)
                 calib = [];
             else
                 calib = importdata(path_to_lut);
             end
 
-            if nargin < 4 || isempty(current_khz)
-                current_khz = calib.khz;
-                fprintf('Assuming calibration khz (%dkHz)\n', calib.khz)
-            end
-
             if ~isempty(calib)
-                obj.get_pwr_fun(calib, current_khz);
+                obj.get_pwr_fun(calib);
             end
             obj.shutter = shutter;
             obj.gate = gate;
@@ -39,16 +34,12 @@ classdef LaserPowerControl < Module
             obj.pwr_request = obj.min_pwr;
         end
         
-        function get_pwr_fun(obj, calib, current_khz)
-            scale = current_khz/calib.khz;
+        function get_pwr_fun(obj, calib)
             % get unique only
             [~, u_idx] = unique(calib.powers);
-            obj.pwr_fun = @(x) interp1(calib.powers(u_idx)*scale, calib.degrees(u_idx), x);
-            % when generating this, maybe set some things..
-            % obj.max_deg = calib.degrees(end);
-            % obj.min_deg = calib.degrees(1);
-            obj.max_pwr = calib.max_power*scale;
-            obj.min_pwr = calib.min_power*scale;
+            obj.pwr_fun = @(x) interp1(calib.powers(u_idx), calib.degrees(u_idx), x);
+            obj.max_pwr = calib.max_power;
+            obj.min_pwr = calib.min_power;
         end
         
         % function control = pwr2con(obj, pwr_request)
@@ -79,12 +70,6 @@ classdef LaserPowerControl < Module
             % use the stiminfo to generate EVERYTHING you might need
             % first let's unpack the stim info
             % power control
-            % convert from power to power per cell...   
-            if ~isempty(s.sequence)
-                de = s.sequence.average_de;
-            else
-                de = 1;
-            end
             
             obj.set_power(s.power); % this is precalculated now
             
@@ -113,9 +98,9 @@ classdef LaserPowerControl < Module
                 error('not a col');
             end
 
-            !! % generate the appropriate sweep here...
+              % generate the appropriate sweep here...
             
-            obj.gate.set(sweep)
+            obj.gate.set(sweep);
         end
 
         % function set_shutter(obj, starts, durations)
