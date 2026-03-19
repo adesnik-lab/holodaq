@@ -12,8 +12,14 @@ classdef LaserGate < Module
             obj.gate = gate;
         end
 
-        function set(obj, input)
-            
+        function set(obj, s, trial_duration)
+            fs = obj.gate.interface.sample_rate;
+            sweep = zeros(trial_duration*fs, 1);
+            n_pulses = length(s.pulse_start);
+            for i = 1:n_pulses
+                sweep(round(s.pulse_start(i)*fs) : round((s.pulse_start(i) + s.pulse_duration(i))*fs)) = obj.output_value;
+            end
+            obj.gate.set(sweep); 
         end
 
         function set_old(obj, stim, trial_duration)  

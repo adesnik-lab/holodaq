@@ -66,20 +66,17 @@ classdef LaserPowerControl < Module
             % obj.hwp.moveto(obj.min_deg)
         end
 
-        function set(obj, s)
+        function set(obj, s, trial_duration)
             % use the stiminfo to generate EVERYTHING you might need
             % first let's unpack the stim info
             % power control
             
             obj.set_power(s.power); % this is precalculated now
             
-            % ok... now we need to set the shutter, but it might be weird?
-            % (idk)
-            %timing now..a
             % get trial duration here... where can i extract it from?o
-            obj.shutter.set(0, ); % open at the beginning for the duration of the experiment
             if s.power > 0 % only set this if there's power...
-                obj.set_gate(s.pulse_start', s.pulse_duration');
+                obj.shutter.set(0, trial_duration); % open at the beginning for the duration of the experiment
+                obj.gate.set(s, trial_duration);
             end
         end
         
@@ -92,16 +89,18 @@ classdef LaserPowerControl < Module
         end
 
 
-        function set_gate(obj, starts, durations)
-            % ensure column
-            if size(starts, 2) ~= 1
-                error('not a col');
-            end
+        % function set_gate(obj, starts, durations)
+        %     % ensure column
+        %     if size(starts, 2) ~= 1
+        %         error('not a col');
+        %     end
 
-              % generate the appropriate sweep here...
+        %     keyboard()
+        %     sweep = 
+
             
-            obj.gate.set(sweep);
-        end
+        %     obj.gate.set(sweep);
+        % end
 
         % function set_shutter(obj, starts, durations)
         %     fs = obj.gate.interface.sample_rate;
