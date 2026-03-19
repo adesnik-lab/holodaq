@@ -18,8 +18,8 @@ classdef LaserPowerControl < Module
     end
 
     methods
-        function obj = LaserPowerControl(shutter, gate, control, path_to_lut)
-            if nargin < 3 || isempty(path_to_lut)
+        function obj = LaserPowerControl(shutter, control, path_to_lut)
+            if nargin < 4 || isempty(path_to_lut)
                 calib = [];
             else
                 calib = importdata(path_to_lut);
@@ -29,7 +29,6 @@ classdef LaserPowerControl < Module
                 obj.get_pwr_fun(calib);
             end
             obj.shutter = shutter;
-            obj.gate = gate;
             obj.control = control;
             obj.pwr_request = obj.min_pwr;
         end
@@ -76,7 +75,6 @@ classdef LaserPowerControl < Module
             % get trial duration here... where can i extract it from?o
             if s.power > 0 % only set this if there's power...
                 obj.shutter.set(0, trial_duration); % open at the beginning for the duration of the experiment
-                obj.gate.set(s, trial_duration);
             end
         end
         

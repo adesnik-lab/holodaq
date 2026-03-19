@@ -1,4 +1,4 @@
-classdef LaserPowerControl < Module
+classdef PowerChannel < Module
     properties (Constant)
         GATE_VOLTAGE = 3.5; % V
     end
@@ -18,20 +18,15 @@ classdef LaserPowerControl < Module
     end
 
     methods
-        function obj = LaserPowerControl(shutter, gate, control, path_to_lut, current_khz)
-            if nargin < 3 || isempty(path_to_lut)
+        function obj = PowerChannel(shutter, gate, control, path_to_lut)
+            if nargin < 4 || isempty(path_to_lut)
                 calib = [];
             else
                 calib = importdata(path_to_lut);
             end
 
-            if nargin < 4 || isempty(current_khz)
-                current_khz = calib.khz;
-                fprintf('Assuming calibration khz (%dkHz)\n', calib.khz)
-            end
-
             if ~isempty(calib)
-                obj.get_pwr_fun(calib, current_khz);
+                obj.get_pwr_fun(calib);
             end
             obj.shutter = shutter;
             obj.gate = gate;
@@ -39,16 +34,15 @@ classdef LaserPowerControl < Module
             obj.pwr_request = obj.min_pwr;
         end
         
-        function get_pwr_fun(obj, calib, current_khz)
-            scale = current_khz/calib.khz;
+        function get_pwr_fun(obj, calib)
             % get unique only
             [~, u_idx] = unique(calib.powers);
-            obj.pwr_fun = @(x) interp1(calib.powers(u_idx)*scale, calib.degrees(u_idx), x);
+            obj.pwr_fun = @(x) interp1(calib.powers(u_idx), calib.degrees(u_idx), x);
             % when generating this, maybe set some things..
             % obj.max_deg = calib.degrees(end);
             % obj.min_deg = calib.degrees(1);
-            obj.max_pwr = calib.max_power*scale;
-            obj.min_pwr = calib.min_power*scale;
+            obj.max_pwr = calib.max_power;
+            obj.min_pwr = calib.min_power;
         end
         
         % function control = pwr2con(obj, pwr_request)
@@ -94,7 +88,7 @@ classdef LaserPowerControl < Module
             % get trial duration here... where can i extract it from?o
             % obj.shutter.set(0); % open at the beginning for the duration of the experiment
             if s.power > 0 % only set this if there's power...
-                obj.set_shutter(0, trial_duration)
+                obj.shutter.set([0, trial_duration]); % right, a column of paired values
                 % obj.set_shutter(s.pulse_start', s.pulse_duration');
             end
         end
@@ -107,30 +101,30 @@ classdef LaserPowerControl < Module
             obj.pwr_request = pwr;
         end
 
-        function set_shutter(obj, starts, durations)
-            % ensure column
-            if size(starts, 2) ~= 1
-                error('not a col');
-            end
-            obj.shutter.set([starts, durations])
-        end
-
-        function set_shutter_old(obj, duration, on_time, frequency, delay)
-            if nargin < 5 || isempty(delay)
-                delay = 0;
-            end
-            obj.shutter_params.duration = duration; % how long the shutter is open for
-            obj.shutter_params.on_time = on_time; % total on time...
-            obj.shutter_params.frequency = frequency;
-            obj.shutter_params.delay = delay;
-
-            n_pulses = round(max(1, on_time/1000 * frequency));
-            if ~isempty(n_pulses)
-                cycle = (1/frequency) * 1000;
-                obj.shutter.set(cat(2, [delay+1:cycle:delay+on_time]', duration * ones(n_pulses, 1)));
-                obj.shutter_params = [];
-            end
-        end
+        % function set_shutter(obj, starts, durations)
+        %     % ensure column
+        %     if size(starts, 2) ~= 1
+        %         error('not a col');
+        %     end
+        %     obj.shutter.set([starts, durations])
+        % end
+        % 
+        % function set_shutter_old(obj, duration, on_time, frequency, delay)
+        %     if nargin < 5 || isempty(delay)
+        %         delay = 0;
+        %     end
+        %     obj.shutter_params.duration = duration; % how long the shutter is open for
+        %     obj.shutter_params.on_time = on_time; % total on time...
+        %     obj.shutter_params.frequency = frequency;
+        %     obj.shutter_params.delay = delay;
+        % 
+        %     n_pulses = round(max(1, on_time/1000 * frequency));
+        %     if ~isempty(n_pulses)
+        %         cycle = (1/frequency) * 1000;
+        %         obj.shutter.set(cat(2, [delay+1:cycle:delay+on_time]', duration * ones(n_pulses, 1)));
+        %         obj.shutter_params = [];
+        %     end
+        % end
 
         function power(obj, pwr)
             obj.control.set(obj.pwr_fun(pwr));

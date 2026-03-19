@@ -5,6 +5,7 @@ classdef HolographicPowerControl < Module
 
     properties
         channels
+        source
     end
 
     methods
@@ -17,15 +18,15 @@ classdef HolographicPowerControl < Module
         %     % call initialize on each of the sources
         % end
 
-        function prepare()
+        function prepare(obj)
             for i = 1:length(obj.channels)
-                obj.channels(i).prepare()
+                obj.channels(i).prepare();
             end
-            obj.source.prepare()
+            obj.source.prepare();
         end
 
 
-        function set(stim, trial_duration) % can we fudge this and not use trial duration? no.. we need it to generate the appropriate sweep vector
+        function set(obj, stim, trial_duration) % can we fudge this and not use trial duration? no.. we need it to generate the appropriate sweep vector
             if length(obj.channels) ~= length(stim)
                 error('Number of stim infos must match the number of stim channels');
             end

@@ -8,11 +8,19 @@ classdef LaserSource < Module
     end
 
     methods
-        function obj = LaserGate(gate)
+        function obj = LaserSource(gate)
             obj.gate = gate;
         end
 
         function set(obj, stim, trial_duration)
+            % check here
+            % first, dimensionality
+            pulse_starts = cat(1, stim.pulse_start); % if this fails, error out
+            pulse_durations = cat(1, stim.pulse_duration);% next, test that they are the same
+            if  ~(all(~diff(pulse_durations))) || ~(all(~diff(pulse_starts)))
+                error('Values are not equal, can''t do this yet... make the pulse durations and starts equal for red and blue')
+            end
+
             fs = obj.gate.interface.sample_rate;
             sweep = zeros(trial_duration*fs, 1);
             for s = stim

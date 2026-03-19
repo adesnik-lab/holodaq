@@ -37,12 +37,14 @@ classdef Module < matlab.mixin.Heterogeneous & handle
             if isa(target, 'daq.interfaces.DataAcquisition') %prevents it from going too far
                 return; % break
             end
-
-            props = properties(target);
-            is_obj = cellfun(@(x) isobject(target.(x)), props);
+            
+            for t = target
+            props = properties(t);
+            is_obj = cellfun(@(x) isobject(t.(x)), props);
             for o = find(is_obj)'
-                all_objs = cat(1, all_objs, {target.(props{o})});
-                all_objs = obj.get_objs(target.(props{o}), all_objs);
+                all_objs = cat(1, all_objs, {t.(props{o})});
+                all_objs = obj.get_objs(t.(props{o}), all_objs);
+            end
             end
         end
 
