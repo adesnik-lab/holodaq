@@ -14,13 +14,22 @@ classdef Saver < handle
         experiment char
 
         stream_to_disk = false;
+
+        % How to handle an existing save file:
+        %   'ask'       - prompt at the console (original, default; console use)
+        %   'overwrite' - reuse the path without prompting (GUI already confirmed)
+        %   'error'     - abort immediately if the file exists
+        overwrite_policy char = 'ask';
     end
 
     methods
-        function obj = Saver(mouse, epoch, experiment)
+        function obj = Saver(mouse, epoch, experiment, overwrite_policy)
             obj.mouse = mouse;
             obj.epoch = epoch;
             obj.experiment = experiment;
+            if nargin >= 4 && ~isempty(overwrite_policy)
+                obj.overwrite_policy = overwrite_policy;
+            end
             obj.set_save_path(obj.derive_save_path())
         end
 
@@ -31,15 +40,23 @@ classdef Saver < handle
         function set_save_path(obj, save_path)
             fprintf('Saving data in ''%s''\n', save_path);
             if exist(save_path, 'file')
-                while true
-                    switch input('Save file already exists, overwrite? (y/n):', 's')
-                        case 'y'
-                            break
-                        case 'n'
-                            error('Did you forget to change your epoch?')
-                        otherwise
-                            continue
-                    end
+                switch obj.overwrite_policy
+                    case 'overwrite'
+                        % proceed without prompting (caller already confirmed)
+                        fprintf('Overwriting existing save file (policy=''overwrite'').\n');
+                    case 'error'
+                        error('Save file already exists (did you forget to change your epoch?): %s', save_path)
+                    otherwise  % 'ask' - original interactive behavior
+                        while true
+                            switch input('Save file already exists, overwrite? (y/n):', 's')
+                                case 'y'
+                                    break
+                                case 'n'
+                                    error('Did you forget to change your epoch?')
+                                otherwise
+                                    continue
+                            end
+                        end
                 end
             end
 
