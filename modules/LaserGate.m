@@ -58,7 +58,9 @@ classdef LaserGate < Module
                 % loop through the starts and durations and put em in
                 n_stims = length(s.pulse_start);
                 for i = 1:n_stims
-                    sweep(round(s.pulse_start(i)*fs) : round((s.pulse_start(i) + s.pulse_duration(i))*fs)) = obj.output_value;
+                    idx0 = round(s.pulse_start(i)*fs) + 1;
+                    idx1 = min(round((s.pulse_start(i) + s.pulse_duration(i))*fs), numel(sweep));
+                    sweep(idx0:idx1) = obj.output_value;
                 end
             end
             obj.gate.set(sweep);

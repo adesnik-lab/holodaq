@@ -7,17 +7,22 @@ classdef ModuleManager < dynamicprops
         end
 
         function module_name = check_for_duplicate(obj, module_name)
-            persistent ct
-            if isempty(ct)
-                ct = 0;
-            end
-            is_duplicate = any(cellfun(@(x) strcmp(module_name, x), properties(obj)));
-            if ~is_duplicate
+            existing = properties(obj);
+            if ~any(strcmp(module_name, existing))
                 return
             end
-            module_name(strfind(module_name, '_'):end) = [];
-            module_name = sprintf('%s_%d', module_name, ct + 1);
-            module_name = obj.check_for_duplicate(module_name);
+            % strip any existing numeric suffix back to the base class name
+            base = module_name;
+            us = strfind(base, '_');
+            if ~isempty(us)
+                base(us(1):end) = [];
+            end
+            % find the lowest free suffix (base_1, base_2, ...)
+            k = 1;
+            while any(strcmp(sprintf('%s_%d', base, k), existing))
+                k = k + 1;
+            end
+            module_name = sprintf('%s_%d', base, k);
         end
         
         function add(obj, module)

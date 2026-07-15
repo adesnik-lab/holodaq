@@ -98,6 +98,10 @@ classdef PowerChannel < Module
                 disp('Outside of range, cannot use this power'); 
                 pwr = obj.min_pwr;
             end
+            if ~isempty(obj.max_pwr) && any(pwr > obj.max_pwr)
+                disp('Above max power, clamping to max');
+                pwr = obj.max_pwr;
+            end
             obj.pwr_request = pwr;
         end
 
@@ -127,7 +131,12 @@ classdef PowerChannel < Module
         % end
 
         function power(obj, pwr)
-            obj.control.set(obj.pwr_fun(pwr));
+            val = obj.pwr_fun(pwr);
+            if isnan(val)
+                disp('power out of range')
+                return
+            end
+            obj.control.set(val);
             % obj.hwp.moveto(obj.pwr2deg(pwr_request));
         end
 

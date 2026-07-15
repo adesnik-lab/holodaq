@@ -70,7 +70,7 @@ classdef FiberPowerControl < Module
         end
 
         function zero(obj)
-            obj.hwp.moveto(obj.min_deg)
+            obj.hwp.set(obj.min_deg)
             obj.close_all()
         end
         
@@ -96,7 +96,7 @@ classdef FiberPowerControl < Module
         end
 
         function power(obj, pwr)
-            obj.hwp.moveto(obj.pwr2deg(pwr));
+            obj.hwp.set(obj.pwr2deg(pwr));
         end
 
         function prepare(obj)
