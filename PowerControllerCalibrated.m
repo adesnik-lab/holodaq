@@ -63,6 +63,9 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
         pwr_fun1100; min_pwr1100; max_pwr1100
 
         dq
+
+        Simulate    logical = false   % off-rig: skip all hardware I/O
+        WantVisible logical = true    % show the uifigure (false = headless)
     end
 
     methods (Access = private)
@@ -75,23 +78,28 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
         end
 
         function open(app, shutter_id)
+            if app.Simulate, return; end   % caller still latches the shadow state
             data = app.build_output();
             data(shutter_id) = 1;
             app.dq.write(data);
         end
 
         function close(app, shutter_id)
+            if app.Simulate, return; end
             data = app.build_output();
             data(shutter_id) = 0;
             app.dq.write(data);
         end
 
         function write_voltage(app)
-            app.dq.write(app.build_output());
+            if ~app.Simulate
+                app.dq.write(app.build_output());
+            end
             app.VoltageLabel.Text = sprintf('%.2f V', app.laser_voltage);
         end
 
         function rotate(app, hwp, deg)
+            if app.Simulate, return; end
             hwp.set(deg);
         end
 
@@ -154,7 +162,7 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
         end
 
         function finish_pulse(app, t)
-            if isvalid(app)                      % app may have closed during the pulse
+            if isvalid(app) && ~app.Simulate     % app may have closed during the pulse
                 app.dq.write(app.build_output());  % restore latched shutter states
             end
             delete(t);
@@ -165,6 +173,19 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
     methods (Access = private)
 
         function startupFcn(app)
+            if app.Simulate
+                % Off-rig: no DAQ / serial. Fake calibrated ranges so the
+                % sliders + status view behave like the real thing.
+                app.shutter900 = 0; app.shutter1100 = 0; app.laser_voltage = 0;
+                [app.pwr_fun900,  app.min_pwr900,  app.max_pwr900]  = deal(@(mW) 0, 5, 120);
+                [app.pwr_fun1100, app.min_pwr1100, app.max_pwr1100] = deal(@(mW) 0, 5, 150);
+                app.init_slider(app.Power900,  app.PowerReadout900,  app.min_pwr900,  app.max_pwr900);
+                app.init_slider(app.Power1100, app.PowerReadout1100, app.min_pwr1100, app.max_pwr1100);
+                app.write_voltage();
+                disp('PowerControllerCalibrated: SIMULATE mode (no hardware).')
+                return
+            end
+
             app.dq = daq('ni');
 
             s = serialport("COM4", 9600, ...
@@ -259,6 +280,92 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
         function PULSE1100ButtonPushed(app, event), app.pulse(2); end
     end
 
+    % Programmatic control surface -------------------------------------------
+    % So a remote bridge (or a script) can drive the exact same logic as the
+    % on-screen buttons: each method sets the relevant component value and then
+    % invokes the existing callback, keeping ONE implementation of every action.
+    methods (Access = public)
+
+        function laser(app, on)
+            app.LASERButton.Value = logical(on);
+            app.LASERButtonValueChanged();
+        end
+
+        function shutter(app, channel, open)
+            if channel == 900
+                app.SHUTTER900Button.Value = logical(open);
+                app.SHUTTER900ButtonValueChanged();
+            else
+                app.SHUTTER1100Button.Value = logical(open);
+                app.SHUTTER1100ButtonValueChanged();
+            end
+        end
+
+        function firePulse(app, channel)
+            app.pulse(app.idForChannel(channel));   % private pulse(): 1=900, 2=1100
+        end
+
+        function setPowerMW(app, channel, mW)
+            if channel == 900, sl = app.Power900; else, sl = app.Power1100; end
+            if strcmp(sl.Enable, 'off'), return; end   % channel has no calibration
+            sl.Value = mW;                             % set_power clamps to range
+            if channel == 900
+                app.Power900ValueChanged();
+            else
+                app.Power1100ValueChanged();
+            end
+        end
+
+        function allSafe(app)
+            % Laser off + both shutters closed (reuses the toggle logic).
+            app.laser(false);
+            app.shutter(900, false);
+            app.shutter(1100, false);
+        end
+
+        function s = state(app)
+            % Snapshot of commanded state for the remote status board.
+            s = struct();
+            s.laser_on      = logical(app.LASERButton.Value);
+            s.laser_voltage = app.laser_voltage;
+            s.ch900  = app.channelState(app.Power900,  app.pwr_fun900,  app.min_pwr900,  app.max_pwr900,  app.shutter900);
+            s.ch1100 = app.channelState(app.Power1100, app.pwr_fun1100, app.min_pwr1100, app.max_pwr1100, app.shutter1100);
+        end
+
+        function releaseHardware(app)
+            % Give up the DAQ + serial so an Experiment can claim them. Safe to
+            % call repeatedly; a no-op in simulate mode.
+            if app.Simulate, return; end
+            try, app.allSafe(); catch, end
+            try
+                if ~isempty(app.dq) && isvalid(app.dq), stop(app.dq); end
+            catch
+            end
+            app.dq     = [];
+            app.hwp900 = [];   % clearing the ELL14s closes the shared COM4 port
+            app.hwp1100 = [];
+        end
+    end
+
+    methods (Access = private)
+        function id = idForChannel(~, channel)
+            if channel == 900, id = 1; else, id = 2; end
+        end
+
+        function c = channelState(~, slider, fun, minp, maxp, shutter_state)
+            c = struct();
+            c.shutter_open = logical(shutter_state);
+            c.calibrated   = ~isempty(fun);
+            if c.calibrated
+                c.power_mW = slider.Value;
+                c.range_mW = [minp maxp];
+            else
+                c.power_mW = [];
+                c.range_mW = [];
+            end
+        end
+    end
+
     % Component initialization
     methods (Access = private)
 
@@ -339,16 +446,29 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
             app.VoltageLabel.Layout.Row = 7; app.VoltageLabel.Layout.Column = [1 2];
             app.VoltageLabel.Text = '0.00 V';
 
-            app.UIFigure.Visible = 'on';
+            if app.WantVisible
+                app.UIFigure.Visible = 'on';
+            end
         end
     end
 
     % App creation and deletion
     methods (Access = public)
 
-        function app = PowerControllerCalibrated
+        function app = PowerControllerCalibrated(varargin)
+            % PowerControllerCalibrated('Simulate', tf, 'Visible', tf)
+            %   Simulate (default false): no DAQ/serial, for off-rig testing.
+            %   Visible  (default true) : show the window; false = headless,
+            %                             for driving it from a remote bridge.
+            p = inputParser;
+            p.addParameter('Simulate', false, @(x) islogical(x) || isnumeric(x));
+            p.addParameter('Visible',  true,  @(x) islogical(x) || isnumeric(x));
+            p.parse(varargin{:});
+
             runningApp = getRunningApp(app);
             if isempty(runningApp)
+                app.Simulate    = logical(p.Results.Simulate);
+                app.WantVisible = logical(p.Results.Visible);
                 createComponents(app)
                 registerApp(app, app.UIFigure)
                 runStartupFcn(app, @startupFcn)
