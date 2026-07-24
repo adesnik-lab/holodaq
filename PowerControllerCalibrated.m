@@ -41,6 +41,10 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
     properties (Constant)
         PULSE_DURATION    = 0.5;   % s, momentary open time for the PULSE buttons
         MAX_LASER_VOLTAGE = 3.5;   % V, gate voltage for max power (HolographicPowerControl.gate_voltage)
+        % Status colours: green = safe (shutter closed / laser off), red = live
+        % (shutter open / laser on), so state is obvious at a glance.
+        COLOR_IDLE   = [0.30 0.65 0.40];   % green
+        COLOR_ACTIVE = [0.85 0.16 0.16];   % red
         % LUT paths come from the `power_calibration` struct that the `power_calibrations`
         % script defines (same source patch_experiment.m uses); see startupFcn.
     end
@@ -203,9 +207,11 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
             if app.LASERButton.Value
                 app.laser_voltage = app.MAX_LASER_VOLTAGE;
                 app.LASERButton.Text = 'LASER ON';
+                app.LASERButton.BackgroundColor = app.COLOR_ACTIVE;   % red
             else
                 app.laser_voltage = 0;
                 app.LASERButton.Text = 'LASER OFF';
+                app.LASERButton.BackgroundColor = app.COLOR_IDLE;     % green
             end
             app.write_voltage();
         end
@@ -224,19 +230,27 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
         function SHUTTER900ButtonValueChanged(app, event)
             if app.SHUTTER900Button.Value
                 app.open(1); app.shutter900 = 1;
-                app.Label900.BackgroundColor = 'r'; app.SHUTTER900Button.Text = 'OPEN';
+                app.SHUTTER900Button.Text = 'OPEN';
+                app.SHUTTER900Button.BackgroundColor = app.COLOR_ACTIVE;   % red
+                app.Label900.BackgroundColor = app.COLOR_ACTIVE;
             else
                 app.close(1); app.shutter900 = 0;
-                app.Label900.BackgroundColor = 'none'; app.SHUTTER900Button.Text = 'CLOSED';
+                app.SHUTTER900Button.Text = 'CLOSED';
+                app.SHUTTER900Button.BackgroundColor = app.COLOR_IDLE;     % green
+                app.Label900.BackgroundColor = 'none';
             end
         end
         function SHUTTER1100ButtonValueChanged(app, event)
             if app.SHUTTER1100Button.Value
                 app.open(2); app.shutter1100 = 1;
-                app.Label1100.BackgroundColor = 'r'; app.SHUTTER1100Button.Text = 'OPEN';
+                app.SHUTTER1100Button.Text = 'OPEN';
+                app.SHUTTER1100Button.BackgroundColor = app.COLOR_ACTIVE;  % red
+                app.Label1100.BackgroundColor = app.COLOR_ACTIVE;
             else
                 app.close(2); app.shutter1100 = 0;
-                app.Label1100.BackgroundColor = 'none'; app.SHUTTER1100Button.Text = 'CLOSED';
+                app.SHUTTER1100Button.Text = 'CLOSED';
+                app.SHUTTER1100Button.BackgroundColor = app.COLOR_IDLE;    % green
+                app.Label1100.BackgroundColor = 'none';
             end
         end
 
@@ -288,14 +302,16 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
             app.PowerReadout1100.Layout.Row = 3; app.PowerReadout1100.Layout.Column = 2;
             app.PowerReadout1100.Text = '-- mW';
 
-            % --- shutter toggles (row 4) ---
+            % --- shutter toggles (row 4). Start green (= CLOSED). ---
             app.SHUTTER900Button = uibutton(app.GridLayout, 'state');
             app.SHUTTER900Button.Text = 'CLOSED'; app.SHUTTER900Button.FontSize = 26;
+            app.SHUTTER900Button.BackgroundColor = app.COLOR_IDLE; app.SHUTTER900Button.FontColor = 'w';
             app.SHUTTER900Button.Layout.Row = 4; app.SHUTTER900Button.Layout.Column = 1;
             app.SHUTTER900Button.ValueChangedFcn = createCallbackFcn(app, @SHUTTER900ButtonValueChanged, true);
 
             app.SHUTTER1100Button = uibutton(app.GridLayout, 'state');
             app.SHUTTER1100Button.Text = 'CLOSED'; app.SHUTTER1100Button.FontSize = 26;
+            app.SHUTTER1100Button.BackgroundColor = app.COLOR_IDLE; app.SHUTTER1100Button.FontColor = 'w';
             app.SHUTTER1100Button.Layout.Row = 4; app.SHUTTER1100Button.Layout.Column = 2;
             app.SHUTTER1100Button.ValueChangedFcn = createCallbackFcn(app, @SHUTTER1100ButtonValueChanged, true);
 
@@ -310,9 +326,10 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
             app.PULSE1100Button.Layout.Row = 5; app.PULSE1100Button.Layout.Column = 2;
             app.PULSE1100Button.ButtonPushedFcn = createCallbackFcn(app, @PULSE1100ButtonPushed, true);
 
-            % --- laser gate toggle (row 6, full width) ---
+            % --- laser gate toggle (row 6, full width). Start green (= OFF). ---
             app.LASERButton = uibutton(app.GridLayout, 'state');
             app.LASERButton.Text = 'LASER OFF'; app.LASERButton.FontSize = 30;
+            app.LASERButton.BackgroundColor = app.COLOR_IDLE; app.LASERButton.FontColor = 'w';
             app.LASERButton.Layout.Row = 6; app.LASERButton.Layout.Column = [1 2];
             app.LASERButton.ValueChangedFcn = createCallbackFcn(app, @LASERButtonValueChanged, true);
 
