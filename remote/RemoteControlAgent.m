@@ -81,9 +81,10 @@ classdef RemoteControlAgent < handle
             obj.visible  = logical(p.Results.Visible);
             obj.launcher = p.Results.Launcher;
 
-            % Reader for the satellites' prime acks (config/{si,ptb,holo}_status
-            % on the holochat broker). Only the launcher side shows them.
-            if ~obj.simulate && obj.hasLauncher()
+            % Client to the holochat broker: reads the satellites' prime acks
+            % (config/{si,ptb,holo}_status, launcher side) and broadcasts the
+            % abort signal (config/abort, both sides). Skipped in simulate.
+            if ~obj.simulate
                 try
                     obj.holoIO = RESTio(p.Results.HoloServer);
                 catch
@@ -317,6 +318,10 @@ classdef RemoteControlAgent < handle
                 obj.laserArmedUntil = NaT;
             end
 
+            % Tell every satellite to cancel its priming (same broadcast for a
+            % plain Abort and an E-STOP). No-op in simulate (no holoIO).
+            obj.broadcastAbort();
+
             if obj.simulate
                 obj.stopSimTimer();
                 obj.mode = 'idle';
@@ -435,6 +440,18 @@ classdef RemoteControlAgent < handle
                     st = jsondecode(recv.message);
                 end
             catch
+            end
+        end
+
+        function broadcastAbort(obj)
+            % Post an incrementing abort_seq to the shared config/abort topic;
+            % each satellite listener cancels its priming when the seq rises.
+            if isempty(obj.holoIO), return; end
+            try
+                obj.holoIO.post(struct('abort_seq', posixtime(datetime('now'))), ...
+                    'abort', 'daq', 'config');
+            catch ME
+                obj.addFault(sprintf('abort broadcast: %s', ME.message));
             end
         end
 

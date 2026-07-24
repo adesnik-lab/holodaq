@@ -59,6 +59,13 @@ classdef SIReceiver < Receiver
             disp('ScanImage armed.')
         end
 
+        function onAbort(obj)
+            % Cancel the armed acquisition primed for the aborted experiment.
+            try, obj.hSI = evalin('base', 'hSI'); catch, end
+            try, obj.hSI.abort(); catch, end
+            disp('ScanImage priming aborted.')
+        end
+
         function stamp = date_stamp(obj)
             % Prefer the prime's date so tiffs line up with the DAQ save file.
             if isstruct(obj.config) && isfield(obj.config, 'date') && ~isempty(obj.config.date)

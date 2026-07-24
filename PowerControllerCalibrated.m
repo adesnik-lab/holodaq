@@ -278,6 +278,11 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
         % ---- momentary pulse buttons (0.5 s) ----
         function PULSE900ButtonPushed(app, event),  app.pulse(1); end
         function PULSE1100ButtonPushed(app, event), app.pulse(2); end
+
+        % ---- window close: delete the app so hardware is released ----
+        function UIFigureCloseRequest(app, ~)
+            delete(app)
+        end
     end
 
     % Programmatic control surface -------------------------------------------
@@ -373,6 +378,8 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
             app.UIFigure = uifigure('Visible', 'off');
             app.UIFigure.Position = [100 100 560 620];
             app.UIFigure.Name = 'Power Controller (calibrated)';
+            % Closing the window deletes the app (releases DAQ + COM4).
+            app.UIFigure.CloseRequestFcn = createCallbackFcn(app, @UIFigureCloseRequest, true);
 
             app.GridLayout = uigridlayout(app.UIFigure);
             app.GridLayout.ColumnWidth = {'1x', '1x'};
@@ -482,7 +489,13 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
         end
 
         function delete(app)
-            delete(app.UIFigure)
+            % Release the DAQ + COM4 serial before tearing down the window, so
+            % closing the GUI frees the hardware (otherwise the ports stay held
+            % and the next GUI / experiment can't open them).
+            try, app.releaseHardware(); catch, end
+            if ~isempty(app.UIFigure) && isvalid(app.UIFigure)
+                delete(app.UIFigure)
+            end
         end
     end
 end

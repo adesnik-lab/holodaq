@@ -35,6 +35,14 @@ classdef HolochatInterface < Interface
             out = obj.io.read(obj.id, 30, 'config');
         end
 
+        function out = scan_config(obj, topic)
+            % Non-blocking single read of a config topic (default: self).
+            % [] if unset. Used to poll the shared config/abort signal without
+            % the 30 s busy-wait that get_config does.
+            if nargin < 2 || isempty(topic), topic = obj.id; end
+            out = obj.io.decode(obj.io.scan(topic, 'config'));
+        end
+
         function out = read(obj, timeout)
             if nargin < 2 || isempty(timeout)
                 timeout = 10;

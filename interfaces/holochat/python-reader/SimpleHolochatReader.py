@@ -39,13 +39,16 @@ class SimpleReader:
             output = recv['mwdata']
         return output
 
-    def read_config(self):
-        """Read this box's persistent `config` topic (no consume-once gate).
+    def read_config(self, topic=None):
+        """Read a persistent `config` topic (default: this box's own) with no
+        consume-once gate. `topic='abort'` reads the shared abort signal.
 
         Returns a dict (or None if unset). Handles both MATLAB Production
         Server "large" typed JSON (mwtype/mwdata, from the DAQ) and plain JSON.
         """
-        response = requests.get(f'{self.url}/config/{self.name}')
+        if topic is None:
+            topic = self.name
+        response = requests.get(f'{self.url}/config/{topic}')
         if response.status_code == 404:
             return None
         raw = response.json().get('message')

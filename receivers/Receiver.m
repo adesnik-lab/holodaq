@@ -19,6 +19,7 @@ classdef Receiver < handle
         interface
         config
         last_prime_seq = -inf
+        last_abort_seq = -inf
         poll_period = 0.25   % s between config polls once a prime is present
     end
 
@@ -44,7 +45,30 @@ classdef Receiver < handle
                         fprintf('[%s] prime FAILED: %s\n', obj.name, err.message);
                     end
                 end
+                obj.poll_abort();
                 pause(obj.poll_period);   % throttle the (persistent) config polling
+            end
+        end
+
+        function poll_abort(obj)
+            % When the DAQ broadcasts a new abort (config/abort abort_seq rises),
+            % cancel this box's priming via the subclass onAbort(). The first
+            % sighting only adopts a baseline so a stale abort doesn't fire.
+            a = [];
+            try, a = obj.interface.scan_config('abort'); catch, end
+            if ~(isstruct(a) && isfield(a, 'abort_seq') && ~isempty(a.abort_seq))
+                return
+            end
+            if isinf(obj.last_abort_seq)
+                obj.last_abort_seq = a.abort_seq;      % baseline; do not fire
+            elseif a.abort_seq > obj.last_abort_seq
+                obj.last_abort_seq = a.abort_seq;
+                try
+                    obj.onAbort();
+                    fprintf('[%s] priming aborted by DAQ.\n', obj.name);
+                catch err
+                    fprintf('[%s] abort handler error: %s\n', obj.name, err.message);
+                end
             end
         end
 
@@ -84,6 +108,10 @@ classdef Receiver < handle
 
         function run(obj)
             % overridden by subclass
+        end
+
+        function onAbort(obj)  %#ok<MANU>
+            % overridden by subclass: cancel whatever run() primed
         end
     end
 end
