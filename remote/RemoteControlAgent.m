@@ -45,6 +45,7 @@ classdef RemoteControlAgent < handle
         phoneEverSeen   logical = false
         laserArmedUntil datetime = NaT
         expListeners    = []
+        trackedExp      = []            % Experiment we've attached listeners to ([] = none)
 
         % satellite prime status (read from holochat config/*_status)
         holoIO                          % RESTio to the holochat broker ([] off-rig)
@@ -122,6 +123,18 @@ classdef RemoteControlAgent < handle
             obj.poll = [];
         end
 
+        function pushStatus(obj)
+            % Public: the launcher calls this on a local state change so the
+            % phone reflects preparing/prepared/running without waiting for the
+            % next tick. Also (re)attaches the experiment listeners now, so a
+            % fast local Prepare->Start can't begin the blocking run() before the
+            % agent is listening.
+            if obj.hasLauncher() && ~obj.simulate
+                try, obj.syncLauncherExp(); catch, end
+            end
+            obj.postStatus();
+        end
+
         function delete(obj)
             obj.stop();
             obj.stopSimTimer();
@@ -144,6 +157,7 @@ classdef RemoteControlAgent < handle
                     obj.handle(cmds{k});
                 end
                 if obj.hasLauncher()
+                    obj.syncLauncherExp();   % track a GUI-started run too
                     obj.satTick = obj.satTick + 1;
                     if mod(obj.satTick, obj.satEvery) == 0
                         obj.refreshSatellites();
@@ -238,7 +252,7 @@ classdef RemoteControlAgent < handle
         end
 
         function doPrepare(obj, args)
-            if ~strcmp(obj.mode, 'idle')
+            if ~strcmp(obj.currentMode(), 'idle')
                 obj.addFault('prepare ignored (not idle)');
                 return
             end
@@ -271,14 +285,15 @@ classdef RemoteControlAgent < handle
             end
             if ok
                 obj.mode = 'prepared';
+                obj.ensureExpListeners(obj.launcher.getExperiment());
             else
                 obj.mode = 'idle';
-                obj.acquirePower();       % failed/aborted -> resume power control
+                obj.acquirePower();       % failed/aborted -> resume power control ('both' role)
             end
         end
 
         function doStart(obj)
-            if ~strcmp(obj.mode, 'prepared')
+            if ~strcmp(obj.currentMode(), 'prepared')
                 obj.addFault('start ignored (nothing prepared)');
                 return
             end
@@ -291,12 +306,11 @@ classdef RemoteControlAgent < handle
             exp = obj.launcher.getExperiment();
             if isempty(exp) || ~isvalid(exp)
                 obj.addFault('start: no prepared experiment');
-                obj.mode = 'idle';
                 obj.acquirePower();
                 return
             end
 
-            obj.attachExpListeners(exp);
+            obj.ensureExpListeners(exp);   % (also attached by the tick for a local start)
             obj.mode = 'running';
             obj.postStatus();
             try
@@ -304,10 +318,10 @@ classdef RemoteControlAgent < handle
             catch ME
                 obj.addFault(sprintf('run: %s', ME.message));
             end
-            obj.detachExpListeners();
+            obj.clearExpListeners();
 
             % The run's cleanup ran daqreset(); reclaim the hardware for idle
-            % power control.
+            % power control ('both' role; no-op for launcher role).
             obj.mode = 'idle';
             obj.acquirePower();
         end
@@ -369,6 +383,37 @@ classdef RemoteControlAgent < handle
             obj.expListeners = [];
         end
 
+        function syncLauncherExp(obj)
+            % Track whatever Experiment the launcher currently holds, so a run
+            % started from the local GUI still forwards trial progress + honors
+            % a remote stop (the listeners fire in the run's drawnow).
+            exp = [];
+            if ~isempty(obj.launcher) && isvalid(obj.launcher)
+                exp = obj.launcher.getExperiment();
+            end
+            if ~isempty(exp) && isvalid(exp)
+                obj.ensureExpListeners(exp);
+            else
+                obj.clearExpListeners();
+            end
+        end
+
+        function ensureExpListeners(obj, exp)
+            if isempty(exp) || ~isvalid(exp), return; end
+            same = ~isempty(obj.trackedExp) && isvalid(obj.trackedExp) && (obj.trackedExp == exp);
+            if ~same
+                obj.attachExpListeners(exp);
+                obj.trackedExp = exp;
+            end
+        end
+
+        function clearExpListeners(obj)
+            if ~isempty(obj.trackedExp)
+                obj.detachExpListeners();
+                obj.trackedExp = [];
+            end
+        end
+
         function onTrialRemote(obj, ~)
             % Fires inside notify_progress's drawnow (once per trial): report
             % progress and check for a remote stop. This is the only servicing
@@ -387,9 +432,10 @@ classdef RemoteControlAgent < handle
                 obj.remember(id);
                 t = char(c.type);
                 if any(strcmp(t, {'experiment.abort', 'estop'}))
-                    exp = obj.launcher.getExperiment();
-                    if ~isempty(exp) && isvalid(exp)
-                        exp.AbortRequested = true;   % honored at the next trial boundary
+                    if ~isempty(obj.launcher) && isvalid(obj.launcher)
+                        % sets AbortRequested (honored at the next trial boundary)
+                        % AND broadcasts the satellite abort.
+                        obj.launcher.remoteAbort();
                     end
                 else
                     obj.addFault(sprintf('"%s" ignored during run', t));
@@ -411,7 +457,7 @@ classdef RemoteControlAgent < handle
                 s.power = obj.powerStatus();
             end
             if obj.hasLauncher()
-                s.mode       = obj.mode;
+                s.mode       = obj.currentMode();   % launcher's true State (local or remote)
                 s.experiment = obj.expStatus();
                 s.satellites = obj.satellites;
             end
@@ -490,6 +536,17 @@ classdef RemoteControlAgent < handle
             if ~isempty(obj.launcher) && isvalid(obj.launcher)
                 s = obj.launcher.remoteStatus();
                 st = s.state;
+            end
+        end
+
+        function m = currentMode(obj)
+            % Truth for the launcher role is the launcher's own State, so a
+            % GUI-driven Prepare/Start/Abort is reflected on the phone; scope /
+            % simulate keep the agent's local mode.
+            if obj.simulate || ~obj.hasLauncher()
+                m = obj.mode;
+            else
+                m = obj.launcherState();
             end
         end
     end
