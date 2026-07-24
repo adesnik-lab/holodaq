@@ -318,9 +318,12 @@ classdef RemoteControlAgent < handle
                 obj.laserArmedUntil = NaT;
             end
 
-            % Tell every satellite to cancel its priming (same broadcast for a
-            % plain Abort and an E-STOP). No-op in simulate (no holoIO).
-            obj.broadcastAbort();
+            % Cancel satellite priming. When a launcher is attached it does this
+            % itself (ExperimentLauncher.onAbort, so a local GUI abort works too);
+            % only broadcast here for a scope-only client (E-STOP, no launcher).
+            if ~obj.hasLauncher()
+                obj.broadcastAbort();
+            end
 
             if obj.simulate
                 obj.stopSimTimer();
