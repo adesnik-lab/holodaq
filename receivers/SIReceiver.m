@@ -29,6 +29,11 @@ classdef SIReceiver < Receiver
             obj.hSI    = evalin('base', 'hSI');
             obj.hSICtl = evalin('base', 'hSICtl');
 
+            % Priming must not change the user's Stack setting; capture it now
+            % and restore it before arming (something in the prime/abort path
+            % was clearing "Enable Stack").
+            stackEnable = obj.getStackEnable();
+
             % Stop any prior looped acquisition before re-arming for a new expt.
             try, obj.hSI.abort(); catch, end
 
@@ -58,8 +63,21 @@ classdef SIReceiver < Receiver
             % stray trailing files don't auto-bump it to a higher number — we
             % want to overwrite from _00001. (Set last so nothing re-derives it.)
             obj.hSI.hScan2D.logFileCounter = 1;
+            obj.restoreStackEnable(stackEnable);   % keep the user's Stack setting
             obj.hSI.startLoop();      % arm: wait for the DAQ external trigger
             disp('ScanImage armed.')
+        end
+
+        function tf = getStackEnable(obj)
+            % Current "Enable Stack" state ([] if unavailable). Property name
+            % may differ across ScanImage versions — adjust here if needed.
+            tf = [];
+            try, tf = obj.hSI.hStackManager.enable; catch, end
+        end
+
+        function restoreStackEnable(obj, tf)
+            if isempty(tf), return; end
+            try, obj.hSI.hStackManager.enable = tf; catch, end
         end
 
         function onFinish(obj)
