@@ -45,6 +45,12 @@ classdef RemoteControlAgent < handle
         laserArmedUntil datetime = NaT
         expListeners    = []
 
+        % satellite prime status (read from holochat config/*_status)
+        holoIO                          % RESTio to the holochat broker ([] off-rig)
+        satellites      struct = struct()
+        satTick         double = 0
+        satEvery        double = 5       % refresh satellites every Nth tick
+
         % simulate-mode fake experiment run
         simSelected     char = ''
         simTrial        double = 0
@@ -64,12 +70,23 @@ classdef RemoteControlAgent < handle
             p.addParameter('Visible',  true);
             p.addParameter('Launcher', []);   % an ExperimentLauncher, or [] to disable experiments
             p.addParameter('Power',    []);   % an existing PowerControllerCalibrated, or [] to create one
+            p.addParameter('HoloServer', 'http://136.152.58.120:8000');  % holochat broker for satellite acks
             p.parse(varargin{:});
 
             obj.io       = io;
             obj.simulate = logical(p.Results.Simulate);
             obj.visible  = logical(p.Results.Visible);
             obj.launcher = p.Results.Launcher;
+
+            % Reader for the satellites' prime acks (config/{si,ptb,holo}_status
+            % on the holochat broker). Skipped off-rig / in simulate.
+            if ~obj.simulate
+                try
+                    obj.holoIO = RESTio(p.Results.HoloServer);
+                catch
+                    obj.holoIO = [];
+                end
+            end
 
             if isempty(p.Results.Power)
                 obj.acquirePower();
@@ -118,6 +135,10 @@ classdef RemoteControlAgent < handle
                 cmds = obj.io.popCommands();
                 for k = 1:numel(cmds)
                     obj.handle(cmds{k});
+                end
+                obj.satTick = obj.satTick + 1;
+                if mod(obj.satTick, obj.satEvery) == 0
+                    obj.refreshSatellites();
                 end
             catch ME
                 obj.addFault(sprintf('tick: %s', ME.message));
@@ -366,8 +387,37 @@ classdef RemoteControlAgent < handle
             s.mode       = obj.mode;
             s.power      = obj.powerStatus();
             s.experiment = obj.expStatus();
+            s.satellites = obj.satellites;
             s.faults     = obj.faults;
             obj.io.postStatus(s);
+        end
+
+        function refreshSatellites(obj)
+            % Pull each satellite's latest prime ack from config/*_status.
+            if isempty(obj.holoIO), return; end
+            sat = struct();
+            sat.si   = obj.readSatelliteStatus('si_status');
+            sat.ptb  = obj.readSatelliteStatus('ptb_status');
+            sat.holo = obj.readSatelliteStatus('holo_status');
+            obj.satellites = sat;
+        end
+
+        function st = readSatelliteStatus(obj, topic)
+            % Read + decode one config/*_status ack. Tolerates both MATLAB
+            % (mps) and plain-JSON (Python/PTB) encodings; [] if none.
+            st = [];
+            try
+                recv = obj.holoIO.scan(topic, 'config');
+                if isempty(recv) || ~isstruct(recv) || ~isfield(recv, 'message')
+                    return
+                end
+                try
+                    st = mps.json.decode(recv.message);
+                catch
+                    st = jsondecode(recv.message);
+                end
+            catch
+            end
         end
 
         function ps = powerStatus(obj)
