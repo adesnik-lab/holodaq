@@ -20,6 +20,7 @@ classdef Receiver < handle
         config
         last_prime_seq = -inf
         last_abort_seq = -inf
+        last_finish_seq = -inf
         poll_period = 0.25   % s between config polls once a prime is present
     end
 
@@ -46,6 +47,7 @@ classdef Receiver < handle
                     end
                 end
                 obj.poll_abort();
+                obj.poll_finish();
                 pause(obj.poll_period);   % throttle the (persistent) config polling
             end
         end
@@ -106,12 +108,38 @@ classdef Receiver < handle
             end
         end
 
+        function poll_finish(obj)
+            % End-of-recording signal (config/<name>_finish): a graceful stop,
+            % distinct from abort. Baseline the first sighting so a stale value
+            % doesn't fire. Only SIReceiver overrides onFinish today.
+            f = [];
+            try, f = obj.interface.scan_config([obj.name '_finish']); catch, end
+            if ~(isstruct(f) && isfield(f, 'finish_seq') && ~isempty(f.finish_seq))
+                return
+            end
+            if isinf(obj.last_finish_seq)
+                obj.last_finish_seq = f.finish_seq;
+            elseif f.finish_seq > obj.last_finish_seq
+                obj.last_finish_seq = f.finish_seq;
+                try
+                    obj.onFinish();
+                    fprintf('[%s] end-of-recording stop.\n', obj.name);
+                catch err
+                    fprintf('[%s] finish handler error: %s\n', obj.name, err.message);
+                end
+            end
+        end
+
         function run(obj)
             % overridden by subclass
         end
 
         function onAbort(obj)  %#ok<MANU>
             % overridden by subclass: cancel whatever run() primed
+        end
+
+        function onFinish(obj)  %#ok<MANU>
+            % overridden by subclass: stop gracefully at end of recording
         end
     end
 end

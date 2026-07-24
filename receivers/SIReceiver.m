@@ -50,13 +50,38 @@ classdef SIReceiver < Receiver
             % so OnlineSession can pair the tiffs with the K: stim-data file.
             obj.hSI.hScan2D.logFilePath    = logdir;
             obj.hSI.hScan2D.logFileStem    = sprintf('%s_%s_%d%s', stamp, mouse, epoch, expt);
-            obj.hSI.hScan2D.logFileCounter = 1;
             obj.hSICtl.updateView();
 
             obj.set_user_function();
 
+            % Force the acquisition number back to 1 right before arming, so
+            % stray trailing files don't auto-bump it to a higher number — we
+            % want to overwrite from _00001. (Set last so nothing re-derives it.)
+            obj.hSI.hScan2D.logFileCounter = 1;
             obj.hSI.startLoop();      % arm: wait for the DAQ external trigger
             disp('ScanImage armed.')
+        end
+
+        function onFinish(obj)
+            % End of a normal recording: let ScanImage finish the CURRENT
+            % acquisition (its frame timer runs out) and THEN stop the LOOP.
+            % NOT an immediate abort (that would truncate the in-progress tiff).
+            try, obj.hSI = evalin('base', 'hSI'); catch, end
+            try, obj.hSI.extTrigEnable = 0; catch, end   % don't start another acquisition
+            t0 = tic;
+            while toc(t0) < 60
+                st = '';
+                try, st = lower(char(obj.hSI.acqState)); catch, end
+                % idle / loop_wait => the current acquisition has finished; safe
+                % to stop. grab / loop / focus => still acquiring; keep waiting.
+                % (acqState strings can vary by ScanImage version — adjust here.)
+                if isempty(st) || any(strcmp(st, {'idle', 'loop_wait'}))
+                    break
+                end
+                pause(0.05);
+            end
+            try, obj.hSI.abort(); catch, end   % exit the loop now the acq is done
+            disp('ScanImage: current acquisition finished; loop stopped.')
         end
 
         function onAbort(obj)
