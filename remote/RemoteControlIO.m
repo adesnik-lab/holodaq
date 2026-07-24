@@ -32,20 +32,22 @@ classdef RemoteControlIO < handle
                 'HeaderFields', hdr, 'Timeout', 3, 'RequestMethod', 'post');
         end
 
-        function cmds = popCommands(obj)
+        function cmds = popCommands(obj, role)
+            if nargin < 2, role = ''; end
             cmds = {};
             try
-                recv = webread([obj.base '/cmd/pop'], obj.getops);
+                recv = webread([obj.base '/cmd/pop' obj.roleq(role)], obj.getops);
                 cmds = RemoteControlIO.aslist(recv);
             catch ME
                 obj.note('popCommands', ME);
             end
         end
 
-        function ok = postStatus(obj, s)
+        function ok = postStatus(obj, s, role)
+            if nargin < 3, role = ''; end
             ok = false;
             try
-                webwrite([obj.base '/status'], s, obj.postops);
+                webwrite([obj.base '/status' obj.roleq(role)], s, obj.postops);
                 ok = true;
             catch ME
                 obj.note('postStatus', ME);
@@ -79,6 +81,15 @@ classdef RemoteControlIO < handle
     end
 
     methods (Access = private)
+        function q = roleq(~, role)
+            % '' / 'both' -> no role filter (drain everything); else ?role=<role>.
+            if isempty(role) || strcmp(role, 'both')
+                q = '';
+            else
+                q = ['?role=' role];
+            end
+        end
+
         function note(~, where, ME)
             % Surface a transport error once (dedup on message) so a server
             % that isn't up yet doesn't spam the console every poll.

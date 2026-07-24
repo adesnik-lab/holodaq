@@ -9,11 +9,15 @@ classdef SIReceiver < Receiver
     properties
         hSI
         hSICtl
+        si_root = 'D:'   % local drive/base for ScanImage tiff logging on the SI PC
     end
 
     methods
-        function obj = SIReceiver()
+        function obj = SIReceiver(si_root)
             obj = obj@Receiver('si');
+            if nargin >= 1 && ~isempty(si_root)
+                obj.si_root = si_root;
+            end
         end
 
         function run(obj)
@@ -30,9 +34,21 @@ classdef SIReceiver < Receiver
 
             obj.hSI.extTrigEnable            = 1;
             obj.hSI.hChannels.loggingEnable  = 1;
+
+            % ScanImage does NOT create the log directory and throws "Invalid
+            % file identifier" when it can't open the tiff in a missing folder,
+            % so build the path with native (Windows) separators via fullfile
+            % and create it first. Base drive is obj.si_root (default 'D:').
+            logdir = fullfile(obj.si_root, stamp, mouse, sprintf('%d%s', epoch, expt));
+            if ~isfolder(logdir)
+                [ok, msg] = mkdir(logdir);
+                if ~ok
+                    error('SIReceiver: could not create log dir "%s": %s', logdir, msg);
+                end
+            end
             % logFileStem MUST match the DAQ Saver stem <date>_<mouse>_<epoch><expt>
             % so OnlineSession can pair the tiffs with the K: stim-data file.
-            obj.hSI.hScan2D.logFilePath    = sprintf('D:/%s/%s/%d%s', stamp, mouse, epoch, expt);
+            obj.hSI.hScan2D.logFilePath    = logdir;
             obj.hSI.hScan2D.logFileStem    = sprintf('%s_%s_%d%s', stamp, mouse, epoch, expt);
             obj.hSI.hScan2D.logFileCounter = 1;
             obj.hSICtl.updateView();

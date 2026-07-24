@@ -34,6 +34,7 @@ classdef RemoteControlAgent < handle
         launcher                            % ExperimentLauncher ([] if disabled)
         poll                                % polling timer
         mode            char = 'idle'       % idle | preparing | prepared | running
+        role            char = 'both'       % scope | launcher | both (both = dev/simulate)
         simulate        logical = false
         visible         logical = true
 
@@ -66,6 +67,7 @@ classdef RemoteControlAgent < handle
     methods
         function obj = RemoteControlAgent(io, varargin)
             p = inputParser;
+            p.addParameter('Role', 'both');   % scope | launcher | both
             p.addParameter('Simulate', false);
             p.addParameter('Visible',  true);
             p.addParameter('Launcher', []);   % an ExperimentLauncher, or [] to disable experiments
@@ -74,13 +76,14 @@ classdef RemoteControlAgent < handle
             p.parse(varargin{:});
 
             obj.io       = io;
+            obj.role     = char(p.Results.Role);
             obj.simulate = logical(p.Results.Simulate);
             obj.visible  = logical(p.Results.Visible);
             obj.launcher = p.Results.Launcher;
 
             % Reader for the satellites' prime acks (config/{si,ptb,holo}_status
-            % on the holochat broker). Skipped off-rig / in simulate.
-            if ~obj.simulate
+            % on the holochat broker). Only the launcher side shows them.
+            if ~obj.simulate && obj.hasLauncher()
                 try
                     obj.holoIO = RESTio(p.Results.HoloServer);
                 catch
@@ -88,10 +91,13 @@ classdef RemoteControlAgent < handle
                 end
             end
 
-            if isempty(p.Results.Power)
-                obj.acquirePower();
-            else
-                obj.power = p.Results.Power;
+            % Only the scope side owns the power hardware.
+            if obj.hasScope()
+                if isempty(p.Results.Power)
+                    obj.acquirePower();
+                else
+                    obj.power = p.Results.Power;
+                end
             end
         end
 
@@ -131,14 +137,16 @@ classdef RemoteControlAgent < handle
         function tick(obj)
             obj.faults = {};                 % faults reflect only this cycle
             try
-                obj.deadmanCheck();
-                cmds = obj.io.popCommands();
+                if obj.hasScope(), obj.deadmanCheck(); end
+                cmds = obj.io.popCommands(obj.role);
                 for k = 1:numel(cmds)
                     obj.handle(cmds{k});
                 end
-                obj.satTick = obj.satTick + 1;
-                if mod(obj.satTick, obj.satEvery) == 0
-                    obj.refreshSatellites();
+                if obj.hasLauncher()
+                    obj.satTick = obj.satTick + 1;
+                    if mod(obj.satTick, obj.satEvery) == 0
+                        obj.refreshSatellites();
+                    end
                 end
             catch ME
                 obj.addFault(sprintf('tick: %s', ME.message));
@@ -150,9 +158,13 @@ classdef RemoteControlAgent < handle
             if ~isstruct(c) || ~isfield(c, 'type'), return; end
             id = obj.cmdId(c);
             if obj.isDup(id), return; end
-            obj.remember(id);
 
             type = char(c.type);
+            if ~obj.roleAllows(type)
+                return   % handled by the other client (scope vs launcher)
+            end
+            obj.remember(id);
+
             args = obj.getargs(c);
             switch type
                 case 'laser.set'
@@ -358,7 +370,7 @@ classdef RemoteControlAgent < handle
         end
 
         function pollForStop(obj)
-            cmds = obj.io.popCommands();
+            cmds = obj.io.popCommands(obj.role);
             for k = 1:numel(cmds)
                 c = cmds{k};
                 if ~isstruct(c) || ~isfield(c, 'type'), continue; end
@@ -383,13 +395,19 @@ classdef RemoteControlAgent < handle
         function postStatus(obj)
             obj.agentSeq = obj.agentSeq + 1;
             s = struct();
-            s.agent_seq  = obj.agentSeq;
-            s.mode       = obj.mode;
-            s.power      = obj.powerStatus();
-            s.experiment = obj.expStatus();
-            s.satellites = obj.satellites;
-            s.faults     = obj.faults;
-            obj.io.postStatus(s);
+            s.agent_seq = obj.agentSeq;
+            s.faults    = obj.faults;
+            % Post only the sections this role owns; the server merges by role
+            % so scope and launcher don't clobber each other's status.
+            if obj.hasScope()
+                s.power = obj.powerStatus();
+            end
+            if obj.hasLauncher()
+                s.mode       = obj.mode;
+                s.experiment = obj.expStatus();
+                s.satellites = obj.satellites;
+            end
+            obj.io.postStatus(s, obj.role);
         end
 
         function refreshSatellites(obj)
@@ -512,6 +530,7 @@ classdef RemoteControlAgent < handle
     %% ---- hardware ownership ----------------------------------------------
     methods (Access = private)
         function acquirePower(obj)
+            if ~obj.hasScope(), return; end   % launcher role never owns power
             if ~isempty(obj.power) && isvalid(obj.power), return; end
             try
                 obj.power = PowerControllerCalibrated('Simulate', obj.simulate, 'Visible', obj.visible);
@@ -558,6 +577,34 @@ classdef RemoteControlAgent < handle
                 try, delete(obj.simTimer); catch, end
             end
             obj.simTimer = [];
+        end
+    end
+
+    %% ---- role helpers ----------------------------------------------------
+    methods (Access = private)
+        function tf = hasScope(obj)
+            tf = any(strcmp(obj.role, {'scope', 'both'}));
+        end
+
+        function tf = hasLauncher(obj)
+            tf = any(strcmp(obj.role, {'launcher', 'both'}));
+        end
+
+        function tf = roleAllows(obj, type)
+            % Which command types this agent acts on, by role. estop is honored
+            % by whichever client is up (scope -> allSafe, launcher -> abort).
+            scopeCmds    = {'laser.set', 'shutter.set', 'power.set', 'pulse'};
+            launcherCmds = {'experiment.select', 'experiment.prepare', ...
+                            'experiment.start', 'experiment.abort'};
+            if strcmp(type, 'estop')
+                tf = true;
+            elseif any(strcmp(type, scopeCmds))
+                tf = obj.hasScope();
+            elseif any(strcmp(type, launcherCmds))
+                tf = obj.hasLauncher();
+            else
+                tf = true;   % unknown -> let handle() log it
+            end
         end
     end
 

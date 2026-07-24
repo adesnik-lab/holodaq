@@ -1,5 +1,13 @@
 function agent = start_remote(varargin)
-%START_REMOTE Launch the phone remote-control bridge for the scope2k rig.
+%START_REMOTE Dev/simulate convenience: one process driving BOTH the power GUI
+%   and the ExperimentLauncher (role 'both').
+%
+%   On the RIG use the two separate entry points instead — they must not share
+%   the DAQ/COM4 ports at the same time:
+%       ScopeController('Token', <PIN>)     % laser / shutter / power
+%       ExperimentLauncher('Token', <PIN>)  % experiments
+%   start_remote bundles both in one process, which is only safe with
+%   'Simulate', true (no hardware). It remains handy for off-rig UI testing.
 %
 %   agent = START_REMOTE() connects to http://127.0.0.1:8765/api, creates an
 %   ExperimentLauncher + PowerControllerCalibrated, and starts polling the
@@ -29,6 +37,12 @@ function agent = start_remote(varargin)
     p.addParameter('Experiments', true);
     p.parse(varargin{:});
     r = p.Results;
+
+    if ~logical(r.Simulate)
+        warning(['start_remote runs the power GUI + launcher in ONE process ' ...
+            '(they share COM4 on real hardware). On the rig use ScopeController ' ...
+            'and ExperimentLauncher separately instead.']);
+    end
 
     base = r.Base;
     if isempty(base)
