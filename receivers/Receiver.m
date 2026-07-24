@@ -32,6 +32,7 @@ classdef Receiver < handle
         end
 
         function listen(obj)
+            obj.flush_stale();
             fprintf('[%s] listener up; waiting for a prime from the DAQ...\n', obj.name);
             while true
                 cfg = obj.poll_prime();
@@ -71,6 +72,19 @@ classdef Receiver < handle
                 catch err
                     fprintf('[%s] abort handler error: %s\n', obj.name, err.message);
                 end
+            end
+        end
+
+        function flush_stale(obj)
+            % On startup, drop stale messages from a previous session: clear the
+            % consume-once msg inbox, and adopt the current prime as the baseline
+            % so an old prime left on the config channel isn't re-run. (abort /
+            % finish baseline themselves on first sighting.)
+            try, obj.interface.flush(); catch, end
+            c = [];
+            try, c = obj.interface.scan_config(obj.name); catch, end
+            if isstruct(c) && isfield(c, 'prime_seq') && ~isempty(c.prime_seq)
+                obj.last_prime_seq = c.prime_seq;
             end
         end
 
