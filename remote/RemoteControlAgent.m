@@ -73,7 +73,8 @@ classdef RemoteControlAgent < handle
             p.addParameter('Visible',  true);
             p.addParameter('Launcher', []);   % an ExperimentLauncher, or [] to disable experiments
             p.addParameter('Power',    []);   % an existing PowerControllerCalibrated, or [] to create one
-            p.addParameter('HoloServer', 'http://136.152.58.120:8000');  % holochat broker for satellite acks
+            p.addParameter('HoloServer', ...
+                rig_get('network.holochat_server', 'http://136.152.58.120:8000'));  % holochat broker for satellite acks
             p.parse(varargin{:});
 
             obj.io       = io;

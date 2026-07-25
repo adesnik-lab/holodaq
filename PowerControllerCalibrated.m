@@ -40,13 +40,12 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
 
     properties (Constant)
         PULSE_DURATION    = 0.5;   % s, momentary open time for the PULSE buttons
-        MAX_LASER_VOLTAGE = 3.5;   % V, gate voltage for max power (HolographicPowerControl.gate_voltage)
         % Status colours: green = safe (shutter closed / laser off), red = live
         % (shutter open / laser on), so state is obvious at a glance.
         COLOR_IDLE   = [0.30 0.65 0.40];   % green
         COLOR_ACTIVE = [0.85 0.16 0.16];   % red
-        % LUT paths come from the `power_calibration` struct that the `power_calibrations`
-        % script defines (same source patch_experiment.m uses); see startupFcn.
+        % LUT paths come from the rig file (rig.modules.fpc_*.calibration, the
+        % same source patch_experiment.m uses); see startupFcn.
     end
 
     properties (Access = private)
@@ -64,6 +63,14 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
 
         dq
 
+        % V, gate "on" voltage; default from HolographicPowerControl.gate_voltage,
+        % overridden by rig.modules.laser_gate.max_voltage (see startupFcn)
+        MAX_LASER_VOLTAGE double = 3.5
+
+        % Position of [shutter900, shutter1100, laser] in the DAQ output vector;
+        % 0 = channel absent on this rig (not in the rig file). See build_output.
+        out_idx = [0 0 0]
+
         Simulate    logical = false   % off-rig: skip all hardware I/O
         WantVisible logical = true    % show the uifigure (false = headless)
     end
@@ -72,28 +79,37 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
 
         % ---- DAQ helpers ----------------------------------------------------
         % Output vector order matches the order outputs are added in startupFcn:
-        %   [shutter900, shutter1100, laser_voltage]
+        %   [shutter900, shutter1100, laser_voltage], minus any channel the rig
+        % file omits. out_idx maps each logical channel to its vector position.
         function data = build_output(app)
-            data = cat(2, app.shutter900, app.shutter1100, app.laser_voltage);
+            vals = cat(2, app.shutter900, app.shutter1100, app.laser_voltage);
+            data = vals(app.out_idx > 0);   % startupFcn adds outputs in vals order
         end
 
         function open(app, shutter_id)
             if app.Simulate, return; end   % caller still latches the shadow state
+            idx = app.out_idx(shutter_id);
+            if idx == 0, return; end       % channel not on this rig
             data = app.build_output();
-            data(shutter_id) = 1;
+            data(idx) = 1;
             app.dq.write(data);
         end
 
         function close(app, shutter_id)
             if app.Simulate, return; end
+            idx = app.out_idx(shutter_id);
+            if idx == 0, return; end       % channel not on this rig
             data = app.build_output();
-            data(shutter_id) = 0;
+            data(idx) = 0;
             app.dq.write(data);
         end
 
         function write_voltage(app)
             if ~app.Simulate
-                app.dq.write(app.build_output());
+                data = app.build_output();
+                if ~isempty(data)
+                    app.dq.write(data);
+                end
             end
             app.VoltageLabel.Text = sprintf('%.2f V', app.laser_voltage);
         end
@@ -186,36 +202,71 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
                 return
             end
 
-            app.dq = daq('ni');
+            % Everything rig-specific (DAQ device, channels, serial port, LUT
+            % paths) comes from the rig file (rigs/<Name>Rig.m); a channel the
+            % rig file omits is skipped and its controls are disabled.
+            addpath(fullfile(fileparts(mfilename('fullpath')), 'rigs'));
+            rig = load_rig();
+            has900  = rig_has(rig, 'fpc_900');
+            has1100 = rig_has(rig, 'fpc_1100');
+            hasgate = rig_has(rig, 'laser_gate');
 
-            s = serialport("COM4", 9600, ...
-                'ByteOrder', 'big-endian', 'Parity', 'none', ...
-                'StopBits', 1, 'DataBits', 8);
-            s.configureTerminator('CR/LF');
+            app.dq = daq(rig.daq.vendor);
+            dev = rig.daq.device;
+            if isempty(dev)
+                dl = daqlist();
+                dev = dl.DeviceID(1);   % auto-detect, same as DAQInterface
+            end
 
-            % Shutters (digital) + HWPs (ELL14 on serial). Same wiring/order as
-            % PowerControllerSimple: line5=900, line4=1100.
-            app.dq.addoutput('Dev1', 'port0/line5', 'Digital');
-            app.hwp900 = ELL14(SerialInterface(s), 1, 'hwp');
+            % The HWPs (ELL14) share one serial bus; open it once if either
+            % power channel exists.
+            if has900 || has1100
+                if has900, sname = rig.modules.fpc_900.serial; else, sname = rig.modules.fpc_1100.serial; end
+                s = open_serial(rig.serial.(sname));
+            end
+
+            % Shutters (digital) + HWPs (ELL14 on serial), then the laser gate
+            % (analog out) LAST — build_output relies on this order; out_idx
+            % records each channel's position in the output vector.
+            n_out = 0;
+            cal900 = ''; cal1100 = '';
+            if has900
+                app.dq.addoutput(dev, rig.modules.fpc_900.shutter, 'Digital');
+                n_out = n_out + 1; app.out_idx(1) = n_out;
+                app.hwp900 = ELL14(SerialInterface(s), rig.modules.fpc_900.ell14_channel, 'hwp');
+                cal900 = rig.modules.fpc_900.calibration;
+            else
+                app.SHUTTER900Button.Enable = 'off';
+                app.PULSE900Button.Enable   = 'off';
+            end
             app.shutter900 = 0;
 
-            app.dq.addoutput('Dev1', 'port0/line4', 'Digital');
-            app.hwp1100 = ELL14(SerialInterface(s), 2, 'hwp');
+            if has1100
+                app.dq.addoutput(dev, rig.modules.fpc_1100.shutter, 'Digital');
+                n_out = n_out + 1; app.out_idx(2) = n_out;
+                app.hwp1100 = ELL14(SerialInterface(s), rig.modules.fpc_1100.ell14_channel, 'hwp');
+                cal1100 = rig.modules.fpc_1100.calibration;
+            else
+                app.SHUTTER1100Button.Enable = 'off';
+                app.PULSE1100Button.Enable   = 'off';
+            end
             app.shutter1100 = 0;
 
-            % Laser gate (analog out). Added LAST so it is the last element of the
-            % output vector (see build_output). ao1 as in SimpleVoltageController.
-            app.dq.addoutput('Dev1', 'ao1', 'Voltage');
+            if hasgate
+                app.dq.addoutput(dev, rig.modules.laser_gate.output, 'Voltage');
+                n_out = n_out + 1; app.out_idx(3) = n_out;
+                if isfield(rig.modules.laser_gate, 'max_voltage')
+                    app.MAX_LASER_VOLTAGE = rig.modules.laser_gate.max_voltage;
+                end
+            else
+                app.LASERButton.Enable = 'off';
+            end
             app.laser_voltage = 0;
 
-            % Pull the per-laser LUT paths from the `power_calibration` struct the
-            % `power_calibrations` script defines (same source as patch_experiment.m /
-            % default_setup.m). Run it here so the app is self-contained.
-            power_calibrations;   % defines `power_calibration` in this workspace
-
-            % Load calibrations (mW -> HWP degrees) and point each slider at its range.
-            [app.pwr_fun900,  app.min_pwr900,  app.max_pwr900]  = app.load_lut(power_calibration.calibration_900);
-            [app.pwr_fun1100, app.min_pwr1100, app.max_pwr1100] = app.load_lut(power_calibration.calibration_1100);
+            % Load calibrations (mW -> HWP degrees) and point each slider at its
+            % range; an empty LUT path leaves that slider disabled.
+            [app.pwr_fun900,  app.min_pwr900,  app.max_pwr900]  = app.load_lut(cal900);
+            [app.pwr_fun1100, app.min_pwr1100, app.max_pwr1100] = app.load_lut(cal1100);
             app.init_slider(app.Power900,  app.PowerReadout900,  app.min_pwr900,  app.max_pwr900);
             app.init_slider(app.Power1100, app.PowerReadout1100, app.min_pwr1100, app.max_pwr1100);
 

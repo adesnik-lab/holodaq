@@ -16,18 +16,19 @@ function ctl = ScopeController(varargin)
 %
 %   See also PowerControllerCalibrated, RemoteControlAgent, ExperimentLauncher.
 
+    here = fileparts(mfilename('fullpath'));   % holodaq
+    addpath(here);
+    addpath(fullfile(here, 'remote'));
+    addpath(fullfile(here, 'rigs'));           % rig_get below needs rigs/
+
     p = inputParser;
     p.addParameter('Base', '');
-    p.addParameter('Port', 8765);
+    p.addParameter('Port', rig_get('network.remote_port', 8765));
     p.addParameter('Token', '');
     p.addParameter('Simulate', false);
     p.addParameter('Visible', true);
     p.parse(varargin{:});
     r = p.Results;
-
-    here = fileparts(mfilename('fullpath'));   % holodaq
-    addpath(here);
-    addpath(fullfile(here, 'remote'));
 
     app = PowerControllerCalibrated('Simulate', logical(r.Simulate), ...
                                     'Visible',  logical(r.Visible));

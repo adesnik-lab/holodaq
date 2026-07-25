@@ -17,6 +17,8 @@ classdef SIReceiver < Receiver
             obj = obj@Receiver('si');
             if nargin >= 1 && ~isempty(si_root)
                 obj.si_root = si_root;
+            else
+                obj.si_root = rig_get('paths.si_root', obj.si_root);
             end
         end
 

@@ -8,41 +8,64 @@ clc
 
 %
 default_setup();
+tm = TrialManager(dq);
 sm = SessionManager(tm, 'bleh');
 
-% Modules
-si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
-    Input(DAQInput(dq, 'ai0'), 'SI Frame'));
+% Modules (wiring comes from the rig file loaded by default_setup; a rig
+% without a module skips it)
+if rig_has(rig, 'si')
+    c = rig.modules.si;
+    si = SIComputer(Output(DAQOutput(dq, c.trigger), 'SI Trigger'),...
+        Input(DAQInput(dq, c.frame), 'SI Frame'));
+    tm.modules.add(si);
+end
 
-holo = HoloComputer();
+if rig_has(rig, 'holo')
+    holo = HoloComputer();
+    tm.modules.add(holo);
+end
 
-fpc_900 = FiberPowerControl(Output(DAQOutput(dq, 'port0/line5'), 'Shutter 900'),...
-    ELL14(SerialInterface(sp), 1, 'Power 900'),...
-    power_calibration.calibration_900, 250); % update these calibration paths as you get them...
+if rig_has(rig, 'fpc_900')
+    c = rig.modules.fpc_900;
+    fpc_900 = FiberPowerControl(Output(DAQOutput(dq, c.shutter), 'Shutter 900'),...
+        ELL14(SerialInterface(sp), c.ell14_channel, 'Power 900'),...
+        c.calibration, c.khz);
+    tm.modules.add(fpc_900);
+end
 
-fpc_1100 = FiberPowerControl(Output(DAQOutput(dq, 'port0/line4'), 'Shutter 1100'),...
-    ELL14(SerialInterface(sp), 2, 'Power 1100'),...
-    power_calibration.calibration_1100, 250);
+if rig_has(rig, 'fpc_1100')
+    c = rig.modules.fpc_1100;
+    fpc_1100 = FiberPowerControl(Output(DAQOutput(dq, c.shutter), 'Shutter 1100'),...
+        ELL14(SerialInterface(sp), c.ell14_channel, 'Power 1100'),...
+        c.calibration, c.khz);
+    tm.modules.add(fpc_1100);
+end
 
+if rig_has(rig, 'slm_900')
+    c = rig.modules.slm_900;
+    slm_900 = SLMComm(Output(DAQOutput(dq, c.trigger), 'SLM Trigger'),...
+        Input(DAQInput(dq, c.flip), 'SLM FLip'));
+    tm.modules.add(slm_900);
+end
 
-slm_900 = SLMComm(Output(DAQOutput(dq, 'port0/line2'), 'SLM Trigger'),...
-    Input(DAQInput(dq, 'ai1'), 'SLM FLip'));
+if rig_has(rig, 'slm_1100')
+    c = rig.modules.slm_1100;
+    slm_1100 = SLMComm(Output(DAQOutput(dq, c.trigger), 'SLM Trigger2'),...
+        Input(DAQInput(dq, c.flip), 'SLM FLip2'));
+    tm.modules.add(slm_1100);
+end
 
-slm_1100 = SLMComm(Output(DAQOutput(dq, 'port0/line3'), 'SLM Trigger2'),...
-    Input(DAQInput(dq, 'ai2'), 'SLM FLip2')); 
+if rig_has(rig, 'patch')
+    c = rig.modules.patch;
+    patch = Patch(Output(DAQOutput(dq, c.output), 'patch output'),...
+        Input(DAQInput(dq, c.input), 'patch input'));
+    tm.modules.add(patch);
+end
 
-patch = Patch(Output(DAQOutput(dq, 'ao0'), 'patch output'),... 
-    Input(DAQInput(dq, 'ai7'), 'patch input'));
+if rig_has(rig, 'wheel')
+    rwheel = RunningWheel(); % add running wheel here
+end
 
-rwheel = RunningWheel(); % add running wheel here
-
-tm.modules.add(si);
-tm.modules.add(holo);
-tm.modules.add(slm_900);
-tm.modules.add(slm_1100);
-tm.modules.add(fpc_900);
-tm.modules.add(fpc_1100);
-tm.modules.add(patch);
  sm.start_session();
 
 %
@@ -50,14 +73,14 @@ n_trials = 5;
 red_power = 0.01;
 scale = 2;
 
-randomly sample powers...
+% randomly sample powers...
 clear stims
 for n = 1:n_trials
     stims{1, n} = StimInfo(1, 1, red_power, 1000, 20);
     stims{2, n} = StimInfo(1, 1, red_power*scale, 1000, 20);
 end
 
-lastly, need to get info about stimulus
+% lastly, need to get info about stimulus
  %
 disp('Press any key to continue...')
 pause
@@ -66,17 +89,17 @@ ct = 1;
 start_delay = 500; % 500ms delay from start imaging for stim
 for p = 1:n_trials
     disp(ct)
-    tic; 
+    tic;
     s = [stims{:, p}];
-    
+
     patch.control.set(randi(3, [30000, 1]));
-    determine overall trial length
+    % determine overall trial length
     trial_length = max([s(1).trial_length, s(2).trial_length]);
     trial_length = 1000 + start_delay;
     tm.set_trial_length(trial_length); % stimulus on
     fprintf('This trial duration is %ds\n', trial_length/1000)
     fprintf('Red power: %0.02fmW | Blue power: %0.02fmW\n', s(1).power*1000, s(2).power*1000)
-    optogenetic params
+    % optogenetic params
     fpc_1100.set_power(s(1).power); % rigth now, power can only be a single value throughout the trial... we don't have the ability to trigger changes (yet)
     if s(1).power > 0
         for ii = 1:s.N % number of holos?
@@ -84,7 +107,7 @@ for p = 1:n_trials
         end
     end
 
-    optogenetic params
+    % optogenetic params
 
     fpc_900.set_power(s(2).power); % rigth now, power can only be a single value throughout the trial... we don't have the ability to trigger changes (yet)
     if s(2).power > 0
@@ -93,16 +116,16 @@ for p = 1:n_trials
         end
     end
 
-    set SLM stuff?
+    % set SLM stuff?
     for ii = 1:s.N
         slm_1100.set_flip(sum(s(1).total_stimulation_time(1:ii-1))+1);
         slm_900.set_flip(sum(s(2).total_stimulation_time(1:ii-1))+1);
     end
 
-    prepare machinery
+    % prepare machinery
     holo.set_sequence({s.firing_order}); % sequenc is a cell array for multislm
 
-    run the trial
+    % run the trial
     out = tm.run_trial();
     sm.saver.store(out);
     toc

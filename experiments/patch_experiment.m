@@ -18,25 +18,31 @@ default_setup();
 tm = TrialManager(dq);
 sm = SessionManager(tm, 'patch');
 
-%% Modules
-si = SIComputer(Output(DAQOutput(dq, 'port0/line0'), 'SI Trigger'),...
-    Input(DAQInput(dq, 'ai0'), 'SI Frame'));
+%% Modules (wiring comes from the rig file loaded by default_setup)
+assert(rig_has(rig, 'si') && rig_has(rig, 'fpc_900') && rig_has(rig, 'fpc_1100'), ...
+    'patch_experiment requires modules.si, modules.fpc_900, and modules.fpc_1100 in the rig file')
 
-fpc_900 = FiberPowerControl(Output(DAQOutput(dq, 'port0/line5'), 'Shutter 900'),...
-    ELL14(SerialInterface(sp), 1, 'Power 900'),...
-    power_calibration.calibration_900, 250); % update these calibration paths as you get them...
+c = rig.modules.si;
+si = SIComputer(Output(DAQOutput(dq, c.trigger), 'SI Trigger'),...
+    Input(DAQInput(dq, c.frame), 'SI Frame'));
 
-fpc_1100 = FiberPowerControl(Output(DAQOutput(dq, 'port0/line4'), 'Shutter 1100'),...
-    ELL14(SerialInterface(sp), 2, 'Power 1100'),...
-    power_calibration.calibration_1100, 250);
+c = rig.modules.fpc_900;
+fpc_900 = FiberPowerControl(Output(DAQOutput(dq, c.shutter), 'Shutter 900'),...
+    ELL14(SerialInterface(sp), c.ell14_channel, 'Power 900'),...
+    c.calibration, c.khz);
 
-patch = PatchInput(); % idr what its called... move the stupid things to 
+c = rig.modules.fpc_1100;
+fpc_1100 = FiberPowerControl(Output(DAQOutput(dq, c.shutter), 'Shutter 1100'),...
+    ELL14(SerialInterface(sp), c.ell14_channel, 'Power 1100'),...
+    c.calibration, c.khz);
+
+patch = PatchInput(); % idr what its called... move the stupid things to
 tm.modules.add(si);
 tm.modules.add(fpc_900);
 tm.modules.add(fpc_1100);
 
 % %% below is holography setup
-% holoRequest = importdata(fullfile(loc.HoloRequest, 'holoRequest.mat'));
+% holoRequest = importdata(fullfile(rig.paths.holo_request, 'holoRequest.mat'));
 % 
 % holoRequest.rois = {1:size(holoRequest.targets, 1)};%makeseq(holoRequest);
 % % eventually some kind of code that gathers them, rigth now one at a time?

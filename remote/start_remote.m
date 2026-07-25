@@ -28,9 +28,16 @@ function agent = start_remote(varargin)
 %   See also RemoteControlAgent, RemoteControlIO, PowerControllerCalibrated,
 %            ExperimentLauncher.
 
+    % Ensure the remote classes, the rig classes, and rigs/ are on the path
+    % (the rig_get default below needs rigs/).
+    here = fileparts(mfilename('fullpath'));   % holodaq/remote
+    addpath(here);
+    addpath(fileparts(here));                  % holodaq (PowerControllerCalibrated, ...)
+    addpath(fullfile(fileparts(here), 'rigs'));
+
     p = inputParser;
     p.addParameter('Base', '');
-    p.addParameter('Port', 8765);
+    p.addParameter('Port', rig_get('network.remote_port', 8765));
     p.addParameter('Token', '1234');
     p.addParameter('Simulate', false);
     p.addParameter('Visible', true);
@@ -40,19 +47,14 @@ function agent = start_remote(varargin)
 
     if ~logical(r.Simulate)
         warning(['start_remote runs the power GUI + launcher in ONE process ' ...
-            '(they share COM4 on real hardware). On the rig use ScopeController ' ...
-            'and ExperimentLauncher separately instead.']);
+            '(they share the HWP serial port on real hardware). On the rig use ' ...
+            'ScopeController and ExperimentLauncher separately instead.']);
     end
 
     base = r.Base;
     if isempty(base)
         base = sprintf('http://127.0.0.1:%d/api', r.Port);
     end
-
-    % Ensure the remote classes and the rig classes are on the path.
-    here = fileparts(mfilename('fullpath'));   % holodaq/remote
-    addpath(here);
-    addpath(fileparts(here));                  % holodaq (PowerControllerCalibrated, ...)
 
     io = RemoteControlIO(base, r.Token);
 

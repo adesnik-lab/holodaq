@@ -21,7 +21,9 @@ classdef RemoteControlIO < handle
 
     methods
         function obj = RemoteControlIO(base, token)
-            if nargin < 1 || isempty(base), base = 'http://127.0.0.1:8765/api'; end
+            if nargin < 1 || isempty(base)
+                base = rig_get('network.remote_api', 'http://127.0.0.1:8765/api');
+            end
             if nargin < 2, token = ''; end
             obj.base  = regexprep(base, '/+$', '');
             obj.token = token;

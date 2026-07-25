@@ -1,0 +1,9 @@
+function name = rig_config()
+%RIG_CONFIG Per-machine rig selection (gitignored).
+%   Copy this file to the repo root (or anywhere on your MATLAB path) as
+%   rig_config.m and return the name of your rig, e.g. 'Scope2K' for
+%   rigs/Scope2KRig.m. load_rig() calls this when no rig was requested
+%   explicitly and HOLODAQ_RIG is not set.
+
+    name = 'Scope2K';
+end

@@ -1,9 +1,9 @@
 classdef Saver < handle
-    properties (Constant = true)
-        base_path = 'K://KKS//stim-data'
-    end
-
     properties
+        % Save root; overridden by rig.paths.data_root when a rig is loaded
+        % (see constructor). The literal is the no-rig fallback.
+        base_path = 'K://KKS//stim-data'
+
         data = [];
 
 
@@ -24,6 +24,7 @@ classdef Saver < handle
 
     methods
         function obj = Saver(mouse, epoch, experiment, overwrite_policy)
+            obj.base_path = rig_get('paths.data_root', obj.base_path);
             obj.mouse = mouse;
             obj.epoch = epoch;
             obj.experiment = experiment;
