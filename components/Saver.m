@@ -24,7 +24,8 @@ classdef Saver < handle
 
     methods
         function obj = Saver(mouse, epoch, experiment, overwrite_policy)
-            obj.base_path = rig_get('paths.data_root', obj.base_path);
+            % Active profile's save root (falls back to rig.paths.data_root).
+            obj.base_path = stim_data_root();
             obj.mouse = mouse;
             obj.epoch = epoch;
             obj.experiment = experiment;
