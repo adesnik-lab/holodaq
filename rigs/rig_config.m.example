@@ -1,9 +1,12 @@
 function name = rig_config()
 %RIG_CONFIG Per-machine rig selection (gitignored).
 %   Copy this file to the repo root (or anywhere on your MATLAB path) as
-%   rig_config.m and return the name of your rig, e.g. 'Scope2K' for
+%   rig_config.m and return the name of YOUR rig, e.g. 'Scope2K' for
 %   rigs/Scope2KRig.m. load_rig() calls this when no rig was requested
 %   explicitly and HOLODAQ_RIG is not set.
+%
+%   The name below is only an example — change it. Returning another machine's
+%   rig gives you that machine's channel map, i.e. the wrong physical lines.
 
     name = 'Scope2K';
 end

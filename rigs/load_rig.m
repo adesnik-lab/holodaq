@@ -15,6 +15,7 @@ function rig = load_rig(name)
 %     3. a rig_config.m on the MATLAB path returning the rig name
 %        (per-machine, gitignored — copy rigs/rig_config.m.example)
 %     4. if rigs/ holds exactly one <Name>Rig.m besides ExampleRig, use it
+%        (warns — nothing on this machine actually selected a rig)
 %     5. otherwise error, listing the available rig files.
 %
 %   The loaded rig is cached so class internals can read it anywhere via
@@ -75,11 +76,19 @@ function [fn, source] = resolve_rig_function(name)
         return
     end
 
-    % Last resort: a lone rig file in this folder is unambiguous.
+    % Last resort: a lone rig file is unambiguous, but nothing on this machine
+    % actually *chose* it — say so, since the map may be another scope's.
     candidates = list_rig_files();
     if numel(candidates) == 1
         fn = str2func(candidates{1});
         source = sprintf('only rig file in %s', rigs_dir());
+        warning('load_rig:unconfigured', ...
+            ['Nothing on this machine selected a rig, so load_rig fell back to\n' ...
+             '''%s'' — the only rig file in %s.\n' ...
+             'If that is not this machine''s scope, its channel map is wrong for\n' ...
+             'your hardware. Select yours: copy rigs/rig_config.m.example to\n' ...
+             'rig_config.m (gitignored) on your MATLAB path, or set HOLODAQ_RIG.'], ...
+            candidates{1}, rigs_dir());
         return
     end
 
