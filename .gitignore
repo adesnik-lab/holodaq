@@ -2,6 +2,7 @@
 .DS_Store
 __pycache__/
 *.pyc
+.claude/
 
 # per-machine rig selection (copy rigs/rig_config.m.example)
 rig_config.m
