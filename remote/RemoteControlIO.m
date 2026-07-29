@@ -9,7 +9,7 @@ classdef RemoteControlIO < handle
     %   Endpoints (all under <base>, e.g. http://127.0.0.1:8765/api):
     %       GET  /cmd/pop      -> {commands:[...]}   (consume-once queue)
     %       POST /status       <- status struct       (persistent board)
-    %       GET  /heartbeat    -> {phone_stale, ...}  (dead-man input)
+    %       GET  /heartbeat    -> {phone_stale, ...}  (phone liveness; logged)
     %       GET  /experiments  -> {experiments:[...]}
 
     properties

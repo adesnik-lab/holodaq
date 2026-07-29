@@ -19,8 +19,10 @@ classdef RemoteControlAgent < handle
     %   drawnow window), which posts status and polls for a remote stop.
     %
     %   Safety: laser-ON requires an explicit confirm; a laser watchdog auto-offs
-    %   after LaserMaxOnSecs; a dead-man drives the rig safe if a phone that had
-    %   connected goes quiet (or the server becomes unreachable); commands are
+    %   after LaserMaxOnSecs; E-STOP drives everything safe on demand. A phone
+    %   that goes quiet does NOT trigger any safe-ing: the operator toggles their
+    %   phone on/off while working, so the rig HOLDS its current state and the
+    %   phone resyncs from the live status board when it reconnects. Commands are
     %   de-duplicated by id.
     %
     %   Usage (see start_remote.m):
@@ -43,6 +45,7 @@ classdef RemoteControlAgent < handle
         agentSeq        double = 0
         faults          cell = {}
         phoneEverSeen   logical = false
+        phoneLost       logical = false   % edge-tracks phone/link drop for logging
         laserArmedUntil datetime = NaT
         expListeners    = []
         trackedExp      = []            % Experiment we've attached listeners to ([] = none)
@@ -60,8 +63,7 @@ classdef RemoteControlAgent < handle
         simTimer
 
         % tunables
-        DeadmanSecs     double = 8
-        LaserMaxOnSecs  double = 60
+        LaserMaxOnSecs  double = 1800   % laser watchdog: 30 min max-on
         PollPeriod      double = 0.4
     end
 
@@ -152,7 +154,7 @@ classdef RemoteControlAgent < handle
         function tick(obj)
             obj.faults = {};                 % faults reflect only this cycle
             try
-                if obj.hasScope(), obj.deadmanCheck(); end
+                if obj.hasScope(), obj.safetyTick(); end
                 cmds = obj.io.popCommands(obj.role);
                 for k = 1:numel(cmds)
                     obj.handle(cmds{k});
@@ -554,30 +556,39 @@ classdef RemoteControlAgent < handle
 
     %% ---- safety ----------------------------------------------------------
     methods (Access = private)
-        function deadmanCheck(obj)
+        function safetyTick(obj)
+            % Time-based laser watchdog + phone-link edge logging. A phone
+            % going quiet NO LONGER drives the rig safe: the operator toggles
+            % their phone on/off while working, so we HOLD the current hardware
+            % state and let the phone resync from the live status board when it
+            % reconnects (web/app.js render() repaints laser/shutter/power from
+            % powerStatus() on every poll). Explicit safe-ing is still available
+            % via E-STOP.
             now_ = datetime('now');
             hb = obj.io.readHeartbeat();
             serverOk = isfield(hb, 'ok') && hb.ok;
+            phoneStale = ~isfield(hb, 'phone_stale') || logical(hb.phone_stale);
             if isfield(hb, 'phone_last_seen') && hb.phone_last_seen > 0
                 obj.phoneEverSeen = true;
             end
-            phoneStale = ~isfield(hb, 'phone_stale') || logical(hb.phone_stale);
 
-            % Laser watchdog: auto-off once the armed window elapses.
+            % Log the drop/reconnect transitions (no hardware action either
+            % way) so the "state held across a phone toggle" behavior is
+            % observable on the rig console.
+            lost = (~serverOk) || phoneStale;
+            if obj.phoneEverSeen && lost && ~obj.phoneLost
+                obj.phoneLost = true;
+                fprintf('[RemoteControlAgent] phone/link lost - holding current rig state.\n');
+            elseif obj.phoneLost && serverOk && ~phoneStale
+                obj.phoneLost = false;
+                fprintf('[RemoteControlAgent] phone reconnected - it will resync from live status.\n');
+            end
+
+            % Laser watchdog: auto-off once the armed window elapses (time-based,
+            % independent of the phone link).
             if ~isnat(obj.laserArmedUntil) && now_ > obj.laserArmedUntil
                 obj.makeLaserSafe('laser auto-off (watchdog)');
                 obj.laserArmedUntil = NaT;
-            end
-
-            % Dead-man: only after a phone had actually connected. If it went
-            % quiet, or the server is now unreachable, and anything is live
-            % while idle, drive the rig safe.
-            lost = (~serverOk) || phoneStale;
-            if obj.phoneEverSeen && lost && strcmp(obj.mode, 'idle')
-                if obj.somethingLive()
-                    try, obj.power.allSafe(); catch, end
-                    obj.addFault('dead-man: phone lost, rig set safe');
-                end
             end
         end
 
@@ -591,16 +602,6 @@ classdef RemoteControlAgent < handle
                     end
                 catch
                 end
-            end
-        end
-
-        function tf = somethingLive(obj)
-            tf = false;
-            if isempty(obj.power) || ~isvalid(obj.power), return; end
-            try
-                st = obj.power.state();
-                tf = st.laser_on || st.ch900.shutter_open || st.ch1100.shutter_open;
-            catch
             end
         end
     end
