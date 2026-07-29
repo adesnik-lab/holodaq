@@ -9,8 +9,11 @@ classdef DAQInterface < Interface
     methods
         function obj = DAQInterface(dq, channel)                    
             obj.io = dq;
-            dev = daqlist();
-            obj.dev = dev.DeviceID(1);
+            obj.dev = rig_get('daq.device', '');
+            if isempty(obj.dev)
+                dev = daqlist();
+                obj.dev = dev.DeviceID(1);   % auto-detect the first device
+            end
             obj.channel = strtrim(channel);
             obj.type = obj.derive_type();
             obj.sample_rate = obj.io.Rate;

@@ -6,7 +6,7 @@ classdef HolochatInterface < Interface
     methods
         function obj = HolochatInterface(id, server, reset)
             if nargin < 2 || isempty(server)
-                server = 'http://136.152.58.120:8000';
+                server = rig_get('network.holochat_server', 'http://136.152.58.120:8000');
             end
 
             if nargin < 3 || isempty(reset)
@@ -33,6 +33,31 @@ classdef HolochatInterface < Interface
 
         function out = get_config(obj)
             out = obj.io.read(obj.id, 30, 'config');
+        end
+
+        function out = scan_config(obj, topic)
+            % Non-blocking single read of a config topic (default: self).
+            % [] if unset. Used to poll the shared config/abort signal without
+            % the 30 s busy-wait that get_config does. Decodes the MPS-typed
+            % JSON the DAQ posts (prime / abort / finish).
+            if nargin < 2 || isempty(topic), topic = obj.id; end
+            out = obj.io.decode(obj.io.scan(topic, 'config'));
+        end
+
+        function out = scan_status(obj, topic)
+            % Non-blocking read of a satellite ack topic (config/<name>_status).
+            % Tolerates BOTH the MPS-typed JSON that MATLAB satellites post and
+            % the plain JSON the Python (PTB) primer posts. [] if unset.
+            out = [];
+            raw = obj.io.scan(topic, 'config');
+            if isempty(raw) || ~isstruct(raw) || ~isfield(raw, 'message')
+                return
+            end
+            try
+                out = mps.json.decode(raw.message);
+            catch
+                try, out = jsondecode(raw.message); catch, end
+            end
         end
 
         function out = read(obj, timeout)

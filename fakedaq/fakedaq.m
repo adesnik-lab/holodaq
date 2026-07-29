@@ -5,7 +5,11 @@ classdef fakedaq < handle
     end
     
     methods
-        function obj = daq()
+        function obj = fakedaq()
+            dev = rig_get('daq.device', '');
+            if ~isempty(dev)
+                obj.dev = dev;   % 'Dev1' property default when no rig is loaded
+            end
         end
         function ch = addinput(obj, varargin)
             disp('Added input')
