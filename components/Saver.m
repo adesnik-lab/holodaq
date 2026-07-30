@@ -1,8 +1,8 @@
 classdef Saver < handle
     properties
-        % Save root; overridden by rig.paths.data_root when a rig is loaded
-        % (see constructor). The literal is the no-rig fallback.
-        base_path = 'K://KKS//stim-data'
+        % Save root; always set from stim_data_root() in the constructor,
+        % which resolves profile -> rig.paths.data_root -> documented default.
+        base_path = ''
 
         data = [];
 
