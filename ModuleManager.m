@@ -25,10 +25,41 @@ classdef ModuleManager < dynamicprops
             module_name = sprintf('%s_%d', base, k);
         end
         
-        function add(obj, module)
-            module_name = obj.check_for_duplicate(class(module));
+        function add(obj, module, name)
+            %ADD Register a module, optionally under an EXPLICIT key.
+            %   add(m)        key it by class(m), auto-suffixing '_1', '_2' for
+            %                 repeats. What every caller did before, and still
+            %                 does: the inline experiment runners and both
+            %                 patch_experiment copies rely on it.
+            %   add(m, name)  key it verbatim as `name`.
+            %
+            %   Why the explicit form exists: keying by class means the FIRST
+            %   instance added gets the bare class name and the second gets '_1',
+            %   so with two lasers `modules.LaserPowerControl` was whichever one
+            %   happened to be added first. Which physical laser a caller reached
+            %   depended on add ORDER, silently. An explicit key is a claim about
+            %   WHICH device, so a collision is refused rather than suffixed --
+            %   auto-suffixing a claimed name is the original bug in miniature.
+            if nargin < 3 || isempty(name)
+                module_name = obj.check_for_duplicate(class(module));
+            else
+                module_name = char(name);
+                assert(isvarname(module_name), 'ModuleManager:badKey', ...
+                    'Module key ''%s'' is not a valid MATLAB identifier.', module_name);
+                assert(~any(strcmp(module_name, properties(obj))), ...
+                    'ModuleManager:duplicateKey', ...
+                    ['A module is already registered as ''%s''. Explicit keys are ' ...
+                     'not suffixed:\nthe caller asked for a specific device, so ' ...
+                     'silently renaming it to ''%s_1''\nwould hand them a ' ...
+                     'different one.'], module_name, module_name);
+            end
             obj.addprop(module_name);
             obj.(module_name) = module;
+        end
+
+        function tf = has(obj, name)
+            %HAS Is a module registered under this key?
+            tf = any(strcmp(char(name), properties(obj)));
         end
         
          function out = call(obj, function_name, varargin)
