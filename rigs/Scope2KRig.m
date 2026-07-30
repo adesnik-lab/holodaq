@@ -28,6 +28,15 @@ rig.serial.wheel = struct('port', 'COM3', 'baud', 115200, ...
 % A module listed here exists on this rig; omit the field entirely on rigs
 % that lack the hardware (scripts skip construction via rig_has).
 rig.modules.si         = struct('trigger', 'port0/line0', 'frame', 'ai0');
+% PsychToolbox computer trigger. port0/line17 is what Experiment.setup and every
+% live non-voltage-imaging runner use. NOTE: the voltage-imaging runners under
+% expts/Andrea/voltage-imaging/ instead use port0/line7 for the PTB trigger, and
+% additionally bind port0/line2 and port0/line3 as PTB *inputs* -- the lines this
+% file assigns to the SLM triggers below. Those runners build the rig inline and
+% keep their own literals, so they are unaffected by this entry; resolve on-rig
+% whether line7 is a second physical PTB line before migrating them (load_rig's
+% duplicate-channel check cannot help, since only one value ever lands here).
+rig.modules.ptb        = struct('trigger', 'port0/line17');
 rig.modules.holo       = struct();   % HoloComputer: holochat only, no DAQ wiring
 rig.modules.fpc_900    = struct('shutter', 'port0/line5', 'serial', 'ell14', ...
     'ell14_channel', 1, 'calibration', '', 'khz', 250);

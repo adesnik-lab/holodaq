@@ -57,6 +57,7 @@ rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
 %
 % Modules the stock experiment scripts / GUIs know about:
 %   si         : ScanImage computer — trigger (digital out), frame (analog in)
+%   ptb        : PsychToolbox visual-stimulus computer — trigger (digital out)
 %   holo       : holography computer — no wiring (talks over holochat)
 %   fpc_900    : fiber power control — shutter (digital out), serial (ELL14
 %   fpc_1100     bus name), ell14_channel (rotator address on that bus),
@@ -65,8 +66,12 @@ rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
 %   slm_1100
 %   patch      : patch clamp — output (analog out), input (analog in)
 %   wheel      : running wheel — serial (rig.serial entry name)
-%   laser_gate : laser gate — output (analog out), max_voltage (V, "on" level)
+%   laser_gate : laser gate — output (analog out). max_voltage (V, "on" level)
+%                is read by PowerControllerCalibrated only; at trial time
+%                LaserGate pins 3.5 V as a Constant (LaserGate.m:46), so
+%                changing max_voltage here does not change the trial sweep.
 rig.modules.si         = struct('trigger', 'port0/line0', 'frame', 'ai0');
+rig.modules.ptb        = struct('trigger', 'port0/line17');
 rig.modules.fpc_900    = struct('shutter', 'port0/line5', 'serial', 'ell14', ...
     'ell14_channel', 1, 'calibration', '', 'khz', 250);
 rig.modules.laser_gate = struct('output', 'ao1', 'max_voltage', 3.5);

@@ -38,6 +38,11 @@ scripts or classes; they all read the loaded rig.
   no rig loaded the fallback keeps satellite machines and Simulate-mode GUIs
   working).
 - `open_serial(rig.serial.<name>)` — build a `serialport` from a rig entry.
+- `rig_hardware()` — load the rig **and** open what it declares: returns
+  `.rig`, `.dq`, `.serial.<name>` (open ports), plus back-compat `.sp` /
+  `.arduino_obj` / `.power_calibration`. `default_setup` is the script-shaped
+  front end over it; call `rig_hardware()` directly from anywhere that cannot
+  take variables injected into its workspace, such as a classdef method.
 - `stim_data_root()` — the one place save paths resolve: the active profile's
   save root, else `rig.paths.data_root`, else the documented default (which
   warns, since nothing said where this machine's data belongs).
