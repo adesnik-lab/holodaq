@@ -23,9 +23,9 @@ rig.name = 'Scope2K';
 % Do not reformat the three lines below or move their <captured:...> tags: the
 % rewrite locates them by tag and refuses to touch the file if a tag is missing
 % or duplicated.
-captured_calibration_900  = '';   % <captured:calibration_900>
-captured_calibration_1100 = '';   % <captured:calibration_1100>
-captured_holo_request     = '';   % <captured:holo_request>
+captured_calibration_900  = 'C:\Users\holos\Documents\power-calibrations\active_900.mat';   % <captured:calibration_900>
+captured_calibration_1100 = 'C:\Users\holos\Documents\power-calibrations\active_1100.mat';   % <captured:calibration_1100>
+captured_holo_request     = 'K:\holography\HoloRequest\';   % <captured:holo_request>
 
 % ---- paths ---------------------------------------------------------------
 % MATLAB paths default_setup adds (data drive + sibling code checkouts).
@@ -114,7 +114,7 @@ if isempty(captured_calibration_1100), missing{end+1} = 'calibration_1100'; end
 if isempty(captured_holo_request),     missing{end+1} = 'holo_request';     end
 
 if ~isempty(missing)
-    got = local_capture(missing, mfilename('fullpath'));
+    got = local_capture(missing, [mfilename('fullpath') '.m']);
     % Apply to THIS session too, so a machine that can reach K:\ behaves
     % identically to before the capture existed.
     if isfield(got, 'calibration_900')
