@@ -198,6 +198,16 @@ function rig = validate_rig(rig)
         assert(~isempty(rig.daq.vendor), 'load_rig:invalid', ...
             'rig.daq.vendor must be set (e.g. ''ni'') when DAQ channels are declared.');
     end
+
+    % Optogenetic channel table. Validated here so a malformed rig.opto is
+    % refused at load time, before any hardware is opened -- and so the errors
+    % name the rig file rather than surfacing mid-experiment. A rig with no
+    % rig.opto is fine (vis-only rigs have no lasers); opto_channels returns an
+    % empty table. Its return value is discarded: callers that need the resolved
+    % table call opto_channels(rig) themselves, which is cheap and keeps the
+    % derived field names (hr<nm>, stim_<nm>) out of the cached rig struct where
+    % they could drift from the wavelength they came from.
+    opto_channels(rig);
 end
 
 function s = setdefault(s, field, value)

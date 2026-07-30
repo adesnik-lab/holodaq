@@ -59,11 +59,12 @@ rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
 %   si         : ScanImage computer — trigger (digital out), frame (analog in)
 %   ptb        : PsychToolbox visual-stimulus computer — trigger (digital out)
 %   holo       : holography computer — no wiring (talks over holochat)
-%   fpc_900    : fiber power control — shutter (digital out), serial (ELL14
-%   fpc_1100     bus name), ell14_channel (rotator address on that bus),
-%                calibration (path to power->angle LUT .mat), khz
-%   slm_900    : SLM comm — trigger (digital out), flip (analog in)
-%   slm_1100
+%   fpc_<tag>  : fiber power control — shutter (digital out), serial (ELL14
+%                bus name), ell14_channel (rotator address on that bus),
+%                calibration (path to power->angle LUT .mat), khz. The <tag> is
+%                free: a module is bound to an opto channel by rig.opto below,
+%                not by its name.
+%   slm_<tag>  : SLM comm — trigger (digital out), flip (analog in)
 %   patch      : patch clamp — output (analog out), input (analog in)
 %   wheel      : running wheel — serial (rig.serial entry name)
 %   laser_gate : laser gate — output (analog out). max_voltage (V, "on" level)
@@ -75,6 +76,43 @@ rig.modules.ptb        = struct('trigger', 'port0/line17');
 rig.modules.fpc_900    = struct('shutter', 'port0/line5', 'serial', 'ell14', ...
     'ell14_channel', 1, 'calibration', '', 'khz', 250);
 rig.modules.laser_gate = struct('output', 'ao1', 'max_voltage', 3.5);
+% The single opto path this template declares. Named for the wavelength here only
+% by habit -- rig.opto below is what binds them to a channel, so any tag works.
+rig.modules.fpc_1040   = struct('shutter', 'port0/line6', 'serial', 'ell14', ...
+    'ell14_channel', 2, 'calibration', '', 'khz', 250);   % distinct rotator address
+rig.modules.slm_1040   = struct('trigger', 'port0/line8', 'flip', 'ai3');
+
+% ---- opto (photostim) channels (optional) ----------------------------------
+% One entry per laser + SLM path. DELETE the field entirely on a rig with no
+% photostim lasers -- opto_channels then returns an empty table and vis-only
+% experiments run normally.
+%
+% THE COMMON CASE IS ONE CHANNEL. No ceremony, no special case:
+rig.opto = opto_channel('act', 1040, 'fpc_1040', 'slm_1040');
+%
+% Two channels. The ORDER is the wire order: the sequence holoRequests are
+% transferred in, and the cell position of each firing order.
+%   rig.opto = [ opto_channel('red',  1100, 'fpc_1100', 'slm_1100'), ...
+%                opto_channel('blue',  900, 'fpc_900',  'slm_900') ];
+%
+% Three channels at other wavelengths, named for what they do rather than for a
+% colour:
+%   rig.opto = [ opto_channel('act',  920, 'fpc_920',  'slm_920'), ...
+%                opto_channel('sup', 1040, 'fpc_1040', 'slm_1040'), ...
+%                opto_channel('aux', 1064, 'fpc_1064', 'slm_1064') ];
+%
+% One laser split across two SLMs (same wavelength). Legal, and the reason the
+% pool key is the NAME rather than the wavelength -- but each arm must declare
+% its own board, because the holography computer would otherwise resolve the
+% board from the wavelength alone and hand both arms the same one:
+%   rig.opto = [ opto_channel('arm1', 1040, 'fpc_a', 'slm_a', 'slm_board', 1), ...
+%                opto_channel('arm2', 1040, 'fpc_b', 'slm_b', 'slm_board', 2) ];
+%
+% Each entry's NAME is the params.pool field (pool(i).<name>). Each entry's
+% WAVELENGTH derives the params.holoinfo field (hr<nm>) and the saved field
+% (stim_<nm>) -- see opto_channels, which also validates the whole table at
+% load_rig time. Neither is ever typed twice, so no rig-file entry can bind one
+% laser's power command to another wavelength's calibration.
 
 % ---- network (all optional) ---------------------------------------------------------
 % holochat_server : REST broker coordinating the DAQ / SI / holo / PTB

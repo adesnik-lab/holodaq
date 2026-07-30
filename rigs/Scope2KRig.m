@@ -48,6 +48,27 @@ rig.modules.patch      = struct('output', 'ao0', 'input', 'ai7');
 rig.modules.wheel      = struct('serial', 'wheel');
 rig.modules.laser_gate = struct('output', 'ao1', 'max_voltage', 3.5);
 
+% ---- opto (photostim) channels ---------------------------------------------
+% THE declaration of this rig's opto channel identity: one entry per laser + SLM
+% path. Both halves of an entry are load-bearing.
+%   name       -> the params.pool field. 'red'/'blue' are exactly what the ~36
+%                 existing experiment files already write (pool(ct).red /
+%                 pool(ct).blue), so they run unedited and no alias is needed.
+%   wavelength -> DERIVES params.holoinfo.hr<nm> and the saved stim_<nm> (see
+%                 opto_channels), reproducing hr1100/hr900 and
+%                 stim_1100/stim_900 exactly. Never hand-typed, so a rig-file
+%                 typo cannot cross one laser's power command with another
+%                 wavelength's calibration.
+% ORDER IS THE WIRE ORDER: the sequence holoRequests are transferred in and the
+% cell position of each firing order. 1100 first reproduces today's transfer
+% order (FullExperiment.initialize sends hr1100 then hr900) and the holo
+% listener's historical [1100 900] default, so an un-updated listener still
+% agrees. Note this is deliberately NOT the module add order in
+% Experiment.setup, which adds 900 first -- that order fixes DAQ channel
+% registration and is a separate concern.
+rig.opto = [ opto_channel('red',  1100, 'fpc_1100', 'slm_1100'), ...
+             opto_channel('blue',  900, 'fpc_900',  'slm_900') ];
+
 % ---- network -------------------------------------------------------------------
 rig.network.holochat_server = 'http://136.152.58.120:8000';   % holochat broker
 rig.network.remote_port     = 8765;                           % phone-control server (remote/)
