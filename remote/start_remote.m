@@ -19,7 +19,11 @@ function agent = start_remote(varargin)
 %     'Token'       shared PIN/token; MUST match server config.json (default '1234')
 %     'Simulate'    true = no hardware + fake run, for off-rig testing (default false)
 %     'Visible'     show the PowerControllerCalibrated window   (default true)
-%     'Experiments' create an ExperimentLauncher for run control (default true)
+%     'Experiments' create an ExperimentLauncher for run control (default true).
+%            Requires the holoexpt repo on the path; warns and continues with
+%            power control only if it is absent.
+%     'Launcher'    an existing launcher object to drive instead of constructing
+%            one. Preferred: it keeps holodaq independent of holoexpt.
 %
 %   Examples:
 %     ag = start_remote('Token', '8261');                    % on the rig PC
@@ -42,6 +46,7 @@ function agent = start_remote(varargin)
     p.addParameter('Simulate', false);
     p.addParameter('Visible', true);
     p.addParameter('Experiments', true);
+    p.addParameter('Launcher', []);   % an ExperimentLauncher (holoexpt); [] to construct one
     p.parse(varargin{:});
     r = p.Results;
 
@@ -58,9 +63,24 @@ function agent = start_remote(varargin)
 
     io = RemoteControlIO(base, r.Token);
 
-    launcher = [];
-    if logical(r.Experiments) && ~logical(r.Simulate)
-        launcher = ExperimentLauncher();       % opens the launcher window (real hardware)
+    % The launcher lives in holoexpt, not here, so holodaq must not name the
+    % class: pass one in with 'Launcher', or let it be constructed only when
+    % ExperimentLauncher happens to be on the path. RemoteControlAgent takes it
+    % as a duck-typed parameter, so holodaq stays independently usable.
+    launcher = r.Launcher;
+    if isempty(launcher) && logical(r.Experiments) && ~logical(r.Simulate)
+        % 'class' alone can miss a classdef .m that MATLAB has not loaded yet,
+        % so accept either answer.
+        if exist('ExperimentLauncher', 'class') == 8 || ...
+           exist('ExperimentLauncher', 'file') == 2
+            fn = str2func('ExperimentLauncher');
+            launcher = fn();                   % opens the launcher window (real hardware)
+        else
+            warning('start_remote:noLauncher', ...
+                ['Experiments were requested but ExperimentLauncher is not on the ' ...
+                 'path. Add the holoexpt repo, or pass ''Launcher'', <obj>. ' ...
+                 'Continuing with power control only.']);
+        end
     end
 
     agent = RemoteControlAgent(io, ...
