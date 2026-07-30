@@ -148,26 +148,45 @@ function got = local_capture(missing, thisfile)
     end
     addpath('K:\');
 
-    wants = @(f) any(strcmp(f, missing));
-
-    if (wants('calibration_900') || wants('calibration_1100')) ...
-            && exist('power_calibrations', 'file')
-        % Pre-declared because power_calibrations is a legacy SCRIPT that fills
-        % this variable in our workspace rather than returning anything.
-        power_calibration = struct('calibration_900', '', 'calibration_1100', '');
-        power_calibrations;
-        if wants('calibration_900') && ~isempty(power_calibration.calibration_900)
-            got.calibration_900 = char(power_calibration.calibration_900);
-        end
-        if wants('calibration_1100') && ~isempty(power_calibration.calibration_1100)
-            got.calibration_1100 = char(power_calibration.calibration_1100);
+    if any(strcmp('calibration_900', missing)) || any(strcmp('calibration_1100', missing))
+        if exist('power_calibrations', 'file')
+            [pc, err] = local_read_power_calibrations();
+            if isempty(err)
+                if any(strcmp('calibration_900', missing)) && ~isempty(pc.calibration_900)
+                    got.calibration_900 = char(pc.calibration_900);
+                end
+                if any(strcmp('calibration_1100', missing)) && ~isempty(pc.calibration_1100)
+                    got.calibration_1100 = char(pc.calibration_1100);
+                end
+            else
+                warning('Scope2KRig:legacyPowerCalib', ...
+                    'K:\\power_calibrations failed, so no LUT path was captured: %s', err);
+            end
+        else
+            warning('Scope2KRig:legacyMissing', ...
+                'power_calibrations is not on the path even after addpath(''K:\\'').');
         end
     end
 
-    if wants('holo_request') && exist('FrankenScopeRigFile', 'file')
-        loc = FrankenScopeRigFile();
-        if isfield(loc, 'HoloRequest') && ~isempty(loc.HoloRequest)
-            got.holo_request = char(loc.HoloRequest);
+    if any(strcmp('holo_request', missing))
+        if exist('FrankenScopeRigFile', 'file')
+            try
+                loc = FrankenScopeRigFile();
+                if isfield(loc, 'HoloRequest') && ~isempty(loc.HoloRequest)
+                    got.holo_request = char(loc.HoloRequest);
+                else
+                    warning('Scope2KRig:legacyNoHoloRequest', ...
+                        ['FrankenScopeRigFile returned no non-empty .HoloRequest. ' ...
+                         'Fields present: %s'], strjoin(fieldnames(loc)', ', '));
+                end
+            catch err
+                warning('Scope2KRig:legacyHoloRequest', ...
+                    'FrankenScopeRigFile failed, so holo_request was not captured: %s', ...
+                    err.message);
+            end
+        else
+            warning('Scope2KRig:legacyMissing', ...
+                'FrankenScopeRigFile is not on the path even after addpath(''K:\\'').');
         end
     end
 
@@ -196,6 +215,26 @@ function got = local_capture(missing, thisfile)
         end
         fprintf(['Review the diff and commit it. After that this rig file no ' ...
                  'longer needs K:\\.\n']);
+    end
+end
+
+
+function [pc, err] = local_read_power_calibrations()
+%LOCAL_READ_POWER_CALIBRATIONS Run the legacy K:\power_calibrations script.
+%   Deliberately isolated in a function that holds nothing else. A script called
+%   from a function executes in THAT function's workspace, so every temporary
+%   power_calibrations creates lands here instead of among live rig state -- and
+%   keeping this workspace free of anonymous and nested functions keeps it clear
+%   of MATLAB's static-workspace rules, which would otherwise reject the script's
+%   own temporaries with "Attempt to add variable to a static workspace".
+    err = '';
+    pc  = struct('calibration_900', '', 'calibration_1100', '');
+    power_calibration = pc;   %#ok<NASGU> the legacy script fills this by name
+    try
+        power_calibrations;
+        pc = power_calibration;
+    catch e
+        err = e.message;
     end
 end
 
