@@ -1,8 +1,12 @@
 function r = expt_params_root()
 %EXPT_PARAMS_ROOT Folder for experiment parameter files (the ONE place they resolve).
 %   Holds the per-run <date>_<mouse>_<epoch><experiment>_experiment_parameters.json
-%   that save_params writes, the .mat OnlineSession saves, and the folder
-%   run_experiment cd's into so a runner's uigetfile starts somewhere useful.
+%   that save_params writes, and is where run_experiment's uigetfile starts when
+%   you re-run a saved experiment.
+%
+%   PARAMETERS ONLY. Anything that describes a session's DATA -- the stim-data
+%   .mat, hologram_info, online-analysis output -- belongs under stim_data_root
+%   in the dated session folder, not here.
 %
 %   Resolution order:
 %     1) rig.paths.expt_params from the loaded rig (rig_get);
