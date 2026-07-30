@@ -17,9 +17,17 @@ classdef SIReceiver < Receiver
             obj = obj@Receiver('si');
             if nargin >= 1 && ~isempty(si_root)
                 obj.si_root = si_root;
+                src = 'the start_si_listener argument';
             else
-                obj.si_root = rig_get('paths.si_root', obj.si_root);
+                % Was rig_get, which reads the rig loaded THIS session -- and
+                % nothing on the SI computer ever calls load_rig, so it always
+                % returned the 'D:' class default no matter what the rig file
+                % said. rig_remote_get reads the config the DAQ published, then a
+                % local rig file, then the default.
+                [obj.si_root, src] = rig_remote_get('paths.si_root', obj.si_root);
             end
+            fprintf('SIReceiver: ScanImage tiff root ''%s'' (from %s).\n', ...
+                obj.si_root, src);
         end
 
         function run(obj)

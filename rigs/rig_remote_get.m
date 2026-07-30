@@ -1,4 +1,4 @@
-function out = rig_remote_get(path, fallback)
+function [out, source] = rig_remote_get(path, fallback)
 %RIG_REMOTE_GET Read a rig config value on a satellite machine.
 %   Same dotted-path interface as RIG_GET, but resolved in this order:
 %
@@ -9,6 +9,12 @@ function out = rig_remote_get(path, fallback)
 %   out = RIG_REMOTE_GET('paths.calib_dir', 'C:\Users\holos\Documents\calibs')
 %   out = RIG_REMOTE_GET()          the whole published payload ([] if none)
 %   out = RIG_REMOTE_GET('refresh') drop the cache, re-read, return the payload
+%
+%   [out, source] = RIG_REMOTE_GET(...) also returns a short human-readable
+%   string naming which of the three tiers supplied the value. Callers print it,
+%   because "which config is this machine actually using" is the question you
+%   need answered when a satellite behaves unexpectedly -- and the failure this
+%   whole layer replaces was a silent fallback nobody could see.
 %
 %   Why the DAQ wins: it is the only machine guaranteed to have a rig file
 %   (rig_hardware calls load_rig unconditionally), so it is the single source of
@@ -57,6 +63,7 @@ function out = rig_remote_get(path, fallback)
     % No path (or 'refresh'): hand back the whole payload.
     if nargin == 0 || (ischar(path) && strcmp(path, 'refresh'))
         out = cache;
+        source = local_source_of(cache);
         return
     end
 
@@ -65,8 +72,10 @@ function out = rig_remote_get(path, fallback)
     % at startup to build its SLM inventory, before any prime arrives.
     if ischar(path) && strcmp(path, 'opto')
         out = local_opto(cache);
+        source = local_source_of(cache);
         if isempty(out) && nargin >= 2
             out = fallback;
+            source = 'coded default';
         end
         return
     end
@@ -76,6 +85,7 @@ function out = rig_remote_get(path, fallback)
     key = strrep(path, '.', '_');
     if isstruct(cache) && isfield(cache, key) && ~isempty(cache.(key))
         out = cache.(key);
+        source = local_source_of(cache);
         return
     end
 
@@ -91,13 +101,39 @@ function out = rig_remote_get(path, fallback)
         end
     end
 
-    % rig_get reads the cached rig, so this returns the fallback when load_rig
-    % above found nothing. Its own error message covers the no-fallback case.
-    if nargin < 2
-        out = rig_get(path);
-    else
-        out = rig_get(path, fallback);
+    % A sentinel distinguishes "the local rig defines this" from "the local rig
+    % has no such field", which rig_get alone cannot report -- and that
+    % distinction is the whole point of the source string.
+    SENTINEL = '<<rig_remote_get:absent>>';
+    v = rig_get(path, SENTINEL);
+    if ~isequal(v, SENTINEL)
+        out = v;
+        r = rig_store('get');
+        name = '?';
+        if isstruct(r) && isfield(r, 'name'), name = char(r.name); end
+        source = sprintf('local rig file (%s)', name);
+        return
     end
+
+    if nargin < 2
+        out = rig_get(path);   % no fallback given: rig_get raises its own error
+    else
+        out = fallback;
+    end
+    source = 'coded default';
+end
+
+
+function s = local_source_of(cache)
+    s = 'coded default';
+    if ~isstruct(cache)
+        return
+    end
+    name = '?';
+    if isfield(cache, 'rig_name') && ~isempty(cache.rig_name)
+        name = char(cache.rig_name);
+    end
+    s = sprintf('config/rig (%s)', name);
 end
 
 
