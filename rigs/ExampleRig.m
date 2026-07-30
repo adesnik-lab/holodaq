@@ -22,11 +22,19 @@ rig.name = 'Example';   % REQUIRED — a short name for this rig
 %                sibling code checkouts). Use genpath(...) for recursive adds.
 % data_root    : where Saver writes experiment .mat files
 %                (default 'K://KKS//stim-data' when absent).
+% expt_params  : where per-run experiment parameter .json/.mat files go
+%                (default 'K:/KKS/expt-params'). On Scope2K this is a SIBLING of
+%                data_root, not a child, so it is its own field.
 % si_root      : drive/base for ScanImage tiff logging on the SI computer
 %                (default 'D:').
 % holo_request : folder holding holoRequest.mat for holography experiments.
+%
+% NOTE matlab_paths is MACHINE-scoped, not rig-scoped: it is the addpath list for
+% whichever machine loads this file, so publish_rig_config never sends it to the
+% satellites. Same for the network.remote_api that validate_rig derives.
 rig.paths.matlab_paths = {};
 rig.paths.data_root    = 'C:\data';
+rig.paths.expt_params  = 'C:\data\expt-params';
 rig.paths.si_root      = 'D:';
 rig.paths.holo_request = '';
 

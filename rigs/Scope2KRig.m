@@ -33,6 +33,7 @@ captured_holo_request     = 'K:\holography\HoloRequest\';   % <captured:holo_req
 % publish_rig_config must NOT ship it to the satellites.
 rig.paths.matlab_paths = {'K:\', genpath('C:\Users\holos\Documents\_code')};
 rig.paths.data_root    = 'K://KKS//stim-data';   % Saver output root
+rig.paths.expt_params  = 'K:/KKS/expt-params';   % experiment parameter json/mat
 rig.paths.si_root      = 'D:';                   % ScanImage tiff root (SI computer)
 rig.paths.holo_request = captured_holo_request;  % holoRequest.mat folder
 
