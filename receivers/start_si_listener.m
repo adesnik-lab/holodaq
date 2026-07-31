@@ -7,10 +7,15 @@ function r = start_si_listener(si_root)
 %   Prepare. Requires hSI and hSICtl in the base workspace (ScanImage running).
 %
 %   Usage (on the SI computer):
-%       start_si_listener            % tiffs under D:\<date>\<mouse>\<epoch><expt>\
-%       start_si_listener('E:')      % use a different local drive/base
+%       start_si_listener            % tiff root from the rig (see below)
+%       start_si_listener('E:')      % override: use this local drive/base
 %
-%   Ctrl-C to stop. See also SIReceiver, Receiver, prime_info.
+%   With no argument the tiff root comes from rig.paths.si_root, resolved via
+%   rig_remote_get: the config the DAQ published to holochat, else a rig file on
+%   this machine, else 'D:'. The receiver prints which one it used. An explicit
+%   argument always wins, so the old start_si_listener('E:') behaviour is intact.
+%
+%   Ctrl-C to stop. See also SIReceiver, Receiver, prime_info, publish_rig_config.
 
     if nargin < 1, si_root = ''; end
 

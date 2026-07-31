@@ -31,7 +31,11 @@ order, validation rules, and how optional hardware is declared.
 
 - **`default_setup`** — loads the rig, builds the DAQ object, opens the serial
   devices the rig declares, and adds the rig's MATLAB paths. Experiment scripts
-  call it first.
+  call it first. It is a thin front end over **`rig_hardware()`**, which does the
+  work and *returns* a struct instead of injecting `rig`/`dq`/`sp`/`arduino_obj`
+  into the caller's workspace. Scripts keep calling `default_setup`; anything
+  that cannot rely on workspace injection — a classdef method, e.g. holoexpt's
+  `Experiment/setup` — calls `rig_hardware()` directly.
 - **`ScopeController`** — launches *only* the laser/shutter/power GUI
   (`PowerControllerCalibrated`), optionally connected to the phone webapp. Run
   this **instead of** `ExperimentLauncher`; the two must not run at once because

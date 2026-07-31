@@ -207,6 +207,24 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
             % rig file omits is skipped and its controls are disabled.
             addpath(fullfile(fileparts(mfilename('fullpath')), 'rigs'));
             rig = load_rig();
+
+            % FAIL CLOSED on a rig this GUI cannot represent. Every control here
+            % is hardcoded to exactly two channels -- the sliders, channelState's
+            % s.ch900/s.ch1100, idForChannel's 1=900/2=1100, and critically
+            % allSafe, which closes exactly two shutters. On a rig with one
+            % channel the extra controls would command nothing; on a rig with
+            % three, E-STOP would leave the third shutter OPEN while reporting
+            % everything safe. Refusing to open is the safe response, and it says
+            % what to do about it. Experiments themselves are N-channel via
+            % rig.opto (see opto_channels); only this GUI is not yet.
+            n_opto = numel(opto_channels(rig));
+            assert(n_opto == 0 || n_opto == 2, 'PowerControllerCalibrated:channelCount', ...
+                ['This GUI supports exactly two opto channels, but rig ''%s'' ' ...
+                 'declares %d.\nIts E-STOP closes two shutters by name, so on ' ...
+                 'your rig it could report\n"all safe" with a shutter still open. ' ...
+                 'Use ScopeController''s other controls, or\ngeneralize this GUI ' ...
+                 'to loop rig.opto before running it here.'], rig.name, n_opto);
+
             has900  = rig_has(rig, 'fpc_900');
             has1100 = rig_has(rig, 'fpc_1100');
             hasgate = rig_has(rig, 'laser_gate');

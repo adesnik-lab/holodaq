@@ -6,7 +6,11 @@ classdef HolochatInterface < Interface
     methods
         function obj = HolochatInterface(id, server, reset)
             if nargin < 2 || isempty(server)
-                server = rig_get('network.holochat_server', 'http://136.152.58.120:8000');
+                % Was rig_get + a literal, which meant the satellites (no rig
+                % file, so nothing in rig_store) could only ever use the
+                % hardcoded Scope2K broker. See holochat_server: the URL is the
+                % bootstrap value, so it cannot come from the published config.
+                server = holochat_server();
             end
 
             if nargin < 3 || isempty(reset)

@@ -35,17 +35,24 @@ function rig = load_rig(name)
         end
     end
 
+    file = '';
     if isstruct(name)
         rig = name;
         source = 'struct argument';
     else
         [fn, source] = resolve_rig_function(name);
+        file = rig_function_file(fn);
+        warn_if_shadowed(file);
         rig = fn();
     end
 
     rig = validate_rig(rig);
     rig_store('set', rig);
-    fprintf('load_rig: using rig ''%s'' (%s).\n', rig.name, source);
+    if isempty(file)
+        fprintf('load_rig: using rig ''%s'' (%s).\n', rig.name, source);
+    else
+        fprintf('load_rig: using rig ''%s'' (%s)\n  from %s\n', rig.name, source, file);
+    end
 end
 
 % -------------------------------------------------------------------------
@@ -117,6 +124,47 @@ end
 
 function d = rigs_dir()
     d = fileparts(mfilename('fullpath'));
+end
+
+function file = rig_function_file(fn)
+%RIG_FUNCTION_FILE Absolute path of the file the rig handle actually resolves to.
+%   Empty if it cannot be determined (a handle to a nested/anonymous function).
+    file = '';
+    try
+        file = which(regexprep(func2str(fn), '^@', ''));
+    catch
+        % Not worth failing a rig load over a diagnostic.
+    end
+end
+
+function warn_if_shadowed(file)
+%WARN_IF_SHADOWED Say so when the rig file that ran is not this checkout's.
+%   load_rig LISTS candidate rig files from its own rigs/ directory (list_rig_files)
+%   but EXECUTES whatever the MATLAB path resolves the name to via str2func. Those
+%   two can disagree, and the failure is silent and very confusing: edits to the
+%   checkout you are looking at appear to do nothing. It happens easily here
+%   because rig_hardware addpath's rig.paths.matlab_paths — which on Scope2K
+%   includes genpath of a whole code tree — and addpath PREPENDS, so a second
+%   checkout or a stale copy under that tree wins over rigs/.
+    if isempty(file)
+        return
+    end
+    norm = @(p) regexprep(char(p), '[\\/]+$', '');
+    if ~strcmpi(norm(fileparts(file)), norm(rigs_dir()))
+        warning('load_rig:shadowed', ...
+            ['The rig file that ran is NOT the one beside this load_rig:\n' ...
+             '  ran        : %s\n  this rigs/ : %s\n' ...
+             'Something earlier on the MATLAB path shadows it — commonly a second\n' ...
+             'checkout, or a stale copy under one of rig.paths.matlab_paths.\n' ...
+             'Edits in this checkout will have NO effect until the path is fixed.\n' ...
+             'Run ''which %s -all'' to see the full resolution order.'], ...
+            file, rigs_dir(), regexprep(local_basename(file), '\.m$', ''));
+    end
+end
+
+function b = local_basename(p)
+    [~, n, e] = fileparts(char(p));
+    b = [n e];
 end
 
 function names = list_rig_files()
@@ -198,6 +246,16 @@ function rig = validate_rig(rig)
         assert(~isempty(rig.daq.vendor), 'load_rig:invalid', ...
             'rig.daq.vendor must be set (e.g. ''ni'') when DAQ channels are declared.');
     end
+
+    % Optogenetic channel table. Validated here so a malformed rig.opto is
+    % refused at load time, before any hardware is opened -- and so the errors
+    % name the rig file rather than surfacing mid-experiment. A rig with no
+    % rig.opto is fine (vis-only rigs have no lasers); opto_channels returns an
+    % empty table. Its return value is discarded: callers that need the resolved
+    % table call opto_channels(rig) themselves, which is cheap and keeps the
+    % derived field names (hr<nm>, stim_<nm>) out of the cached rig struct where
+    % they could drift from the wavelength they came from.
+    opto_channels(rig);
 end
 
 function s = setdefault(s, field, value)

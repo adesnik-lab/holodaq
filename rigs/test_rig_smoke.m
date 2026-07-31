@@ -42,6 +42,82 @@ function test_rig_smoke()
     assert(rig_has(rig, 'patch') && rig_has(rig, 'fpc_900'), 'module presence');
     assert(~rig_has(rig, 'no_such_module'), 'absent module');
     assert(rig_has(rig, 'serial.ell14') && ~rig_has(rig, 'serial.nope'), 'dotted rig_has');
+
+    % ---- opto channel table -------------------------------------------------
+    % Scope2K declares red(1100) then blue(900) -- the WIRE order (holoRequests
+    % are transferred 1100 first), which is deliberately not the module add order.
+    o = opto_channels(rig);
+    assert(numel(o) == 2, 'Scope2K declares two opto channels');
+    assert(isequal({o.name}, {'red', 'blue'}), 'opto channels in declaration order');
+    assert(isequal([o.wavelength], [1100 900]), 'wire order is 1100 then 900');
+    % Derived names, never stored in the rig file.
+    assert(strcmp(o(1).pool_field, 'red')      && strcmp(o(2).pool_field, 'blue'), 'pool_field == name');
+    assert(strcmp(o(1).holo_field, 'hr1100')   && strcmp(o(2).holo_field, 'hr900'), 'holo_field from wavelength');
+    assert(strcmp(o(1).save_field, 'stim_1100')&& strcmp(o(2).save_field, 'stim_900'), 'save_field from wavelength');
+    assert(isequal([o.index], [1 2]), 'index follows declaration order');
+    assert(strcmp(opto_signature(o), 'red@1100#auto|blue@900#auto'), 'signature');
+
+    % A rig with no lasers is legal and yields an empty table, not an error --
+    % the vis-only case, and what makes N=0 and N=1 need no special handling.
+    e = opto_channels(base_rig());
+    assert(isstruct(e) && isempty(e), 'no rig.opto -> empty table');
+    assert(all(isfield(e, {'name', 'wavelength', 'pool_field', 'holo_field', 'save_field'})), ...
+        'empty table still carries the full field set');
+    assert(strcmp(opto_signature(e), 'none'), 'empty signature');
+
+    % One channel: the common case for an adopting lab.
+    one = opto_channels(opto_rig(opto_channel('act', 1040, 'fpc_a', 'slm_a')));
+    assert(numel(one) == 1 && strcmp(one.holo_field, 'hr1040'), 'single channel resolves');
+
+    % Single-channel validation (opto_channel, before any table).
+    expect_throw(@() opto_channel('2bad', 900, 'f', 's'),  'opto_channel:badName');
+    expect_throw(@() opto_channel('vis',  900, 'f', 's'),  'opto_channel:reservedName');
+    expect_throw(@() opto_channel('type', 900, 'f', 's'),  'opto_channel:reservedName');
+    expect_throw(@() opto_channel('a', 1064.5, 'f', 's'),  'opto_channel:badWavelength');
+    expect_throw(@() opto_channel('a',   -900, 'f', 's'),  'opto_channel:badWavelength');
+    expect_throw(@() opto_channel('a',    900, '',  's'),  'opto_channel:noFpc');
+    expect_throw(@() opto_channel('a',    900, 'f', ''),   'opto_channel:noSlm');
+
+    % Cross-channel validation (opto_channels). Each of these is a silent
+    % wrong-laser or dropped-laser bug in the old two-hardcoded-channel world.
+    expect_throw(@() opto_channels(opto_rig(opto_channel('a', 900, 'nope', 'slm_a'))), ...
+        'opto_channels:noModule');
+    expect_throw(@() opto_channels(opto_rig([opto_channel('a', 900, 'fpc_a', 'slm_a'), ...
+                                             opto_channel('a', 1100, 'fpc_b', 'slm_b')])), ...
+        'opto_channels:duplicateName');
+    expect_throw(@() opto_channels(opto_rig([opto_channel('a', 900, 'fpc_a', 'slm_a'), ...
+                                             opto_channel('b', 1100, 'fpc_a', 'slm_b')])), ...
+        'opto_channels:sharedModule');
+    expect_throw(@() opto_channels(opto_rig([opto_channel('a', 1040, 'fpc_a', 'slm_a'), ...
+                                             opto_channel('b', 1040, 'fpc_b', 'slm_b')])), ...
+        'opto_channels:sharedWavelengthNoBoard');
+    expect_throw(@() opto_channels(opto_rig([ ...
+        opto_channel('a', 1040, 'fpc_a', 'slm_a', 'slm_board', 1), ...
+        opto_channel('b', 1040, 'fpc_b', 'slm_b', 'slm_board', 1)])), ...
+        'opto_channels:sharedBoard');
+    % Same wavelength IS legal once each arm pins its own board.
+    two = opto_channels(opto_rig([ ...
+        opto_channel('arm1', 1040, 'fpc_a', 'slm_a', 'slm_board', 1), ...
+        opto_channel('arm2', 1040, 'fpc_b', 'slm_b', 'slm_board', 2)]));
+    assert(numel(two) == 2 && strcmp(two(1).holo_field, two(2).holo_field), ...
+        'split-arm channels share a holoRequest field by design');
+    assert(strcmp(opto_signature(two), 'arm1@1040#1|arm2@1040#2'), 'board in signature');
+
+    % Two channels on one half-wave plate: setting one power would move the other.
+    expect_throw(@() opto_channels(opto_rig([opto_channel('a', 900, 'fpc_a', 'slm_a'), ...
+                                             opto_channel('b', 1100, 'fpc_dup', 'slm_b')])), ...
+        'opto_channels:sharedRotator');
+
+    % load_rig itself refuses a bad table, so nothing downstream ever sees one.
+    expect_error(opto_rig(opto_channel('a', 900, 'nope', 'slm_a')), 'opto_channels:noModule');
+
+    % The shipped template must validate, or every adopter starts from a broken file.
+    rig_store('clear');
+    ex = load_rig('Example');
+    exo = opto_channels(ex);
+    assert(numel(exo) == 1 && strcmp(exo.name, 'act'), 'ExampleRig declares one channel');
+    rig_store('clear');
+    load_rig('Scope2K');   % restore the cached rig for the rest of the test
     assert(strcmp(rig_get('daq.device', 'DevX'), ''), 'explicitly-empty field wins over fallback');
 
     % cached: a plain load_rig() must return the same rig without re-resolving
@@ -157,6 +233,38 @@ end
 function rig = bad_rig(field, value)
     rig = base_rig();
     rig.(field) = value;
+end
+
+function rig = opto_rig(opto)
+%OPTO_RIG A minimal rig carrying an opto table, with the modules it references.
+%   Declares fpc_a/fpc_b/slm_a/slm_b plus fpc_dup, which shares fpc_a's ELL14
+%   address so the sharedRotator check has something to catch. Deliberately does
+%   NOT go through a rig file: these tables must be rejected by opto_channels
+%   itself, not by anything Scope2KRig happens to do.
+    rig = base_rig();
+    rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, 'terminator', 'CR/LF');
+    rig.modules.fpc_a   = struct('shutter', 'port0/line5', 'serial', 'ell14', ...
+        'ell14_channel', 1, 'calibration', '', 'khz', 250);
+    rig.modules.fpc_b   = struct('shutter', 'port0/line4', 'serial', 'ell14', ...
+        'ell14_channel', 2, 'calibration', '', 'khz', 250);
+    rig.modules.fpc_dup = struct('shutter', 'port0/line9', 'serial', 'ell14', ...
+        'ell14_channel', 1, 'calibration', '', 'khz', 250);   % same rotator as fpc_a
+    rig.modules.slm_a   = struct('trigger', 'port0/line2', 'flip', 'ai1');
+    rig.modules.slm_b   = struct('trigger', 'port0/line3', 'flip', 'ai2');
+    rig.opto = opto;
+end
+
+function expect_throw(fn, id)
+%EXPECT_THROW Assert a callable throws a specific error identifier.
+%   expect_error drives load_rig; this drives an arbitrary thunk, so the
+%   opto_channel / opto_channels validators can be tested without a rig file.
+    err = '';
+    try
+        fn();
+    catch ME
+        err = ME.identifier;
+    end
+    assert(strcmp(err, id), 'expected error %s, got ''%s''', id, err);
 end
 
 function expect_error(rig, id)

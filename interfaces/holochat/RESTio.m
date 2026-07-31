@@ -57,7 +57,13 @@ classdef RESTio < handle
             try
                 webread(obj.get_url('msg', target), weboptions('RequestMethod', 'delete')); % delete everything on the server?? (bad?)
             catch ME
-                warning(ME.message)
+                % A 404 here means there was nothing queued to delete, which is
+                % success, not failure -- it is the normal state on a fresh broker
+                % or a first run. Warning about it made every listener startup look
+                % broken. scan() has always filtered the same identifier.
+                if ~strcmp(ME.identifier, 'MATLAB:webservices:HTTP404StatusCodeError')
+                    warning(ME.message)
+                end
             end
         end
 
