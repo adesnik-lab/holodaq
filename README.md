@@ -269,7 +269,7 @@ graph LR
     RC -->|name| P["<b>pool</b><br/>params.pool(i).<b>act</b><br/><i>power, pattern_ids,<br/>duration, delay</i>"]
     RC -->|wavelength| HR["<b>holoRequest</b><br/>params.holoinfo.<b>hr1040</b><br/><i>targets + registration</i>"]
     RC -->|wavelength| SV["<b>saved record</b><br/><b>stim_1040</b>"]
-    RC -->|fpc| FPC["rig.modules.<b>fpc_1040</b><br/><i>shutter line, ELL14 address,<br/>power LUT</i>"]
+    RC -->|fpc| FPC["rig.modules.<b>fpc_1040</b><br/><i>how power is set and gated<br/>(see kind, below)</i>"]
     RC -->|slm| SLM["rig.modules.<b>slm_1040</b><br/><i>trigger line, flip input</i>"]
 ```
 
@@ -291,6 +291,44 @@ so it could not otherwise tell them apart).
 
 A rig with **no** `rig.opto` is legal — that is a vis-only scope, and
 `opto_channels` returns an empty table rather than erroring.
+
+### How power is set, and how the laser is kept dark
+
+The `fpc` module says how a channel's power is commanded. Different scopes do
+this with different hardware, so the module declares a **kind**, and the kind
+also decides the safety-critical half of the question — what stops light
+reaching the sample between pulses.
+
+| | `kind = 'ell14'` (default) | `kind = 'eom'` |
+|---|---|---|
+| sets power | half-wave plate on an Elliptec rotator | modulator (EOM / Pockels / AOM) on an analog line |
+| required fields | `shutter`, `serial`, `ell14_channel` | `output` |
+| gated by | the digital shutter | **the waveform itself**, if no `shutter` is declared |
+| power command | one scalar, held all trial | a full-trial waveform: `rest` volts, rising only inside pulse windows |
+| with no calibration LUT | shutter opens anyway — **fails hot**, power unknown | stays at `rest` — **fails dark**, no light |
+
+Omitting `kind` means `'ell14'`, so every rig file written before the field
+existed keeps its exact meaning.
+
+The gating row is the one to read twice. With a rotator the shutter does the
+gating, so the power command is a single value held for the whole trial. Drive
+a modulator that way with no shutter and **the laser is on for the entire
+trial**. That is why gating is explicit rather than inferred: a channel with no
+shutter is built in waveform mode, where `LaserPowerControl` constructs the
+trial's command itself and returns the modulator to `rest` between pulses. The
+shutter's 50 ms travel margins are deliberately *not* applied there — a
+modulator gates at the sample, and widening its pulses that way would deliver
+100 ms of unrequested light per stim.
+
+Two consequences worth knowing:
+
+* **`rest` is what keeps a shutterless channel dark.** It defaults to 0 V, but
+  on some modulators 0 V is fully *open*. Measure it on your rig.
+* **A waveform-gated rig needs no `laser_gate`.** That module is a separate
+  analog line opening around the union of every channel's pulse windows — which
+  a self-gating channel already does. `required_modules` stops demanding one
+  when every channel is waveform-gated, so such a rig runs `HoloExperiment`
+  without inventing a gate line.
 
 ## 6. The life of one experiment
 
@@ -369,6 +407,9 @@ protects makes their error messages readable.
 | unknown `serial` reference | `load_rig` | a module bound to a bus that does not exist |
 | shared `fpc`/`slm`/rotator between channels | `opto_channels` | setting one channel's power moving another's attenuator |
 | two channels, one wavelength, no pinned board | `opto_channels` | one SLM driven with two hologram stacks |
+| power path missing fields for its `kind` | `power_control_spec` (via `load_rig`) | a channel that cannot be built — refused before any hardware opens |
+| modulator on a digital line | `power_control_spec` | on/off cannot set a power level |
+| shutter gating declared with no shutter | `LaserPowerControl` | a channel with nothing to turn the laser off |
 | missing required module (`si`, …) | `Experiment.check_rig` | a session that runs perfectly and records nothing |
 | rig channel with no pool command | `opto_bind` | an armed, gated laser holding a stale rotator angle |
 | pool command no rig channel claims | `opto_bind` | a red+blue experiment silently dropping half its stimulus on a one-laser rig |
@@ -378,10 +419,13 @@ protects makes their error messages readable.
 Two things **warn** rather than refuse, and you should know why:
 
 * **A missing power LUT.** `LaserPowerControl` tolerates an empty calibration,
-  so refusing would newly stop sessions that run today. But with no LUT *both
-  power clamps silently vanish and the half-wave plate is never rotated, while
-  the shutter still opens* — the delivered power is unknown. Do not trust a run
-  that printed this warning.
+  so refusing would newly stop sessions that run today. What happens instead
+  depends on the channel's kind, and the two are opposites. On an `ell14`
+  channel *both power clamps silently vanish and the half-wave plate is never
+  rotated, while the shutter still opens* — it **fails hot**, and the delivered
+  power is unknown. On a waveform-gated `eom` channel the modulator simply stays
+  at `rest` — it **fails dark**, and delivers nothing. Both warn, in different
+  words. Do not trust a run that printed the first one.
 * **A rig file shadowed on the MATLAB path.** `addpath` prepends, and
   `rig.paths.matlab_paths` may `genpath` a whole code tree, so a stale second
   checkout can win. `load_rig` prints which file actually ran; if it is not the
@@ -504,6 +548,24 @@ rig.modules.slm_1040 = struct('trigger', 'port0/line8', 'flip', 'ai3');
 
 rig.opto = opto_channel('act', 1040, 'fpc_1040', 'slm_1040');
 ```
+
+The same channel on a scope with **no rotator and no shutter**, where a
+modulator on an analog line both sets the power and gates the beam. Note there
+is no `serial` and no `shutter`, so `rig_hardware` opens no bus for it:
+
+```matlab
+rig.modules.fpc_1040 = struct('kind', 'eom', 'output', 'ao3', ...
+    'rest', -0.375, 'calibration', 'C:\power-calibrations\eom_1040.mat');
+rig.modules.slm_1040 = struct('trigger', 'port0/line8', 'flip', 'ai3');
+
+rig.opto = opto_channel('act', 1040, 'fpc_1040', 'slm_1040');
+```
+
+`rest` is the voltage that means *dark* on your modulator — **measure it**, and
+do not assume 0. On a shutterless channel it is the only thing keeping the laser
+off between pulses. The LUT wants `powers` and `volts` columns (plus
+`min_power` / `max_power`); `volts` exists so an EOM calibration need not store
+voltages in a field named for a rotator angle.
 
 Two channels — remember the order is the wire order:
 
@@ -838,11 +900,11 @@ Channel strings are validated against `port<n>/line<n>`, `ai<n>`, `ao<n>`,
 | `si` | `trigger` (DO), `frame` (AI) | required by every stock experiment flavour |
 | `ptb` | `trigger` (DO) | the DAQ's line; PsychoPy's own settings live in `rig.ptb` |
 | `holo` | *(none)* | `struct()` — holochat only, no wiring |
-| `fpc_<tag>` | `shutter` (DO), `serial`, `ell14_channel`, `calibration`, `khz` | tag is free; binding is via `rig.opto` |
+| `fpc_<tag>` | **`kind = 'ell14'`** (default): `shutter` (DO), `serial`, `ell14_channel`, `calibration`, `khz`<br>**`kind = 'eom'`**: `output` (AO), `calibration`, `rest`, optional `shutter` (DO) | tag is free; binding is via `rig.opto`. See §5 — the kind also decides how the laser is kept dark |
 | `slm_<tag>` | `trigger` (DO), `flip` (AI) | |
 | `patch` | `output` (AO), `input` (AI) | |
 | `wheel` | `serial` | |
-| `laser_gate` | `output` (AO), `max_voltage` | `max_voltage` is read by `PowerControllerCalibrated` only — at trial time `LaserGate` pins 3.5 V as a class constant |
+| `laser_gate` | `output` (AO), `max_voltage` | Not needed when every opto channel is waveform-gated — such a channel gates itself. `max_voltage` is read by `PowerControllerCalibrated` only; at trial time `LaserGate` pins 3.5 V as a class constant |
 
 ### `rig.opto`
 
@@ -892,6 +954,8 @@ Gitignored, one per machine, never committed: `rig_config.m`,
 | `open_serial(cfg)` | build a `serialport` from a `rig.serial` entry |
 | `opto_channel(...)` | declare one photostim channel |
 | `opto_channels(rig)` | resolve + validate the whole table, with derived field names |
+| `power_control_spec(cfg, ...)` | validate + normalise one `fpc` module's power path, per `kind` |
+| `power_control(dq, cfg, ...)` | build the `LaserPowerControl` that spec describes |
 | `opto_signature(chans)` | the deterministic string both machines compare |
 | `publish_rig_config([...])` | publish satellite-relevant config to `config/rig` |
 | `rig_remote_get(path, fb)` | satellite-side read: published config → local rig → fallback |
@@ -937,7 +1001,12 @@ Gitignored, one per machine, never committed: `rig_config.m`,
 | `opto_bind:noPoolField` | a rig channel has no command in the pool | add one (use `power_per_cell = 0` to hold it dark) |
 | `opto_bind:orphanPoolChannel` | the experiment commands a channel this rig lacks | port the experiment, or declare the channel |
 | `Experiment:missingModule` | a required module is absent from the rig | add it, or run a flavour that does not need it |
-| `Experiment:noCalibration` warning | no power LUT on a channel | run `AutoLaserPowerCalib_*`; **do not trust the run's power until you do** |
+| `Experiment:noCalibration` warning | no power LUT on a channel | run `AutoLaserPowerCalib_*`. On an `ell14` channel the shutter still opens — **do not trust the run's power until you do**. On an `eom` channel it just stays dark |
+| `power_control_spec:ell14Wiring` / `:eomWiring` | the `fpc` module lacks a field its `kind` needs | add it, or correct the `kind` — see §5 |
+| `power_control_spec:eomAnalog` | a modulator pointed at a digital line | modulators need `ao<n>`; on/off cannot set a level |
+| `LaserPowerControl:noShutter` | shutter gating asked for with no shutter declared | give the channel a `shutter`, or let it gate by waveform (drop the field) |
+| photostim channel delivers no light at all | waveform-gated channel with no LUT, or a wrong `rest` | point `.calibration` at a real LUT; measure the modulator's dark voltage |
+| laser stays on for the whole trial | `rest` is not actually the dark voltage on your modulator | measure it — on some modulators 0 V is fully open |
 | `holo_listener:sharedBoard` | two wavelengths map to one board | pin distinct `slm_board`s per channel |
 | `load_rig:duplicateChannel` | two modules claim one line | correct the rig file |
 | DAQ or COM port stays held after a failure | a GUI still owns it | close it; `daqreset`; check `ExperimentLauncher` and `ScopeController` are not both open |
@@ -968,6 +1037,20 @@ Things a new adopter should know are *not* done, so you can plan around them:
 * **An IR pupil/behaviour camera has no module shape.** The rig schema's channel
   fields describe DAQ terminals; an ROI, gain or video adaptor needs a new shape.
   The stub is left commented in `Experiment.setup()`.
+* **The power GUI is still rotator-only, and still Scope2K-shaped.**
+  `PowerControllerCalibrated` (what `ScopeController` launches) reads
+  `rig.modules.fpc_900` and `rig.modules.fpc_1100` by name and builds `ELL14`
+  directly, so it does not follow the `kind` field and will not come up on a rig
+  with differently-named channels or a modulator power path. `FiberPowerControl`
+  is likewise Elliptec-only. The *experiment* path is kind-aware; the
+  laser/power GUI is not yet.
+* **A non-zero `rest` is nudged on the last sample of every trial.**
+  `TrialManager.prepare` does `sweep(end,:) = 0` after concatenating all
+  outputs, which is right for digital lines and for a gate whose off state is
+  0 V — but on a modulator resting at, say, −0.375 V it forces one sample
+  (50 µs at 20 kHz) to 0 V at the very end of the trial. Measure whether that
+  leaks on your rig. Fixing it properly means teaching `TrialManager` each
+  column's idle level, which is a much wider change.
 * **`laser_gate.max_voltage` is only half-honoured** — `PowerControllerCalibrated`
   reads it, but at trial time `LaserGate` pins 3.5 V as a class constant.
 * **`opto_channel`'s doc comment names the wrong option** (`'Board'`/`'Lut'`
