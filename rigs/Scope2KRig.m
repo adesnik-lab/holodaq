@@ -44,6 +44,9 @@ rig.paths.calib_dir    = 'C:\Users\holos\Documents\calibs';
 % Power->angle LUTs the AutoLaserPowerCalib_* scripts write and rig.modules.fpc_*
 % read. The captured fpc calibration paths above point inside this folder.
 rig.paths.power_calib_dir = 'C:\Users\holos\Documents\power-calibrations';
+% Holeburn .tif staging folder the live alignment flow reads
+% (process_holeburns_claude, called by align_slm_to_camera_scope2k).
+rig.paths.holo_scratch = 'K:\Calib\Temp3';
 % Meadowlark SDK install on the HOLO computer (not part of any checkout).
 rig.paths.slm_sdk      = 'C:\Users\holos\Desktop\meadowlark';
 % Base folder for a RELATIVE slm_lut on an opto channel. An absolute slm_lut
@@ -81,11 +84,17 @@ rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
     'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');   % HWP rotators
 rig.serial.wheel = struct('port', 'COM3', 'baud', 115200, ...
     'terminator', 'CR/LF');                                   % Arduino running wheel
+% NOTE on the two entries below: neither is opened by rig_hardware. It opens only
+% the conventional ell14/wheel plus buses that a rig.modules.<m>.serial field
+% names, and nothing names these -- the scripts that use them open them by name
+% when run. So they are inert declarations, which is also why a port number may
+% legitimately repeat across machines.
+%
+% Sutter MP285 manipulator, on the HOLOGRAPHY computer. Its COM3 is a DIFFERENT
+% machine's port than rig.serial.wheel's COM3 on the DAQ above.
+rig.serial.sutter = struct('port', 'COM3', 'baud', 9600);
 % Rotator bus the power-calibration scripts drive (AutoLaserPowerCalib_HWP,
-% manual_power_control_setup). Same device family as ell14 on a different port.
-% NOT opened by rig_hardware: only the conventional ell14/wheel and buses a
-% module's 'serial' field names are opened, and nothing references this one -- the
-% calibration scripts open it themselves when run.
+% manual_power_control_setup). Same device family as ell14, different port.
 rig.serial.hwp   = struct('port', 'COM5', 'baud', 9600, ...
     'byte_order', 'big-endian', 'parity', 'none', ...
     'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');

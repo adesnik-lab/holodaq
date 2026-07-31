@@ -47,6 +47,7 @@ rig.paths.si_root      = 'D:';
 rig.paths.holo_request = '';
 rig.paths.calib_dir    = 'C:\calibs';
 rig.paths.power_calib_dir = 'C:\power-calibrations';
+rig.paths.holo_scratch = '';   % holeburn .tif staging for the alignment flow
 rig.paths.slm_sdk      = '';   % SLM vendor SDK install, if not on the path
 rig.paths.slm_lut_dir  = '';   % base for a relative opto_channel slm_lut
 
@@ -98,6 +99,7 @@ rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
     'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');
 % Bus the power-calibration scripts drive. Not opened by rig_hardware unless a
 % module's 'serial' field names it, so an entry here is inert until something asks.
+rig.serial.sutter = struct('port', 'COM3', 'baud', 9600);   % Sutter MP285
 rig.serial.hwp   = struct('port', 'COM5', 'baud', 9600, ...
     'byte_order', 'big-endian', 'parity', 'none', ...
     'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');
