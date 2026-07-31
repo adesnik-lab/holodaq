@@ -115,11 +115,37 @@ rig.serial.hwp   = struct('port', 'COM5', 'baud', 9600, ...
 %   si         : ScanImage computer — trigger (digital out), frame (analog in)
 %   ptb        : PsychToolbox visual-stimulus computer — trigger (digital out)
 %   holo       : holography computer — no wiring (talks over holochat)
-%   fpc_<tag>  : fiber power control — shutter (digital out), serial (ELL14
-%                bus name), ell14_channel (rotator address on that bus),
-%                calibration (path to power->angle LUT .mat), khz. The <tag> is
-%                free: a module is bound to an opto channel by rig.opto below,
-%                not by its name.
+%   fpc_<tag>  : power control for one photostim laser. The <tag> is free: a
+%                module is bound to an opto channel by rig.opto below, not by
+%                its name. Its FIELDS depend on `kind`, which says how this rig
+%                sets power and — just as important — how it keeps the laser
+%                dark between pulses:
+%
+%                kind = 'ell14'  (DEFAULT when the field is absent, so every
+%                    rig file written before this existed keeps its meaning)
+%                    A half-wave plate on an Elliptec rotator sets the power and
+%                    a digital shutter gates it.
+%                      shutter        REQUIRED  digital out
+%                      serial         REQUIRED  a rig.serial entry name
+%                      ell14_channel  REQUIRED  rotator address on that bus
+%                      calibration    power->angle LUT .mat
+%                      khz            read by the power GUIs only
+%
+%                kind = 'eom'
+%                    A modulator (EOM / Pockels cell / AOM) on an ANALOG line
+%                    sets the power. Usually there is no shutter: the same line
+%                    both sets and gates, resting at `rest` whenever the laser
+%                    must be dark, and rising to the commanded level only inside
+%                    the pulse windows.
+%                      output         REQUIRED  analog out, e.g. 'ao3'
+%                      calibration    power->volts LUT .mat
+%                      rest           volts written when dark (default 0)
+%                      shutter        OPTIONAL, if the rig also has one
+%
+%                A 'eom' channel with no LUT stays at rest and delivers NO
+%                light — it fails dark. An 'ell14' channel with no LUT opens
+%                its shutter anyway, so its delivered power is unknown; that
+%                asymmetry is why both warn but say different things.
 %   slm_<tag>  : SLM comm — trigger (digital out), flip (analog in)
 %   patch      : patch clamp — output (analog out), input (analog in)
 %   wheel      : running wheel — serial (rig.serial entry name)
@@ -137,6 +163,16 @@ rig.modules.laser_gate = struct('output', 'ao1', 'max_voltage', 3.5);
 rig.modules.fpc_1040   = struct('shutter', 'port0/line6', 'serial', 'ell14', ...
     'ell14_channel', 2, 'calibration', '', 'khz', 250);   % distinct rotator address
 rig.modules.slm_1040   = struct('trigger', 'port0/line8', 'flip', 'ai3');
+
+% A modulator-driven channel instead, for a rig with no rotator and no shutter.
+% Note there is no 'serial' and no 'shutter': rig_hardware therefore opens no bus
+% for it, and the waveform on 'output' is what turns the laser on and off.
+% 'rest' is the voltage that means dark on YOUR modulator -- measure it; 0 is
+% only a default, and on some modulators 0 V is fully OPEN.
+%   rig.modules.fpc_eom = struct('kind', 'eom', 'output', 'ao3', ...
+%       'rest', -0.375, 'calibration', 'C:\power-calibrations\eom_1040.mat');
+%   rig.modules.slm_eom = struct('trigger', 'port0/line9', 'flip', 'ai4');
+%   rig.opto = opto_channel('act', 1040, 'fpc_eom', 'slm_eom');
 
 % ---- opto (photostim) channels (optional) ----------------------------------
 % One entry per laser + SLM path. DELETE the field entirely on a rig with no

@@ -111,6 +111,73 @@ function test_rig_smoke()
     % load_rig itself refuses a bad table, so nothing downstream ever sees one.
     expect_error(opto_rig(opto_channel('a', 900, 'nope', 'slm_a')), 'opto_channels:noModule');
 
+    % ---- power-control kinds --------------------------------------------------
+    % An fpc module's field set depends on its KIND, and the kind decides how the
+    % laser is kept dark between pulses. That is the safety-critical part: a
+    % modulator driven the way a rotator is driven sits at full power for the
+    % whole trial, so every rule below is checked rather than assumed.
+    warn0 = warning('off', 'power_control_spec:noCalibration');
+    warn_guard = onCleanup(@() warning(warn0));   %#ok<NASGU>
+
+    pr = opto_rig(opto_channel('a', 900, 'fpc_a', 'slm_a'));
+
+    % An absent kind means 'ell14', so every rig file written before this field
+    % existed keeps its exact meaning.
+    s_ell = power_control_spec(pr.modules.fpc_a, 'fpc_a', 'a');
+    assert(strcmp(s_ell.kind, 'ell14'), 'kind defaults to ell14');
+    assert(strcmp(s_ell.gate_mode, 'shutter'), 'ell14 gates with its shutter');
+    assert(strcmp(s_ell.shutter, 'port0/line5') && s_ell.ell14_channel == 1, ...
+        'ell14 spec carries its wiring');
+
+    % A modulator with no shutter gates with the waveform itself.
+    s_eom = power_control_spec(pr.modules.fpc_eom, 'fpc_eom', 'a');
+    assert(strcmp(s_eom.kind, 'eom'), 'eom kind');
+    assert(strcmp(s_eom.gate_mode, 'waveform'), 'no shutter -> the waveform gates');
+    assert(s_eom.rest == -0.375, 'rest voltage carried through');
+    assert(isempty(s_eom.shutter), 'no shutter declared');
+    assert(isempty(s_eom.serial), 'a modulator channel needs no serial bus');
+
+    % ...but a modulator rig MAY also have a shutter, and then that gates.
+    s_both = power_control_spec(pr.modules.fpc_eom_shut, 'fpc_eom_shut', 'a');
+    assert(strcmp(s_both.gate_mode, 'shutter'), 'a declared shutter gates');
+    assert(s_both.rest == 0, 'rest defaults to 0');
+
+    % Per-kind field requirements.
+    expect_throw(@() power_control_spec(struct('kind', 'eom'), 'm', 'a'), ...
+        'power_control_spec:eomWiring');
+    expect_throw(@() power_control_spec(struct('kind', 'ell14', 'shutter', 'port0/line5'), 'm', 'a'), ...
+        'power_control_spec:ell14Wiring');
+    expect_throw(@() power_control_spec(struct('kind', 'sorcery', 'output', 'ao1'), 'm', 'a'), ...
+        'power_control_spec:badKind');
+    % A modulator cannot be driven from a digital line: on/off cannot set a level.
+    expect_throw(@() power_control_spec(struct('kind', 'eom', 'output', 'port0/line5'), 'm', 'a'), ...
+        'power_control_spec:eomAnalog');
+
+    % A channel pointing at a malformed power path is refused at LOAD time,
+    % before any hardware opens -- not later, when setup() tries to build it.
+    bad_eom = opto_rig(opto_channel('a', 1040, 'fpc_bad_eom', 'slm_a'));
+    bad_eom.modules.fpc_bad_eom = struct('kind', 'eom');   % no output
+    expect_error(bad_eom, 'power_control_spec:eomWiring');
+
+    % A modulator channel end to end: no serial bus, no shutter, no rotator --
+    % exactly the rig that could not be described at all before this.
+    eom_rig = opto_rig(opto_channel('act', 1040, 'fpc_eom', 'slm_a'));
+    eom_chans = opto_channels(eom_rig);
+    assert(numel(eom_chans) == 1 && strcmp(eom_chans.fpc, 'fpc_eom'), 'eom channel resolves');
+    assert(strcmp(eom_chans.holo_field, 'hr1040'), 'derived names work the same');
+    rig_store('clear');
+    loaded = load_rig(eom_rig);
+    assert(strcmp(loaded.name, 'SmokeTest'), 'a modulator rig loads and validates');
+
+    % Scope2K is untouched by any of this.
+    rig_store('clear');
+    s2k = load_rig('Scope2K');
+    for c = reshape(opto_channels(s2k), 1, [])
+        k = power_control_spec(s2k.modules.(c.fpc), c.fpc, c.name);
+        assert(strcmp(k.kind, 'ell14') && strcmp(k.gate_mode, 'shutter'), ...
+            'Scope2K channel %s stays ell14/shutter', c.name);
+    end
+
     % The shipped template must validate, or every adopter starts from a broken file.
     rig_store('clear');
     ex = load_rig('Example');
@@ -251,6 +318,13 @@ function rig = opto_rig(opto)
         'ell14_channel', 1, 'calibration', '', 'khz', 250);   % same rotator as fpc_a
     rig.modules.slm_a   = struct('trigger', 'port0/line2', 'flip', 'ai1');
     rig.modules.slm_b   = struct('trigger', 'port0/line3', 'flip', 'ai2');
+    % Modulator power paths: one with no shutter (the waveform gates) and one
+    % that also has a shutter. Neither names a serial bus, which is the point --
+    % a rig like this has no rotator to put on one.
+    rig.modules.fpc_eom      = struct('kind', 'eom', 'output', 'ao5', ...
+        'rest', -0.375, 'calibration', '');
+    rig.modules.fpc_eom_shut = struct('kind', 'eom', 'output', 'ao6', ...
+        'shutter', 'port0/line11', 'calibration', '');
     rig.opto = opto;
 end
 
