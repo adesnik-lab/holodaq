@@ -91,7 +91,12 @@ classdef Receiver < handle
         function cfg = poll_prime(obj)
             % Return the prime config only when a NEW prime_seq arrives, else [].
             cfg = [];
-            c = obj.interface.get_config();
+            % scan_config, not get_config: get_config is io.read, which busy-waits
+            % up to 30 s in a loop with NO pause, so between experiments this
+            % hammered the broker and made listen()'s pause(poll_period) below
+            % meaningless. Non-blocking is all a polling loop needs -- and it is
+            % what flush_stale two methods above already uses.
+            c = obj.interface.scan_config(obj.name);
             if isempty(c) || ~isstruct(c) || ~isfield(c, 'prime_seq'), return; end
             if c.prime_seq > obj.last_prime_seq
                 obj.last_prime_seq = c.prime_seq;
