@@ -41,6 +41,9 @@ rig.paths.holo_request = captured_holo_request;  % holoRequest.mat folder
 % scripts) -- they must stay the same folder or a fresh calibration lands
 % somewhere nothing loads it from.
 rig.paths.calib_dir    = 'C:\Users\holos\Documents\calibs';
+% Power->angle LUTs the AutoLaserPowerCalib_* scripts write and rig.modules.fpc_*
+% read. The captured fpc calibration paths above point inside this folder.
+rig.paths.power_calib_dir = 'C:\Users\holos\Documents\power-calibrations';
 % Meadowlark SDK install on the HOLO computer (not part of any checkout).
 rig.paths.slm_sdk      = 'C:\Users\holos\Desktop\meadowlark';
 % Base folder for a RELATIVE slm_lut on an opto channel. An absolute slm_lut
@@ -78,6 +81,14 @@ rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
     'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');   % HWP rotators
 rig.serial.wheel = struct('port', 'COM3', 'baud', 115200, ...
     'terminator', 'CR/LF');                                   % Arduino running wheel
+% Rotator bus the power-calibration scripts drive (AutoLaserPowerCalib_HWP,
+% manual_power_control_setup). Same device family as ell14 on a different port.
+% NOT opened by rig_hardware: only the conventional ell14/wheel and buses a
+% module's 'serial' field names are opened, and nothing references this one -- the
+% calibration scripts open it themselves when run.
+rig.serial.hwp   = struct('port', 'COM5', 'baud', 9600, ...
+    'byte_order', 'big-endian', 'parity', 'none', ...
+    'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');
 
 % ---- modules -----------------------------------------------------------------
 % A module listed here exists on this rig; omit the field entirely on rigs

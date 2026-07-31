@@ -32,6 +32,8 @@ rig.name = 'Example';   % REQUIRED — a short name for this rig
 %                (find_latest_calib) and written (the alignSLMtoCam scripts), so
 %                it must be one folder -- split them and a fresh calibration
 %                lands where nothing loads it from.
+% power_calib_dir : power->angle LUTs the AutoLaserPowerCalib_* scripts write and
+%                rig.modules.fpc_*.calibration reads.
 % slm_sdk      : SLM vendor SDK install folder on the holography computer, added
 %                to the path by start_holo_listener. '' if already on the path.
 %
@@ -44,6 +46,7 @@ rig.paths.expt_params  = 'C:\data\expt-params';
 rig.paths.si_root      = 'D:';
 rig.paths.holo_request = '';
 rig.paths.calib_dir    = 'C:\calibs';
+rig.paths.power_calib_dir = 'C:\power-calibrations';
 rig.paths.slm_sdk      = '';   % SLM vendor SDK install, if not on the path
 rig.paths.slm_lut_dir  = '';   % base for a relative opto_channel slm_lut
 
@@ -91,6 +94,11 @@ rig.daq.rate   = 20000;
 % Fields: port (required), baud (default 9600), byte_order, parity,
 % stop_bits, data_bits, terminator (default 'CR/LF'). Opened by open_serial.
 rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
+    'byte_order', 'big-endian', 'parity', 'none', ...
+    'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');
+% Bus the power-calibration scripts drive. Not opened by rig_hardware unless a
+% module's 'serial' field names it, so an entry here is inert until something asks.
+rig.serial.hwp   = struct('port', 'COM5', 'baud', 9600, ...
     'byte_order', 'big-endian', 'parity', 'none', ...
     'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');
 
