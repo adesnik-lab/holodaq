@@ -28,6 +28,12 @@ rig.name = 'Example';   % REQUIRED — a short name for this rig
 % si_root      : drive/base for ScanImage tiff logging on the SI computer
 %                (default 'D:').
 % holo_request : folder holding holoRequest.mat for holography experiments.
+% calib_dir    : SLM/CoC calibration folder on the HOLOGRAPHY computer. Both read
+%                (find_latest_calib) and written (the alignSLMtoCam scripts), so
+%                it must be one folder -- split them and a fresh calibration
+%                lands where nothing loads it from.
+% slm_sdk      : SLM vendor SDK install folder on the holography computer, added
+%                to the path by start_holo_listener. '' if already on the path.
 %
 % NOTE matlab_paths is MACHINE-scoped, not rig-scoped: it is the addpath list for
 % whichever machine loads this file, so publish_rig_config never sends it to the
@@ -37,6 +43,18 @@ rig.paths.data_root    = 'C:\data';
 rig.paths.expt_params  = 'C:\data\expt-params';
 rig.paths.si_root      = 'D:';
 rig.paths.holo_request = '';
+rig.paths.calib_dir    = 'C:\calibs';
+rig.paths.slm_sdk      = '';   % SLM vendor SDK install, if not on the path
+
+% ---- holography computer settings --------------------------------------------
+% Read by start_holo_listener on the holo box (via rig_remote_get, since that
+% machine has no rig file of its own).
+% cgh_method     : hologram algorithm id (2 = GSS)
+% use_gpu        : compile holograms on the GPU
+% slm_timeout_ms : SLM trigger timeout
+rig.holo.cgh_method     = 2;
+rig.holo.use_gpu        = true;
+rig.holo.slm_timeout_ms = 1700;
 
 % ---- DAQ ---------------------------------------------------------------------
 % vendor : MATLAB daq() vendor id ('ni', 'mcc', ...). Default 'ni'.

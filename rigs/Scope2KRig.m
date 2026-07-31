@@ -36,6 +36,18 @@ rig.paths.data_root    = 'K://KKS//stim-data';   % Saver output root
 rig.paths.expt_params  = 'K:/KKS/expt-params';   % experiment parameter json/mat
 rig.paths.si_root      = 'D:';                   % ScanImage tiff root (SI computer)
 rig.paths.holo_request = captured_holo_request;  % holoRequest.mat folder
+% SLM/CoC calibrations, on the HOLO computer's local disk. Both read
+% (find_latest_calib, start_holo_listener) and written (the alignSLMtoCam
+% scripts) -- they must stay the same folder or a fresh calibration lands
+% somewhere nothing loads it from.
+rig.paths.calib_dir    = 'C:\Users\holos\Documents\calibs';
+% Meadowlark SDK install on the HOLO computer (not part of any checkout).
+rig.paths.slm_sdk      = 'C:\Users\holos\Desktop\meadowlark';
+
+% ---- holography computer settings ------------------------------------------
+rig.holo.cgh_method     = 2;      % 2 = GSS
+rig.holo.use_gpu        = true;
+rig.holo.slm_timeout_ms = 1700;   % SLM trigger timeout
 
 % ---- DAQ -------------------------------------------------------------------
 rig.daq.vendor = 'ni';
