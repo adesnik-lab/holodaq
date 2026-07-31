@@ -45,6 +45,7 @@ rig.paths.si_root      = 'D:';
 rig.paths.holo_request = '';
 rig.paths.calib_dir    = 'C:\calibs';
 rig.paths.slm_sdk      = '';   % SLM vendor SDK install, if not on the path
+rig.paths.slm_lut_dir  = '';   % base for a relative opto_channel slm_lut
 
 % ---- holography computer settings --------------------------------------------
 % Read by start_holo_listener on the holo box (via rig_remote_get, since that

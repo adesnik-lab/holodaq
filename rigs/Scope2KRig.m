@@ -43,6 +43,10 @@ rig.paths.holo_request = captured_holo_request;  % holoRequest.mat folder
 rig.paths.calib_dir    = 'C:\Users\holos\Documents\calibs';
 % Meadowlark SDK install on the HOLO computer (not part of any checkout).
 rig.paths.slm_sdk      = 'C:\Users\holos\Desktop\meadowlark';
+% Base folder for a RELATIVE slm_lut on an opto channel. An absolute slm_lut
+% is used as given, so this is only a convenience.
+rig.paths.slm_lut_dir  = ['C:\Program Files\Meadowlark Optics\' ...
+                          'Blink OverDrive Plus\LUT Files'];
 
 % ---- holography computer settings ------------------------------------------
 rig.holo.cgh_method     = 2;      % 2 = GSS
@@ -104,13 +108,18 @@ rig.modules.laser_gate = struct('output', 'ao1', 'max_voltage', 3.5);
 % Experiment.setup, which adds 900 first -- that order fixes DAQ channel
 % registration and is a separate concern.
 %
-% slm_board/slm_lut are deliberately left unset (== 'auto'). Pinning them here
-% is safe ONLY in the same commit that teaches start_holo_listener's
-% local_signature to report the real board: opto_signature emits '#<board>'
-% once pinned while that function hardcodes '#auto', so the exact-match gate in
-% Experiment.confirm_opto_agreement would fail and fall through to the weak
-% wavelength-only branch -- silently downgrading the check that exists to stop a
-% beam being steered by the wrong phase mask.
+% slm_board/slm_lut are left unset here, which means "let the holography computer
+% derive them from the wavelength" -- get_slm already maps 900->board 1 and
+% 1100->board 2 with the right LUTs, so pinning them would only restate that.
+%
+% Pinning IS now safe (it was not before: start_holo_listener's local_signature
+% hardcoded '#auto' while opto_signature emits '#<board>' once pinned, so the
+% exact-match gate in Experiment.confirm_opto_agreement would have fallen through
+% to the weak wavelength-only branch). To pin, add them per channel:
+%     opto_channel('red', 1100, 'fpc_1100', 'slm_1100', ...
+%                  'slm_board', 2, 'slm_lut', 'slm6902_at1150.lut')
+% A relative slm_lut resolves against rig.paths.slm_lut_dir. Pinning is REQUIRED
+% for two arms on one wavelength, where the board cannot be derived at all.
 rig.opto = [ opto_channel('red',  1100, 'fpc_1100', 'slm_1100'), ...
              opto_channel('blue',  900, 'fpc_900',  'slm_900') ];
 
