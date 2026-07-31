@@ -57,6 +57,25 @@ rig.holo.cgh_method     = 2;
 rig.holo.use_gpu        = true;
 rig.holo.slm_timeout_ms = 1700;
 
+% ---- PsychToolbox / PsychoPy computer settings --------------------------------
+% Read from PYTHON on that machine (psychopy_defaults), so paths are in its OS's
+% form -- a tty on Linux, 'COM<n>' on Windows.
+% trigger_port/_baud/_timeout : serial line the box reads the DAQ trigger on
+% monitor                     : name of a calibrated monitor in PsychoPy's store
+% observe_monitor             : monitor for the small mirror window
+% stim_screen / observe_screen: screen indices
+%
+% Its own group, NOT fields on rig.modules.ptb: rig_hardware opens every
+% rig.serial entry that a module's 'serial' field references, so naming this tty
+% there would make the DAQ try to open the PTB box's serial port.
+rig.ptb.trigger_port    = '/dev/ttyUSB0';
+rig.ptb.trigger_baud    = 9600;
+rig.ptb.trigger_timeout = 15;
+rig.ptb.monitor         = 'experiment_calibrated';
+rig.ptb.observe_monitor = 'observation';
+rig.ptb.stim_screen     = 1;
+rig.ptb.observe_screen  = 0;
+
 % ---- DAQ ---------------------------------------------------------------------
 % vendor : MATLAB daq() vendor id ('ni', 'mcc', ...). Default 'ni'.
 % device : DAQ device id, e.g. 'Dev1'. '' = auto-detect the first daqlist

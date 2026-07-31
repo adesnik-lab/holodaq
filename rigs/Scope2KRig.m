@@ -53,6 +53,20 @@ rig.holo.cgh_method     = 2;      % 2 = GSS
 rig.holo.use_gpu        = true;
 rig.holo.slm_timeout_ms = 1700;   % SLM trigger timeout
 
+% ---- PsychoPy computer settings --------------------------------------------
+% Read from Python on the PTB box (LINUX), so trigger_port is a tty. This is a
+% group of its own rather than fields on rig.modules.ptb because rig_hardware
+% opens every rig.serial entry a module references -- pointing modules.ptb.serial
+% at this tty would make the WINDOWS DAQ try to open /dev/ttyUSB0 and fail.
+% rig.modules.ptb.trigger stays where it is: that is the DAQ's digital out.
+rig.ptb.trigger_port    = '/dev/ttyUSB0';   % where the PTB box reads the trigger
+rig.ptb.trigger_baud    = 9600;
+rig.ptb.trigger_timeout = 15;               % seconds
+rig.ptb.monitor         = 'experiment_calibrated';  % PsychoPy monitor-store name
+rig.ptb.observe_monitor = 'observation';    % the small mirror window
+rig.ptb.stim_screen     = 1;                % screen index for the stimulus
+rig.ptb.observe_screen  = 0;
+
 % ---- DAQ -------------------------------------------------------------------
 rig.daq.vendor = 'ni';
 rig.daq.device = '';      % '' = auto-detect (first daqlist device)

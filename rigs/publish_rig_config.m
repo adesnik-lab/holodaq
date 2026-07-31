@@ -53,7 +53,7 @@ function payload = publish_rig_config(varargin)
     % Groups published wholesale (flattened). rig.modules is NOT here: most of it
     % is DAQ-side wiring the satellites must not act on, so only the entries a
     % satellite genuinely needs are added explicitly below.
-    GROUPS = {'paths', 'serial', 'holo', 'network'};
+    GROUPS = {'paths', 'serial', 'holo', 'ptb', 'network'};
     % network.remote_api is loopback-scoped: validate_rig defaults it to
     % http://127.0.0.1:<port>/api, which on any other machine points at that
     % machine's own (absent) webapp rather than the DAQ's. Same class of hazard
@@ -73,12 +73,10 @@ function payload = publish_rig_config(varargin)
         end
     end
 
-    % The PTB computer's own settings: trigger line, which rig.serial entry to
-    % open, monitor name, screen indices.
-    if isfield(rig, 'modules') && isfield(rig.modules, 'ptb')
-        [payload, skipped] = local_flatten(rig.modules.ptb, 'modules.ptb', DENY, ...
-                                           payload, skipped);
-    end
+    % rig.modules is deliberately NOT published at all. It is DAQ-side wiring --
+    % digital lines, analog channels, ELL14 rotator addresses -- that no satellite
+    % should act on. The PsychoPy box's settings live in rig.ptb (published above
+    % with the other groups); the holography box's in rig.opto and rig.holo.
 
     % The opto channel table, for the holography computer's SLM inventory. It
     % needs board + LUT at STARTUP, before any prime arrives, because a Meadowlark
