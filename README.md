@@ -77,6 +77,12 @@ never imports your experiments repo.
 | `holography2k` | *How do I make and play a hologram?* | yes — the `2k` name is historical |
 | `scope2k-experiments` | *What experiments does this lab run?* | it's an example; you make your own |
 
+A fifth repo, [`adesnik-lab/holochat`](https://github.com/adesnik-lab/holochat),
+supplies the message broker the four machines coordinate through. It is a
+runtime *service*, not a MATLAB dependency — nothing here imports it, which is
+why it does not appear in the graph above — but a multi-machine rig does not
+work without one. See [Step 2](#step-2--stand-up-a-holochat-broker).
+
 You will write **one new file** (`holodaq/rigs/<YourName>Rig.m`), **a few
 one-line per-machine config files**, and **your own experiments repo**. Nothing
 else should need editing.
@@ -429,12 +435,17 @@ Which machine needs what:
 
 ## Step 2 — stand up a holochat broker
 
-> **This is the one prerequisite not contained in these four repos.** holochat is
-> a small REST service; the client is here (`interfaces/holochat/`), the server
-> is not. You need one reachable by all four machines.
+The broker lives in its own repo,
+[`adesnik-lab/holochat`](https://github.com/adesnik-lab/holochat). Only the
+*client* ships here (`interfaces/holochat/` for MATLAB,
+`interfaces/holochat/python-reader/` for Python), so clone and run holochat
+somewhere all four machines can reach — its README has the current install and
+run steps. It is the only always-on service the rig needs; a single-machine,
+vis-only setup can skip it.
 
 The client speaks a tiny API — `<server>/<path>/<topic>` for
-`path ∈ {msg, config, db}`:
+`path ∈ {msg, config, db}`. This is the contract the code in these repos
+actually depends on:
 
 | verb | path | meaning |
 |---|---|---|
@@ -937,8 +948,10 @@ Gitignored, one per machine, never committed: `rig_config.m`,
 
 Things a new adopter should know are *not* done, so you can plan around them:
 
-* **The holochat broker is not in these repos.** You must supply one
-  ([Step 2](#step-2--stand-up-a-holochat-broker)).
+* **The broker is a separate deployment.** It lives in
+  [`adesnik-lab/holochat`](https://github.com/adesnik-lab/holochat), not in any
+  of the four repos above, and must be running before a multi-machine rig
+  coordinates ([Step 2](#step-2--stand-up-a-holochat-broker)).
 * **`publish_rig_config()` is manual.** Nothing calls it automatically; re-run it
   after every rig-file change, and refresh or restart the satellites.
 * **Experiment discovery is implemented twice** — `gui/discover_experiments.m`
