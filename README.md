@@ -127,6 +127,67 @@ paths that need them are skipped (§3).
 **`ExperimentLauncher` and `ScopeController` must never run at the same time**:
 only one MATLAB object can own the DAQ and the COM ports.
 
+### Which modules belong to which computer
+
+Every module *object* is constructed **on the DAQ** — `Experiment.setup` builds all
+of them, because the DAQ owns the NI card and its own COM ports. A module is the
+DAQ's handle on one subsystem, not code running on another box. What differs
+between machines is where each module's **hardware** physically sits, and which
+part of the rig file each machine reads.
+
+```mermaid
+graph TB
+    subgraph DAQC["<b>DAQ computer</b> — owns the rig file and the NI card"]
+        direction LR
+        P["<b>patch</b><br/>output AO · input AI"]
+        W["<b>wheel</b><br/>serial"]
+        LG["<b>laser_gate</b><br/>output AO"]
+        F["<b>fpc_&lt;tag&gt;</b><br/>ell14: shutter DO + rotator<br/>eom: output AO"]
+    end
+
+    subgraph HOLOC["<b>Holography computer</b>"]
+        direction LR
+        S["<b>slm_&lt;tag&gt;</b><br/>trigger DO · flip AI"]
+        H["<b>holo</b><br/>no wiring — holochat only"]
+        SU["<i>serial.sutter</i><br/>opened here, not on the DAQ"]
+    end
+
+    subgraph SIC["<b>ScanImage computer</b>"]
+        SI["<b>si</b><br/>trigger DO · frame in"]
+    end
+
+    subgraph PTBC["<b>PsychoPy computer</b> (Linux)"]
+        PT["<b>ptb</b><br/>trigger DO"]
+    end
+```
+
+The wires between them are in the diagram above; this one is only about placement.
+
+| `rig` entry | hardware lives at | read by |
+|---|---|---|
+| `daq`, `paths.data_root`, `paths.expt_params` | DAQ | DAQ |
+| `paths.matlab_paths` | DAQ | **DAQ only — machine-scoped, never published** |
+| `modules.patch`, `modules.wheel`, `modules.laser_gate` | DAQ (to an amplifier / Arduino / laser) | DAQ |
+| `modules.fpc_<tag>` | DAQ drives it: a shutter line plus an ELL14 on `serial.ell14`, or an analog line to a modulator | DAQ; `khz` also by `PowerControllerCalibrated` |
+| `modules.si`, `paths.si_root` | the DAQ's line to the ScanImage box; tiffs land on its drive | DAQ wires it, SI box reads `si_root` |
+| `modules.ptb`, `rig.ptb.*` | the DAQ's line to the stimulus box | DAQ wires it; `rig.ptb.*` is read **from Python** on that box |
+| `modules.slm_<tag>` | SLM boards on the holography computer | DAQ drives the trigger |
+| `modules.holo`, `rig.holo.*`, `paths.calib_dir`, `slm_sdk`, `slm_lut_dir`, `holo_scratch` | holography computer | that box, via `rig_remote_get` |
+| `serial.sutter` | **holography** computer | `function_loadparameters2` there opens it |
+| `network.holochat_server` | the broker, anywhere on the LAN | every machine |
+
+Two things this table exists to make obvious:
+
+* **`rig.serial` is not a list of the DAQ's COM ports.** `rig_hardware` opens only
+  `ell14`, `wheel`, and any bus a declared module's `serial` field names. `sutter`
+  is named by no module, so the DAQ never touches it — the holography computer
+  opens it. That is why `serial.sutter` and `serial.wheel` can both say `COM3`
+  without conflicting: they are two different machines' port 3.
+* **A satellite reads config; it does not load the rig.** Python cannot call
+  `load_rig` at all, and neither MATLAB satellite does. They get their values from
+  the config the DAQ published (§4), which is why `publish_rig_config()` has to be
+  re-run after a rig edit or the satellites keep the old values.
+
 ## 3. The rig file: one source of truth
 
 Everything machine-specific — DAQ channel map, device IDs, sample rate, COM
