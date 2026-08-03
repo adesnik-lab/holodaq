@@ -28,9 +28,8 @@ classdef ModuleManager < dynamicprops
         function add(obj, module, name)
             %ADD Register a module, optionally under an EXPLICIT key.
             %   add(m)        key it by class(m), auto-suffixing '_1', '_2' for
-            %                 repeats. What every caller did before, and still
-            %                 does: the inline experiment runners and both
-            %                 patch_experiment copies rely on it.
+            %                 repeats. What every caller did before, and the
+            %                 inline experiment runners still do.
             %   add(m, name)  key it verbatim as `name`.
             %
             %   Why the explicit form exists: keying by class means the FIRST

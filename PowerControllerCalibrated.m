@@ -44,8 +44,8 @@ classdef PowerControllerCalibrated < matlab.apps.AppBase
         % (shutter open / laser on), so state is obvious at a glance.
         COLOR_IDLE   = [0.30 0.65 0.40];   % green
         COLOR_ACTIVE = [0.85 0.16 0.16];   % red
-        % LUT paths come from the rig file (rig.modules.fpc_*.calibration, the
-        % same source patch_experiment.m uses); see startupFcn.
+        % LUT paths come from the rig file (rig.modules.fpc_*.calibration);
+        % see startupFcn.
     end
 
     properties (Access = private)
