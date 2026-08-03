@@ -80,6 +80,7 @@ function chans = opto_channels(rig)
     end
 
     local_check_modules(rig, chans);
+    local_check_power(rig, chans);
     local_check_unique_names(chans);
     local_check_module_reuse(chans);
     local_check_rotators(rig, chans);
@@ -129,6 +130,18 @@ function local_check_modules(rig, chans)
                  'rig.modules.%s, or correct the channel.'], ...
                 c.name, which{1}, m, local_join(declared), m);
         end
+    end
+end
+
+function local_check_power(rig, chans)
+%LOCAL_CHECK_POWER Every channel's fpc must declare a coherent power path.
+%   Delegated to power_control_spec, which is the SAME function the factory uses
+%   at build time -- so the rules cannot drift between "what load_rig accepts"
+%   and "what Experiment.setup can actually construct". Running it here means a
+%   malformed power declaration is refused at load_rig time, before any DAQ
+%   channel or serial port is opened.
+    for i = 1:numel(chans)
+        power_control_spec(rig.modules.(chans(i).fpc), chans(i).fpc, chans(i).name);
     end
 end
 
