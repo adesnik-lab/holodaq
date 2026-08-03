@@ -94,15 +94,18 @@ rig.daq.rate   = 20000;
 % One entry per serial device; modules reference them by name (see below).
 % Fields: port (required), baud (default 9600), byte_order, parity,
 % stop_bits, data_bits, terminator (default 'CR/LF'). Opened by open_serial.
+% The HWP rotator bus. Declare it ONCE, here, and let modules reference it by name
+% via their 'serial' field -- every consumer (PowerControllerCalibrated, the
+% AutoLaserPowerCalib_* scripts, manual_power_control_setup) resolves it through
+% modules.fpc_<nm>.serial rather than naming a bus. A second entry for the same
+% physical bus is how a port drifts on one path and not the other.
 rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
     'byte_order', 'big-endian', 'parity', 'none', ...
     'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');
-% Bus the power-calibration scripts drive. Not opened by rig_hardware unless a
-% module's 'serial' field names it, so an entry here is inert until something asks.
+% Not opened by rig_hardware unless a module's 'serial' field names it, so an entry
+% here is inert until something asks. function_loadparameters2 reads .port off this
+% one directly and hands it to function_Sutter_Start.
 rig.serial.sutter = struct('port', 'COM3', 'baud', 9600);   % Sutter MP285
-rig.serial.hwp   = struct('port', 'COM5', 'baud', 9600, ...
-    'byte_order', 'big-endian', 'parity', 'none', ...
-    'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');
 
 % ---- modules --------------------------------------------------------------------
 % Each field declares one module that exists on this rig and its physical

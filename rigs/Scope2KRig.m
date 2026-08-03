@@ -84,20 +84,24 @@ rig.serial.ell14 = struct('port', 'COM4', 'baud', 9600, ...
     'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');   % HWP rotators
 rig.serial.wheel = struct('port', 'COM3', 'baud', 115200, ...
     'terminator', 'CR/LF');                                   % Arduino running wheel
-% NOTE on the two entries below: neither is opened by rig_hardware. It opens only
-% the conventional ell14/wheel plus buses that a rig.modules.<m>.serial field
-% names, and nothing names these -- the scripts that use them open them by name
-% when run. So they are inert declarations, which is also why a port number may
-% legitimately repeat across machines.
+% NOTE on the entry below: it is not opened by rig_hardware. That opens only the
+% conventional ell14/wheel plus buses that a rig.modules.<m>.serial field names,
+% and nothing names this one -- function_loadparameters2 reads its .port and hands
+% it to function_Sutter_Start, which opens it. Hence a port number may legitimately
+% repeat across machines.
 %
 % Sutter MP285 manipulator, on the HOLOGRAPHY computer. Its COM3 is a DIFFERENT
 % machine's port than rig.serial.wheel's COM3 on the DAQ above.
 rig.serial.sutter = struct('port', 'COM3', 'baud', 9600);
-% Rotator bus the power-calibration scripts drive (AutoLaserPowerCalib_HWP,
-% manual_power_control_setup). Same device family as ell14, different port.
-rig.serial.hwp   = struct('port', 'COM5', 'baud', 9600, ...
-    'byte_order', 'big-endian', 'parity', 'none', ...
-    'stop_bits', 1, 'data_bits', 8, 'terminator', 'CR/LF');
+% There was a rig.serial.hwp here, 'COM5', described as the rotator bus the
+% power-calibration scripts drive -- "same device family as ell14, different port".
+% It was neither: one physical bus, declared twice. The literal came from the
+% hand-written calibration script (holography2k 0624701) and was never revalidated,
+% so when the adapter renumbered to COM4 only serial.ell14 above was updated and
+% the calibration scripts kept failing to open a port that no longer existed.
+% AutoLaserPowerCalib_HWP and manual_power_control_setup now resolve the bus
+% through rig.modules.fpc_<nm>.serial, exactly as PowerControllerCalibrated does,
+% so there is one declaration and it cannot drift again.
 
 % ---- modules -----------------------------------------------------------------
 % A module listed here exists on this rig; omit the field entirely on rigs
