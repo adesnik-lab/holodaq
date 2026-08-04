@@ -697,7 +697,7 @@ environment variable → gitignored config file → lone sibling checkout**:
 | what | env var | config file | lives in |
 |---|---|---|---|
 | which rig | `HOLODAQ_RIG` | `rig_config.m` | holodaq |
-| where holodaq is | `HOLODAQ_HOME` | `holodaq_config.m` | holoexpt |
+| where holodaq is | *(none — clone it as a sibling)* | `holodaq_config.m` | holoexpt |
 | where experiments are | `HOLOEXPT_EXPTS` | `expts_config.m` | holoexpt |
 | broker URL | `HOLOCHAT_SERVER` | *(env only — it is the bootstrap)* | all |
 
@@ -994,7 +994,7 @@ every entry must come from that one constructor. Optional name-value pairs:
 |---|---|---|
 | **DAQ** | `rig_config.m` (or `$HOLODAQ_RIG`), `$HOLOCHAT_SERVER`, `expts_config.m` (or sibling layout) | `ExperimentLauncher` / `ScopeController`; run `publish_rig_config()` after rig edits |
 | **ScanImage** | `$HOLOCHAT_SERVER` | `start_si_listener` |
-| **Holography** | `$HOLOCHAT_SERVER`, `$HOLODAQ_HOME` if not a sibling | `start_holo_listener` |
+| **Holography** | `$HOLOCHAT_SERVER`; holodaq **must** be a sibling checkout | `start_holo_listener` |
 | **PsychoPy** | `$HOLOCHAT_SERVER`, `$HOLOEXPT_EXPTS` if not a sibling | `python ptb_primer.py` |
 
 Gitignored, one per machine, never committed: `rig_config.m`,
