@@ -5,6 +5,10 @@ classdef SIReceiver < Receiver
     %   trigger, enables the experiment's user function, and arms acquisition
     %   (startLoop) so ScanImage waits for the DAQ trigger. Requires hSI/hSICtl
     %   in the base workspace.
+    %
+    %   Priming is meant to be NEUTRAL about what the user set up by hand: it
+    %   captures and restores "Enable Stack" and the imaging beam power (the %
+    %   in Power Controls) around everything it does. See getBeamPowers.
 
     properties
         hSI
@@ -44,6 +48,14 @@ classdef SIReceiver < Receiver
             % was clearing "Enable Stack").
             stackEnable = obj.getStackEnable();
 
+            % Same deal for the imaging beam power (the % in Power Controls):
+            % the power the user dialed in before launching is the power the
+            % experiment runs at. Nothing in holodaq/holoexpt writes hBeams, so
+            % whatever moves it is ScanImage reacting to one of the calls below
+            % -- abort, updateView, the user-function swap, the Stack restore,
+            % or startLoop. Snapshot before all of them, put it back after.
+            beamPowers = obj.getBeamPowers();
+
             % Stop any prior looped acquisition before re-arming for a new expt.
             try, obj.hSI.abort(); catch, end
 
@@ -74,7 +86,16 @@ classdef SIReceiver < Receiver
             % want to overwrite from _00001. (Set last so nothing re-derives it.)
             obj.hSI.hScan2D.logFileCounter = 1;
             obj.restoreStackEnable(stackEnable);   % keep the user's Stack setting
+            obj.restoreBeamPowers(beamPowers, 'prime');   % keep the user's power
             obj.hSI.startLoop();      % arm: wait for the DAQ external trigger
+
+            % Arming itself can re-apply the beam model, and that happens after
+            % the restore above -- so check, but do NOT write: pushing powers
+            % into a live armed acquisition is worse than the drift. If this
+            % warns on the rig, the guard has to extend past startLoop.
+            % Guarded: it runs AFTER arming, and a throw here would ack a failed
+            % prime for a ScanImage that is in fact armed and ready.
+            try, obj.checkBeamPowers(beamPowers, 'startLoop'); catch, end
             disp('ScanImage armed.')
         end
 
@@ -90,11 +111,93 @@ classdef SIReceiver < Receiver
             try, obj.hSI.hStackManager.enable = tf; catch, end
         end
 
+        function p = getBeamPowers(obj)
+            % Snapshot the imaging beam power ([] if unavailable). Property
+            % names may differ across ScanImage versions -- adjust here if
+            % needed; each field is optional and absent ones stay missing so
+            % restoreBeamPowers only ever writes back what it actually read.
+            %
+            % pzAdjust is captured for the DIAGNOSTIC only and is deliberately
+            % never restored: it is the power-vs-depth mode, and priming has no
+            % business writing it either. Knowing whether it was on is what
+            % tells us why powers moved.
+            p = [];
+            hb = [];
+            try, hb = obj.hSI.hBeams; catch, end
+            if isempty(hb), return; end
+            p = struct();
+            try, p.powers          = hb.powers;          catch, end
+            try, p.powerFractions  = hb.powerFractions;  catch, end
+            try, p.pzAdjust        = hb.pzAdjust;        catch, end
+            if isempty(fieldnames(p)), p = []; end
+        end
+
+        function restoreBeamPowers(obj, p, where)
+            % Put the captured beam power back, but only where it actually
+            % drifted -- a well-behaved prime writes nothing at all. Says so out
+            % loud when it does correct something: that line is the evidence for
+            % which call moved the power.
+            if isempty(p), return; end
+            for f = {'powers', 'powerFractions'}
+                name = f{1};
+                if ~isfield(p, name), continue; end
+                want = p.(name);
+                got  = [];
+                ok   = false;
+                try, got = obj.hSI.hBeams.(name); ok = true; catch, end
+                % isequal, not ==: these are vectors (one entry per beam), and
+                % == on a length mismatch errors instead of saying "different".
+                if ~ok || isequal(got, want), continue; end
+                try
+                    obj.hSI.hBeams.(name) = want;
+                    fprintf(['SIReceiver: restored hBeams.%s at %s ' ...
+                             '(%s -> %s)%s.\n'], name, where, ...
+                        obj.fmt_power(got), obj.fmt_power(want), obj.pz_note(p));
+                catch ME
+                    warning('SIReceiver:beamPowerRestore', ...
+                        'Could not restore hBeams.%s at %s: %s', ...
+                        name, where, ME.message);
+                end
+            end
+        end
+
+        function checkBeamPowers(obj, p, where)
+            % Report drift WITHOUT writing (see the startLoop call site).
+            if isempty(p) || ~isfield(p, 'powers'), return; end
+            got = [];
+            try, got = obj.hSI.hBeams.powers; catch, return; end
+            if isequal(got, p.powers), return; end
+            warning('SIReceiver:beamPowerDrift', ...
+                ['%s changed hBeams.powers (%s -> %s)%s, AFTER the guard ' ...
+                 'restored it. Not writing to an armed acquisition -- the ' ...
+                 'guard needs to extend past %s.'], ...
+                where, obj.fmt_power(p.powers), obj.fmt_power(got), ...
+                obj.pz_note(p), where);
+        end
+
+        function s = fmt_power(~, v)
+            if isempty(v)
+                s = '[]';
+            else
+                s = ['[' strjoin(compose('%g', double(v(:))'), ' ') ']'];
+            end
+        end
+
+        function s = pz_note(~, p)
+            % pzAdjust on is the usual explanation for powers moving by itself.
+            s = '';
+            if isfield(p, 'pzAdjust') && ~isempty(p.pzAdjust) && any(p.pzAdjust(:))
+                s = ' [pzAdjust was ON]';
+            end
+        end
+
         function onFinish(obj)
             % End of a normal recording: let ScanImage finish the CURRENT
             % acquisition (its frame timer runs out) and THEN stop the LOOP.
             % NOT an immediate abort (that would truncate the in-progress tiff).
             try, obj.hSI = evalin('base', 'hSI'); catch, end
+            beamPowers = [];
+            try, beamPowers = obj.getBeamPowers(); catch, end
             try, obj.hSI.extTrigEnable = 0; catch, end   % don't start another acquisition
             t0 = tic;
             while toc(t0) < 60
@@ -109,13 +212,20 @@ classdef SIReceiver < Receiver
                 pause(0.05);
             end
             try, obj.hSI.abort(); catch, end   % exit the loop now the acq is done
+            % The abort above is one of the suspects for moving the power, so
+            % end-of-run gets the same guard as the prime. Never let it throw:
+            % this runs inside the listener loop.
+            try, obj.restoreBeamPowers(beamPowers, 'finish'); catch, end
             disp('ScanImage: current acquisition finished; loop stopped.')
         end
 
         function onAbort(obj)
             % Cancel the armed acquisition primed for the aborted experiment.
             try, obj.hSI = evalin('base', 'hSI'); catch, end
+            beamPowers = [];
+            try, beamPowers = obj.getBeamPowers(); catch, end
             try, obj.hSI.abort(); catch, end
+            try, obj.restoreBeamPowers(beamPowers, 'abort'); catch, end
             disp('ScanImage priming aborted.')
         end
 
