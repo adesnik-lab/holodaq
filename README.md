@@ -748,7 +748,17 @@ workspace):
 ```matlab
 start_si_listener            % tiff root from rig.paths.si_root
 start_si_listener('E:')      % explicit override always wins
+start_si_listener('nogui')   % no status window (headless / scripted)
 ```
+
+A small **status window** opens with it, because the listener runs on a timer and is
+otherwise invisible at the prompt: a lamp reading green `LISTENING` / amber `STARVED`
+(running, but something is blocking the prompt so primes are late) / red `STOPPED`
+(you stopped it, or the poll timer errored and the listener died while still looking
+started), plus one Start/Stop button. **Closing that window stops the listener** — it
+is the on/off control, not a passive monitor, so the X de-arms ScanImage and prints a
+line saying so. `start_si_listener` again to get both back, or `SIListenerMonitor(r)`
+for just the window if you still hold `r`.
 
 **Holography computer:**
 

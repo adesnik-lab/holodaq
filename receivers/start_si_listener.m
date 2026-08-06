@@ -11,15 +11,23 @@ function r = start_si_listener(varargin)
 %   lives in this session's base workspace and no other process can reach it, so
 %   the blocking listener cost the only session able to touch ScanImage.
 %
+%   A small status window opens with it (SIListenerMonitor): a lamp saying whether
+%   the listener is listening / starved / stopped, and one Start/Stop button. The
+%   async listener is otherwise invisible -- see below on what async does not give
+%   you. CLOSING THAT WINDOW STOPS THE LISTENER; 'nogui' skips it entirely, which is
+%   what the tests and any headless invocation want.
+%
 %   Usage (on the SI computer):
 %       r = start_si_listener               % async; tiff root from the rig
 %       r = start_si_listener('E:')         % async; override the root
+%       r = start_si_listener('nogui')      % async, no status window
 %       r = start_si_listener('blocking')   % old behaviour: owns the session, Ctrl-C
 %       r = start_si_listener('E:', 'blocking')
 %
 %       r.status()        % am I actually listening? also flags a starved timer
 %       r.stop()          % halt the async listener
 %       r.listen_async()  % start it again
+%       SIListenerMonitor(r)   % re-open the status window
 %
 %   WHAT ASYNC DOES NOT GIVE YOU: an uninterrupted session, only a usable one.
 %   Timer callbacks run on MATLAB's event queue, serviced when MATLAB is idle or at
@@ -35,21 +43,36 @@ function r = start_si_listener(varargin)
 %   this machine, else 'D:'. The receiver prints which one it used. An explicit
 %   argument always wins, so the old start_si_listener('E:') behaviour is intact.
 %
-%   See also SIReceiver, Receiver/listen_async, Receiver/status, Receiver/stop,
-%   prime_info, publish_rig_config.
+%   See also SIReceiver, SIListenerMonitor, Receiver/listen_async, Receiver/status,
+%   Receiver/stop, prime_info, publish_rig_config.
 
-    % Tiff root stays positional, 'blocking'/'async' are keywords in any position.
-    % Split out into its own function so it is testable -- the addpath below prepends
-    % the real receivers, so a stub SIReceiver cannot shadow them from a test.
-    [si_root, mode] = parse_si_listener_args(varargin{:});
+    % Tiff root stays positional, 'blocking'/'async'/'gui'/'nogui' are keywords in any
+    % position. Split out into its own function so it is testable -- the addpath below
+    % prepends the real receivers, so a stub SIReceiver cannot shadow them from a test.
+    [si_root, mode, gui] = parse_si_listener_args(varargin{:});
 
     here = fileparts(mfilename('fullpath'));   % holodaq/receivers
     addpath(genpath(fileparts(here)));         % put holodaq (HolochatInterface, ...) on path
 
     r = SIReceiver(si_root);
     if strcmp(mode, 'blocking')
+        if gui
+            % Blocking mode wins over the window: listen() is a while-true loop, so
+            % a Stop button could never interrupt it -- only Ctrl-C can.
+            fprintf('SIReceiver: no status window in blocking mode (Ctrl-C stops it).\n');
+        end
         r.listen();        % owns this session until Ctrl-C
     else
+        % Listener FIRST, window second: a GUI that fails to build must never cost
+        % you the listener, which is the thing that actually arms ScanImage.
         r.listen_async();  % returns immediately; r.stop() to halt
+        if gui
+            try
+                SIListenerMonitor(r);
+            catch err
+                fprintf(['[si] status window failed to open (%s); the listener is ' ...
+                         'running -- use r.status() / r.stop().\n'], err.message);
+            end
+        end
     end
 end
