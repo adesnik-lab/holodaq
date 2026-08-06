@@ -128,10 +128,18 @@ classdef SIReceiver < Receiver
             try, obj.checkBeamPowers(beamPowers, 'startLoop'); catch, end
             try, obj.checkAcqCounts(acqCounts, 'startLoop'); catch, end
 
-            % Say what was actually armed. There was NO feedback on this at all,
+            % Say what was actually armed. There was NO feedback on any of this,
             % which is why a wrong frame count stayed invisible until the data came
             % off the disk.
-            fprintf('ScanImage armed. %s\n', obj.fmt_counts(obj.getAcqCounts()));
+            %
+            % Beam power and the plane list are here for a specific reason: the SLM
+            % alignment script (holography2k align_slm_to_camera_scope2k) sets
+            % hBeams.powers = 15, hStackManager.enable = 1 and arbitraryZs on this
+            % machine via AutoCalibSI and never restores them. The prime's guards
+            % PRESERVE whatever it finds -- correctly, since the GUI is
+            % authoritative -- which means alignment residue is inherited silently
+            % by the next experiment. Printing it is what makes it catchable.
+            obj.report_armed();
             if ~isempty(obj.acq_drift)
                 fprintf(['SIReceiver: the acquisition counts were first moved by ' ...
                          '''%s'' -- that is the call to fix.\n'], obj.acq_drift);
@@ -303,6 +311,46 @@ classdef SIReceiver < Receiver
                 obj.fmt_counts(now));
         end
 
+        function report_armed(obj)
+            %REPORT_ARMED One line stating what the acquisition was actually armed with.
+            %   Everything here is state the prime PRESERVES rather than sets, so a
+            %   stale value left by an earlier alignment or grab would otherwise be
+            %   invisible until the data came off the disk.
+            fprintf('ScanImage armed. %s', obj.fmt_counts(obj.getAcqCounts()));
+
+            bp = obj.getBeamPowers();
+            if ~isempty(bp) && isfield(bp, 'powers')
+                fprintf(' | beam %s%s', obj.fmt_power(bp.powers), obj.pz_note(bp));
+            end
+
+            st = obj.getStackEnable();
+            if ~isempty(st)
+                fprintf(' | stack %s', obj.onoff(st));
+            end
+
+            % arbitraryZs is set by the alignment script and by nothing in the prime,
+            % so report the plane COUNT (the full list would swamp the line).
+            try
+                zs = obj.hSI.hStackManager.arbitraryZs;
+                if ~isempty(zs), fprintf(' | %d arbitraryZs', numel(zs)); end
+            catch
+            end
+
+            [fns, ok] = obj.enabled_user_functions();
+            if ~ok
+                fprintf(' | user fns: ?');       % unreadable, NOT "none enabled"
+            elseif isempty(fns)
+                fprintf(' | user fns: NONE');
+            else
+                fprintf(' | user fns: %s', strjoin(fns, ','));
+            end
+            fprintf('\n');
+        end
+
+        function s = onoff(~, tf)
+            if isempty(tf), s = '?'; elseif any(tf(:)), s = 'ON'; else, s = 'off'; end
+        end
+
         function s = fmt_counts(obj, c)
             if isempty(c), s = 'counts unavailable'; return; end
             parts = {};
@@ -371,20 +419,63 @@ classdef SIReceiver < Receiver
 
         function set_user_function(obj)
             % Enable the experiment's ScanImage user function (from the prime's
-            % si_callback), disabling all others. No-op when si_callback is ''.
-            obj.disable_all_user_functions();
+            % si_callback). ADDITIVE: nothing is ever disabled.
+            %
+            % This used to call disable_all_user_functions first, which set
+            % Enable = 0 on EVERY entry in userFunctionsCfg and then enabled only
+            % the one named by si_callback. Since every si_callback in every
+            % manifest is '', the effect was that the first prime of a session
+            % turned off arm_reset_callback and online_analysis_callback and never
+            % turned them back on -- online analysis was silently dead from the
+            % first Prepare onwards, with nothing printed.
+            %
+            % Per the operator (2026-08-05): user functions are managed BY HAND in
+            % the ScanImage GUI, so priming must not touch them. The trade, stated
+            % plainly: with nothing disabled, a user function enabled for one
+            % experiment stays enabled for the next. That is now deliberate --
+            % ScanImage's checkboxes are the single source of truth, the same call
+            % the # Frames / beam power guards make.
+            %
+            % disable_all_user_functions is kept as a manual utility (call it from
+            % the prompt on the SI box) but is no longer part of the prime.
             cb = '';
             if isstruct(obj.config) && isfield(obj.config, 'si_callback')
                 cb = char(obj.config.si_callback);
             end
             if ~isempty(cb)
                 obj.enable_user_function(cb);
+                fprintf('SIReceiver: enabled user function ''%s'' (others left as-is).\n', cb);
             end
         end
 
         function disable_all_user_functions(obj)
+            %DISABLE_ALL_USER_FUNCTIONS Manual utility -- NOT called by the prime.
+            %   Priming deliberately leaves the operator's user-function checkboxes
+            %   alone (see set_user_function). Call this by hand when you actually
+            %   want everything off.
             for ii = 1:numel(obj.hSI.hUserFunctions.userFunctionsCfg)
                 obj.hSI.hUserFunctions.userFunctionsCfg(ii).Enable = 0;
+            end
+        end
+
+        function [names, ok] = enabled_user_functions(obj)
+            %ENABLED_USER_FUNCTIONS Names of the currently enabled user functions.
+            %   [names, ok] = ... ; ok is false when the list could not be READ at
+            %   all, which is not the same as "none are enabled" -- reporting an
+            %   unreadable list as NONE would assert something untrue about which
+            %   callbacks are about to fire.
+            %
+            %   Reported at arm time so it is visible which callbacks will run --
+            %   necessary now that the prime no longer forces them off, and the
+            %   thing that would have made the silent-online-analysis bug obvious.
+            names = {};
+            ok = false;
+            try
+                cfg = obj.hSI.hUserFunctions.userFunctionsCfg;
+                on = arrayfun(@(c) ~isempty(c.Enable) && any(c.Enable), cfg);
+                names = {cfg(on).UserFcnName};
+                ok = true;
+            catch
             end
         end
 
