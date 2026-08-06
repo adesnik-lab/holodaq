@@ -14,6 +14,15 @@ classdef SIReceiver < Receiver
         hSI
         hSICtl
         si_root = 'D:'   % local drive/base for ScanImage tiff logging on the SI PC
+        acq_drift = ''   % first prime step seen to move the acquisition counts, '' if none
+    end
+
+    properties (Constant)
+        % The operator's acquisition counts, guarded as a set because ScanImage
+        % couples them: numVolumes is derived from enable/stackMode, and numSlices
+        % is what ties it to framesPerSlice. Capturing all three makes a drift
+        % report interpretable even though only two have GUI boxes.
+        ACQ_COUNT_PROPS = {'framesPerSlice', 'numVolumes', 'numSlices'}
     end
 
     methods
@@ -56,8 +65,19 @@ classdef SIReceiver < Receiver
             % or startLoop. Snapshot before all of them, put it back after.
             beamPowers = obj.getBeamPowers();
 
+            % And the same for the acquisition counts -- the # Frames / # Volumes
+            % the operator typed into ScanImage's Main Controls. Nothing in any of
+            % these repos writes them, so they are purely the operator's, yet they
+            % were coming back as the PREVIOUS grab's values: something in the
+            % sequence below re-derives the stack geometry. Captured before
+            % anything runs; obj.acq_drift below then names the first call that
+            % moves them, since which one it is cannot be settled off the rig.
+            acqCounts = obj.getAcqCounts();
+            obj.acq_drift = '';
+
             % Stop any prior looped acquisition before re-arming for a new expt.
             try, obj.hSI.abort(); catch, end
+            obj.noteAcqDrift(acqCounts, 'abort');
 
             obj.hSI.extTrigEnable            = 1;
             obj.hSI.hChannels.loggingEnable  = 1;
@@ -78,15 +98,25 @@ classdef SIReceiver < Receiver
             obj.hSI.hScan2D.logFilePath    = logdir;
             obj.hSI.hScan2D.logFileStem    = sprintf('%s_%s_%d%s', stamp, mouse, epoch, expt);
             obj.hSICtl.updateView();
+            obj.noteAcqDrift(acqCounts, 'updateView');
 
             obj.set_user_function();
+            obj.noteAcqDrift(acqCounts, 'set_user_function');
 
             % Force the acquisition number back to 1 right before arming, so
             % stray trailing files don't auto-bump it to a higher number — we
             % want to overwrite from _00001. (Set last so nothing re-derives it.)
             obj.hSI.hScan2D.logFileCounter = 1;
             obj.restoreStackEnable(stackEnable);   % keep the user's Stack setting
+            obj.noteAcqDrift(acqCounts, 'restoreStackEnable');
             obj.restoreBeamPowers(beamPowers, 'prime');   % keep the user's power
+
+            % Counts LAST, and after restoreStackEnable specifically: writing
+            % hStackManager.enable re-runs the StackManager setters, which re-derive
+            % numSlices/numVolumes and the frames<->volumes coupling. Restoring the
+            % counts before that write would just be undone by it.
+            obj.restoreAcqCounts(acqCounts, 'prime');
+
             obj.hSI.startLoop();      % arm: wait for the DAQ external trigger
 
             % Arming itself can re-apply the beam model, and that happens after
@@ -96,7 +126,16 @@ classdef SIReceiver < Receiver
             % Guarded: it runs AFTER arming, and a throw here would ack a failed
             % prime for a ScanImage that is in fact armed and ready.
             try, obj.checkBeamPowers(beamPowers, 'startLoop'); catch, end
-            disp('ScanImage armed.')
+            try, obj.checkAcqCounts(acqCounts, 'startLoop'); catch, end
+
+            % Say what was actually armed. There was NO feedback on this at all,
+            % which is why a wrong frame count stayed invisible until the data came
+            % off the disk.
+            fprintf('ScanImage armed. %s\n', obj.fmt_counts(obj.getAcqCounts()));
+            if ~isempty(obj.acq_drift)
+                fprintf(['SIReceiver: the acquisition counts were first moved by ' ...
+                         '''%s'' -- that is the call to fix.\n'], obj.acq_drift);
+            end
         end
 
         function tf = getStackEnable(obj)
@@ -181,6 +220,98 @@ classdef SIReceiver < Receiver
             else
                 s = ['[' strjoin(compose('%g', double(v(:))'), ' ') ']'];
             end
+        end
+
+        function c = getAcqCounts(obj)
+            % Snapshot the operator's # Frames / # Volumes ([] if unavailable).
+            %
+            % Same conventions as getBeamPowers, and for the same reason: each
+            % property is read individually inside try/catch, so one that this
+            % ScanImage version does not expose stays ABSENT from the struct rather
+            % than erroring or turning up as []. restoreAcqCounts then only ever
+            % writes back a field it actually managed to read.
+            c = [];
+            hsm = [];
+            try, hsm = obj.hSI.hStackManager; catch, end
+            if isempty(hsm), return; end
+            c = struct();
+            for f = obj.ACQ_COUNT_PROPS
+                try, c.(f{1}) = hsm.(f{1}); catch, end   %#ok<AGROW>
+            end
+            if isempty(fieldnames(c)), c = []; end
+        end
+
+        function restoreAcqCounts(obj, c, where)
+            % Put the operator's counts back, writing ONLY what actually drifted --
+            % so a prime that leaves them alone writes nothing at all. That
+            % neutrality matters here more than for beam powers: these properties
+            % are coupled, and a redundant write to one re-derives the others.
+            if isempty(c), return; end
+            for f = obj.ACQ_COUNT_PROPS
+                name = f{1};
+                if ~isfield(c, name), continue; end
+                want = c.(name);
+                got  = [];
+                ok   = false;
+                try, got = obj.hSI.hStackManager.(name); ok = true; catch, end
+                if ~ok || isequal(got, want), continue; end
+                try
+                    obj.hSI.hStackManager.(name) = want;
+                    fprintf(['SIReceiver: restored hStackManager.%s at %s ' ...
+                             '(%s -> %s).\n'], name, where, ...
+                        obj.fmt_power(got), obj.fmt_power(want));
+                catch ME
+                    % numVolumes is read-only while the stack is disabled in some
+                    % ScanImage versions, so a failure here is informative, not fatal.
+                    warning('SIReceiver:acqCountRestore', ...
+                        'Could not restore hStackManager.%s at %s: %s', ...
+                        name, where, ME.message);
+                end
+            end
+        end
+
+        function checkAcqCounts(obj, c, where)
+            % Report drift WITHOUT writing. Same reasoning as checkBeamPowers: this
+            % runs after startLoop, and pushing acquisition geometry into an armed
+            % acquisition is worse than the drift. If this warns on the rig, arming
+            % itself is re-deriving the counts and the restore above cannot fix it --
+            % the sequence has to change instead.
+            if isempty(c), return; end
+            now = obj.getAcqCounts();
+            if isempty(now) || isequaln(now, c), return; end
+            warning('SIReceiver:acqCountDrift', ...
+                ['%s changed the acquisition counts (%s -> %s) AFTER the guard ' ...
+                 'restored them.\nNot writing to an armed acquisition -- the guard ' ...
+                 'cannot fix this one, the prime sequence has to change.'], ...
+                where, obj.fmt_counts(c), obj.fmt_counts(now));
+        end
+
+        function noteAcqDrift(obj, c, where)
+            % Record the FIRST prime step at which the counts moved, and say so once.
+            % Which of abort / updateView / the user-function swap / the Stack
+            % restore moves them cannot be worked out off the rig -- ScanImage's
+            % source lives on the SI machine -- so the prime reports it instead of
+            % guessing. Only the first is recorded: every later step would report the
+            % same drift and bury the one that actually caused it.
+            if isempty(c) || ~isempty(obj.acq_drift), return; end
+            now = [];
+            try, now = obj.getAcqCounts(); catch, return; end
+            if isempty(now) || isequaln(now, c), return; end
+            obj.acq_drift = where;
+            fprintf(['SIReceiver: ''%s'' moved the acquisition counts (%s -> %s); ' ...
+                     'restoring before arming.\n'], where, obj.fmt_counts(c), ...
+                obj.fmt_counts(now));
+        end
+
+        function s = fmt_counts(obj, c)
+            if isempty(c), s = 'counts unavailable'; return; end
+            parts = {};
+            for f = obj.ACQ_COUNT_PROPS
+                if isfield(c, f{1})
+                    parts{end+1} = sprintf('%s=%s', f{1}, obj.fmt_power(c.(f{1}))); %#ok<AGROW>
+                end
+            end
+            if isempty(parts), s = 'counts unavailable'; else, s = strjoin(parts, ' '); end
         end
 
         function s = pz_note(~, p)
